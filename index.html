@@ -1338,6 +1338,19 @@ function normalizeSleep(sl){
 }
 function normalizeAll(){
   if(Array.isArray(S.medicines))  S.medicines.forEach(normalizeMed);
+  // Fix voice note dates loaded from Sheets as ISO date strings
+  if(Array.isArray(S.voiceNotes)) S.voiceNotes.forEach(function(vn){
+    if(vn.date && typeof vn.date==='string' && vn.date.includes('T') && vn.date.length>10){
+      // Convert ISO datetime → YYYY-MM-DD date string
+      vn.date = vn.date.substring(0,10);
+    }
+    // filename might be garbled if it captured a date object — ensure it looks like a filename
+    if(vn.filename && typeof vn.filename==='string' && vn.filename.includes('T') && vn.filename.includes(':')){
+      vn.filename = 'VoiceNote_'+vn.date+'.webm';
+    }
+    if(!vn.filename || vn.filename==='null') vn.filename='Voice Note';
+    if(!vn.email || vn.email.includes('T') || vn.email.match(/^\d{4}-/)) vn.email='caregiver@anbucare';
+  });
   if(Array.isArray(S.dietPlan)){
     // Migrate old multi-day entries (one per day) → one entry with date range
     S.dietPlan.forEach(normalizeDiet);
@@ -2479,16 +2492,31 @@ function saveNote(){
 function deleteNote(id){
   S.notes=S.notes.filter(function(n){return n.id!==id;});
   try{localStorage.setItem('anbucare_notes',JSON.stringify(S.notes));}catch(ex){}
-  renderNotes(); renderAllNotes();
-  saveToSheets('notes');
-  toast('🗑 Note deleted');
+  renderNotes();renderAllNotes();saveToSheets('notes');toast('🗑 Note deleted');
+}
+function deleteVoiceNote(id){
+  if(!confirm('Delete this voice note? This cannot be undone.')) return;
+  var idx=S.voiceNotes.findIndex(function(v){return v.id===id;});
+  if(idx===-1) return;
+  var vn=S.voiceNotes[idx];
+  if(vn.blobUrl && vn.blobUrl.startsWith('blob:')) try{URL.revokeObjectURL(vn.blobUrl);}catch(e){}
+  S.voiceNotes.splice(idx,1);
+  renderVoice();saveToSheets('voice');toast('🗑 Voice note deleted');
+}
+function deleteNoteByContent(noteText){
+  if(!confirm('Delete this note?')) return;
+  var idx=S.notes.findIndex(function(n){return (n.note||'')=== noteText;});
+  if(idx!==-1) S.notes.splice(idx,1);
+  try{localStorage.setItem('anbucare_notes',JSON.stringify(S.notes));}catch(ex){}
+  renderNotes();renderAllNotes();saveToSheets('notes');toast('🗑 Note deleted');
 }
 function noteHTML(n){
-  var note_=n.note||'';var sl=note_.startsWith('🌙'),sy=note_.startsWith('📊'),vt=note_.startsWith('🫀');
-  var tag=sl?'ntag-sl':sy?'ntag-sym':vt?'ntag-vit':'ntag-n';
-  var lbl=sl?'😴 Sleep':sy?'📊 Symptoms':vt?'🫀 Vitals':'📝 Note';
-  var del=n.id?'<button onclick="deleteNote('+n.id+')" style="background:none;border:none;color:#e53935;font-size:.9rem;cursor:pointer;padding:2px 6px;float:right;line-height:1" title="Delete">🗑</button>':'';
-  return '<div class="note-item"><div class="note-meta">'+del+'<span class="ntag '+tag+'">'+lbl+'</span><span>'+fmtDate(n.date)+'</span><span>'+esc(n.email)+'</span></div><div class="note-text">'+esc(n.note)+'</div></div>';
+  var note_=n.note||'';var sl=note_.startsWith('🌙'),sy=note_.startsWith('📊'),vt=note_.startsWith('🫀'),bw=note_.startsWith('🚽');
+  var tag=sl?'ntag-sl':sy?'ntag-sym':vt?'ntag-vit':bw?'ntag-sl':'ntag-n';
+  var lbl=sl?'😴 Sleep':sy?'📊 Symptoms':vt?'🫀 Vitals':bw?'🚽 Bowel':'📝 Note';
+  var safeNote=note_.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  var del='<button onclick="deleteNoteByContent(\'' + safeNote + '\')" style="background:none;border:none;color:#e53935;font-size:.88rem;cursor:pointer;padding:2px 6px;margin-left:auto;line-height:1;flex-shrink:0" title="Delete">🗑</button>';
+  return '<div class="note-item"><div class="note-meta" style="display:flex;align-items:center;flex-wrap:wrap;gap:4px"><span class="ntag '+tag+'">'+lbl+'</span><span>'+fmtDate(n.date)+'</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(n.email||'')+'</span>'+del+'</div><div class="note-text">'+esc(n.note)+'</div></div>';
 }
 function renderNotes(){
   var el=document.getElementById('notesList');
@@ -2894,10 +2922,11 @@ function vHTML(n){
   }
 
   return `<div class="note-item">
-    <div class="note-meta">
+    <div class="note-meta" style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">
       <span>🎙️ ${esc(n.filename||'Voice Note')}</span>
       <span>${fmtDate(n.date)}</span>
-      <span>${esc(n.email||'—')}</span>
+      <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(n.email||'—')}</span>
+      <button onclick="event.stopPropagation();deleteVoiceNote('${n.id}')" style="background:none;border:none;color:#e53935;font-size:.88rem;cursor:pointer;padding:2px 6px;margin-left:auto;line-height:1;flex-shrink:0" title="Delete">🗑</button>
     </div>
     ${n.note?`<div class="note-text" style="margin-top:4px">📝 ${esc(n.note)}</div>`:''}
     ${playerHTML}
