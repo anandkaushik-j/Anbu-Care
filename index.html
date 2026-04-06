@@ -168,6 +168,8 @@ input,textarea,select{font-family:inherit;font-size:16px;-webkit-appearance:none
 .flash-card:active{transform:scale(.96)}
   @keyframes voicePulse{0%,100%{box-shadow:0 3px 12px rgba(0,105,92,.3)}50%{box-shadow:0 3px 22px rgba(0,105,92,.65)}}
   #voiceNoteBanner[style*="flex"]{animation:voicePulse 2.5s ease-in-out infinite}
+  #textNoteBanner[style*="flex"]{animation:notePulse 3s ease-in-out infinite}
+  @keyframes notePulse{0%,100%{box-shadow:0 3px 12px rgba(21,101,192,.3)}50%{box-shadow:0 3px 22px rgba(21,101,192,.65)}}
 .fc-icon{font-size:1.8rem;line-height:1;margin-bottom:1px}
 .fc-label{font-size:1rem;font-weight:800;color:#fff;letter-spacing:.1px;text-shadow:0 1px 3px rgba(0,0,0,.2)}
 .fc-next{font-size:1.2rem;color:rgba(255,255,255,.97);font-weight:700;margin-top:6px;background:rgba(0,0,0,.22);border-radius:10px;padding:12px 10px;line-height:1.5;width:100%;display:flex;align-items:center;justify-content:center;min-height:72px;text-align:center}
@@ -534,6 +536,16 @@ input:checked+.tslider::before{transform:translateX(20px)}
       <div style="color:#b2dfdb;font-size:.75rem;margin-top:2px" id="voiceNoteBannerSub">Tap to listen in Voice Archive</div>
     </div>
     <span style="background:rgba(255,255,255,.2);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem">▶</span>
+  </div>
+
+  <!-- ── TEXT NOTE BANNER ── -->
+  <div id="textNoteBanner" onclick="showTab('notes')" style="display:none;background:linear-gradient(135deg,#1565c0,#1976d2);border-radius:14px;padding:12px 16px;margin-bottom:10px;cursor:pointer;align-items:center;gap:12px;box-shadow:0 4px 14px rgba(21,101,192,.35)">
+    <div style="font-size:1.6rem">📝</div>
+    <div style="flex:1;min-width:0">
+      <div style="color:#fff;font-weight:800;font-size:.95rem" id="textNoteBannerTitle">New Note Saved</div>
+      <div style="color:#bbdefb;font-size:.75rem;margin-top:2px" id="textNoteBannerSub">Tap to view in Notes</div>
+    </div>
+    <span style="background:rgba(255,255,255,.2);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem">→</span>
   </div>
 
   <div class="strip-wrap">
@@ -1378,6 +1390,7 @@ function normalizeAll(){
 
 function renderAll(){
   setTimeout(initSymSession, 100);
+  setTimeout(updateTextNoteBanner, 50);
   try{renderNext3Strip();}catch(e){console.error('strip',e);}
   try{renderFlashCards();}catch(e){console.error('flash',e);}
   try{renderTasks();}catch(e){console.error('tasks',e);}
@@ -2441,7 +2454,15 @@ function calcH(b,w){const[bh,bm]=b.split(':').map(Number);const[wh,wm]=w.split('
 function renderSleepSum(){
   const a=document.getElementById('sleepSumArea');if(!a)return;
   const l=S.sleepLogs[0];if(!l){a.innerHTML='';return;}
-  a.innerHTML=`<div class="sleep-sum"><div class="ss-title">🌙 Last Night — ${fmtDate(l.date)}</div><div class="ss-grid"><div class="ss-box"><div class="ss-val">${l.hours}h</div><div class="ss-lbl">Duration</div></div><div class="ss-box"><div class="ss-val">${l.bedtime}</div><div class="ss-lbl">Bedtime</div></div><div class="ss-box"><div class="ss-val">${l.wake}</div><div class="ss-lbl">Wake up</div></div></div><div style="text-align:center;margin-top:9px;font-size:.88rem;font-weight:600;color:var(--purple)">${'⭐'.repeat(l.quality)}${'☆'.repeat(5-l.quality)} ${l.quality}/5</div>${(l.disruptions||[]).length?`<div style="text-align:center;font-size:.75rem;color:var(--muted);margin-top:3px">⚡ ${(l.disruptions||[]).join(' · ')}</div>`:''}</div>`;
+  // Belt-and-suspenders: always fix time display even if normalizeAll hasn't run yet
+  const bedDisp=fixSheetTime(l.bedtime||'');
+  const wakeDisp=fixSheetTime(l.wake||'');
+  // Recalculate hours if they look wrong (>16h suggests bad base data)
+  let hoursDisp=l.hours;
+  if(!hoursDisp||hoursDisp>16){
+    try{const[bh,bm]=bedDisp.split(':').map(Number);const[wh,wm]=wakeDisp.split(':').map(Number);let m=(wh*60+wm)-(bh*60+bm);if(m<0)m+=1440;hoursDisp=parseFloat((m/60).toFixed(1));}catch(e){}
+  }
+  a.innerHTML=`<div class="sleep-sum"><div class="ss-title">🌙 Last Night — ${fmtDate(l.date)}</div><div class="ss-grid"><div class="ss-box"><div class="ss-val">${hoursDisp}h</div><div class="ss-lbl">Duration</div></div><div class="ss-box"><div class="ss-val">${bedDisp||'—'}</div><div class="ss-lbl">Bedtime</div></div><div class="ss-box"><div class="ss-val">${wakeDisp||'—'}</div><div class="ss-lbl">Wake up</div></div></div><div style="text-align:center;margin-top:9px;font-size:.88rem;font-weight:600;color:var(--purple)">${'⭐'.repeat(l.quality||0)}${'☆'.repeat(5-(l.quality||0))} ${l.quality||0}/5</div>${(l.disruptions||[]).length?`<div style="text-align:center;font-size:.75rem;color:var(--muted);margin-top:3px">⚡ ${(l.disruptions||[]).join(' · ')}</div>`:''}</div>`;
 }
 function saveSleep(){
   const btn=document.getElementById('btnSaveSleep');btn.disabled=true;btn.textContent='⏳ Saving…';
@@ -2481,7 +2502,7 @@ function saveNote(){
     var nDate=nd.getFullYear()+'-'+String(nd.getMonth()+1).padStart(2,'0')+'-'+String(nd.getDate()).padStart(2,'0');
     S.notes.unshift({id:Date.now(),date:nDate,email:'user@anbucare',note:txt});
     try{localStorage.setItem('anbucare_notes',JSON.stringify(S.notes));}catch(ex){}
-    renderNotes(); renderAllNotes();
+    renderNotes(); renderAllNotes(); updateTextNoteBanner();
     if(btn){btn.disabled=false; btn.textContent='💾 Save Note';}
     document.getElementById('noteText').value='';
     toast('📝 Note saved!');
@@ -2492,7 +2513,7 @@ function saveNote(){
 function deleteNote(id){
   S.notes=S.notes.filter(function(n){return n.id!==id;});
   try{localStorage.setItem('anbucare_notes',JSON.stringify(S.notes));}catch(ex){}
-  renderNotes();renderAllNotes();saveToSheets('notes');toast('🗑 Note deleted');
+  renderNotes();renderAllNotes();updateTextNoteBanner();saveToSheets('notes');toast('🗑 Note deleted');
 }
 function deleteVoiceNote(id){
   if(!confirm('Delete this voice note? This cannot be undone.')) return;
@@ -3001,6 +3022,28 @@ function updateVoiceBanner(){
     banner.style.display = 'flex';
   } else {
     banner.style.display = 'none';
+  }
+}
+function updateTextNoteBanner(){
+  const banner=document.getElementById('textNoteBanner');
+  if(!banner) return;
+  const AUTO_EMOJIS=['📊','🚽','🫀','🌙'];
+  const todayPersonal=(S.notes||[]).filter(function(n){
+    return n.date===today && !AUTO_EMOJIS.some(function(e){return (n.note||'').startsWith(e);});
+  });
+  if(todayPersonal.length){
+    const latest=todayPersonal[0];
+    const title=document.getElementById('textNoteBannerTitle');
+    const sub=document.getElementById('textNoteBannerSub');
+    const count=todayPersonal.length;
+    if(title) title.textContent=count>1?count+' Notes Written Today':'📝 New Note Saved';
+    if(sub){
+      const preview=(latest.note||'').substring(0,50);
+      sub.textContent=preview+(preview.length<(latest.note||'').length?'…':'');
+    }
+    banner.style.display='flex';
+  } else {
+    banner.style.display='none';
   }
 }
 
