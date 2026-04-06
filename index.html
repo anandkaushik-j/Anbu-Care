@@ -1211,40 +1211,39 @@ const MERGE_KEYS = ['tasks','medicines','dietPlan','tests','chemoSessions',
   renderAll();
 }
 
+let _saveTimer=null, _saving=false;
 async function saveToSheets(section){
   const url = localStorage.getItem('anbucare_url');
   if(!url) return;
-  const sid = localStorage.getItem('anbucare_sid')||'';
-  const payload = {
-    action: 'saveAll',
-    section: section || 'all',
-    sheetId: sid,
-    data:{
-      tasks:           S.tasks,
-      medicines:       S.medicines,
-      dietPlan:        S.dietPlan,
-      tests:           S.tests,
-      chemoSessions:   S.chemoSessions,
-      symptoms:        S.symptoms,
-      vitals:          S.vitals,
-      sleepLogs:       S.sleepLogs,
-      notes:           S.notes,
-      voiceNotes:      S.voiceNotes.filter(n=>!n.isMock),
-      helplines:       S.helplines,
-      reminders:       S.reminders,
-      treatmentProfile:S.treatmentProfile,
-      nextId:          S.nextId,
-      bowelLog:        bowelLog,
-      sheetId:         sid,
-      savedAt:         new Date().toISOString()
-    }
-  };
-  try{
-    const r = await fetch(url, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(payload), redirect:'follow'});
-    const txt = await r.text();
-    const res = JSON.parse(txt);
-    if(!res.ok && res.error) toast('⚠️ Save error: '+res.error);
-  }catch(e){ toast('⚠️ Save failed: '+e.message); }
+  clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(async ()=>{
+    if(_saving){ _saveTimer=setTimeout(()=>saveToSheets(section),1500); return; }
+    _saving=true;
+    const sid = localStorage.getItem('anbucare_sid')||'';
+    let bodyStr;
+    try{
+      bodyStr = JSON.stringify({
+        action:'saveAll', section:section||'all', sheetId:sid,
+        data:{
+          tasks:S.tasks, medicines:S.medicines, dietPlan:S.dietPlan,
+          tests:S.tests, chemoSessions:S.chemoSessions,
+          symptoms:S.symptoms, vitals:S.vitals, sleepLogs:S.sleepLogs,
+          notes:S.notes, voiceNotes:S.voiceNotes.filter(n=>!n.isMock),
+          helplines:S.helplines, reminders:S.reminders,
+          treatmentProfile:S.treatmentProfile, nextId:S.nextId,
+          bowelLog:bowelLog, sheetId:sid, savedAt:new Date().toISOString()
+        }
+      });
+    }catch(je){ _saving=false; toast('⚠️ Data error: '+je.message); return; }
+    try{
+      const r = await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:bodyStr,redirect:'follow'});
+      const txt = await r.text();
+      let res; try{ res=JSON.parse(txt); }catch(pe){ throw new Error('Bad response: '+txt.slice(0,60)); }
+      if(res.ok||res.success){ toast('☁️ Saved to Sheets'); }
+      else { toast('⚠️ '+(res.error||'Save failed — check Sheet ID')); }
+    }catch(e){ toast('⚠️ Save failed: '+e.message); }
+    finally{ _saving=false; }
+  }, 800);
 }
 
 window.onload = async () => {
@@ -1972,7 +1971,7 @@ function submitMed(){
   const ms=document.getElementById('mStart').value,md=parseInt(document.getElementById('mDays').value)||0;
   S.medicines.push({id:S.nextId++,name,qty:+document.getElementById('mQty').value||1,unit:document.getElementById('mUnit').value,freq:document.getElementById('mFreq').value,times:times.length?times:['Morning'],food:document.getElementById('mFood').value,start:ms,days:md,end:document.getElementById('mEnd').value||(ms&&md?addDays(ms,md-1):''),notes:document.getElementById('mNotes').value});
   renderMeds();renderFlashCards();renderNext3Strip();closeModal('addModal');resetChips('mTimeChips');setTimeout(renderReminders,50);['mName','mNotes','mDays'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});const md2=document.getElementById('mEndDisplay');if(md2)md2.textContent='— set start & days';
-  toast('💊 Medicine added!');saveToSheets('medicines');saveToSheets('medicines');
+  toast('💊 Medicine added!');saveToSheets('medicines');
 }
 
 // ═══════════════════════════════════════════
@@ -2118,7 +2117,7 @@ function submitChemo(){
   S.chemoSessions.push({id:S.nextId++,date:document.getElementById('cDate').value||today,cycle:+document.getElementById('cCycle').value||1,session:+document.getElementById('cSession').value||1,treatType:S.treatmentProfile.name||'',hospital:hosp,notes:document.getElementById('cNotes').value});
   renderChemo();renderChemoBySym();renderTreatProfileBanner();
   ['cHospital','cNotes'].forEach(id=>document.getElementById(id).value='');
-  toast('💉 Treatment session logged!');saveToSheets('chemo');saveToSheets('chemo');
+  toast('💉 Treatment session logged!');saveToSheets('chemo');
 }
 
 // ═══════════════════════════════════════════
@@ -2137,7 +2136,7 @@ function _saveSymInternal(){
 function saveSym(){
   const btn=document.getElementById('btnSaveAllLog');
   if(btn){btn.disabled=true;btn.textContent='⏳ Saving…';}
-  setTimeout(()=>{_saveSymInternal();if(btn){btn.disabled=false;btn.textContent='💾 Save Daily Log';}toast('📊 Symptoms logged!');saveToSheets('symptoms');saveToSheets('symptoms');},400);
+  setTimeout(()=>{_saveSymInternal();if(btn){btn.disabled=false;btn.textContent='💾 Save Daily Log';}toast('📊 Symptoms logged!');saveToSheets('symptoms');},400);
 }
 function _saveBowelInternal(){
   const count=parseInt(document.getElementById('bowelCount').value)||0;
