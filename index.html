@@ -1168,7 +1168,7 @@ async function loadFromSheets(){
 
   try{
     const r = await Promise.race([
-      fetch(url, {method:'POST', body:JSON.stringify({action:'loadAll'}), headers:{'Content-Type':'text/plain'}, redirect:'follow'}),
+      fetch(url, {method:'POST', body:JSON.stringify({action:'loadAll'}), redirect:'follow'}),
       new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),8000))
     ]);
     const d = await r.json();
@@ -1229,7 +1229,7 @@ async function saveToSheets(section){
     }
   };
   try{
-    fetch(url, {method:'POST', body:JSON.stringify(payload), headers:{'Content-Type':'text/plain'}, redirect:'follow'});
+    fetch(url, {method:'POST', body:JSON.stringify(payload), redirect:'follow'});
     // Fire-and-forget — don't await so UI stays snappy
   }catch(_){}
 }
@@ -2602,7 +2602,7 @@ function uploadVoice(){
 function callGAS(payload){
   const url=localStorage.getItem('anbucare_url');
   if(!url) return Promise.resolve({success:false,error:'No GAS URL configured'});
-  return fetch(url,{method:'POST',body:JSON.stringify(payload),headers:{'Content-Type':'text/plain'},redirect:'follow'})
+  return fetch(url,{method:'POST',body:JSON.stringify(payload),redirect:'follow'})
     .then(r=>r.json())
     .catch(e=>({success:false,error:String(e)}));
 }
