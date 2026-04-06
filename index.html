@@ -1189,6 +1189,12 @@ async function loadFromSheets(){
 const MERGE_KEYS = ['tasks','medicines','dietPlan','tests','chemoSessions',
         'symptoms','vitals','sleepLogs','notes','voiceNotes','helplines',
         'reminders','treatmentProfile','nextId'];
+      // Merge notes: preserve localStorage-only notes not yet in Sheets
+      if(loaded.notes && Array.isArray(loaded.notes)){
+        const sheetIds=new Set(loaded.notes.map(n=>n.id));
+        const localOnly=(S.notes||[]).filter(n=>n.id&&!sheetIds.has(n.id));
+        loaded.notes=[...localOnly,...loaded.notes];
+      }
       MERGE_KEYS.forEach(k=>{ if(loaded[k] !== undefined) S[k] = loaded[k]; });
       // bowelLog is separate
       // Clear stale blob URLs (they expire on page reload)
@@ -1999,6 +2005,7 @@ function editDiet(id){
     document.querySelectorAll('#dTagChips .chip').forEach(function(c){
       c.classList.toggle('sel',(d.tags||[]).includes(c.textContent.trim()));
     });
+    saveToSheets('diet');
     S.dietPlan = S.dietPlan.filter(function(x){return x.id!==id;});
     renderDiet(); renderFlashCards(); renderNext3Strip();
     openAdd('diet');
@@ -2024,6 +2031,7 @@ function editMed(id){
     document.querySelectorAll('#mTimeChips .chip').forEach(function(c){
       c.classList.toggle('sel',(m.times||[]).includes(c.textContent.trim()));
     });
+    saveToSheets('medicines');
     S.medicines = S.medicines.filter(function(x){return x.id!==id;});
     renderMeds(); renderFlashCards(); renderNext3Strip();
     openAdd('medicine');
@@ -2114,11 +2122,19 @@ function renderChemoBySym(){
 }
 function submitChemo(){
   const hosp=document.getElementById('cHospital').value.trim();if(!hosp){toast('⚠️ Hospital required');return;}
-  S.chemoSessions.push({id:S.nextId++,date:document.getElementById('cDate').value||today,cycle:+document.getElementById('cCycle').value||1,session:+document.getElementById('cSession').value||1,treatType:S.treatmentProfile.name||'',hospital:hosp,notes:document.getElementById('cNotes').value});
+  S.chemoSessions.push({id:S.nextId++,date:document.getElementById('cDate').value||today,cycle:+document.getElementById('cCycle').value||1,session:+document.getElementById('cSession').value||1,treatType:(S.treatmentProfile&&S.treatmentProfile.name)||'',hospital:hosp,notes:document.getElementById('cNotes').value});
   renderChemo();renderChemoBySym();renderTreatProfileBanner();
   ['cHospital','cNotes'].forEach(id=>document.getElementById(id).value='');
   toast('💉 Treatment session logged!');saveToSheets('chemo');
 }
+function deleteChemo(id){
+  if(!confirm('Remove this treatment session?')) return;
+  S.chemoSessions = S.chemoSessions.filter(x=>x.id!==id);
+  renderChemo();renderChemoBySym();
+  toast('🗑 Session removed');
+  saveToSheets('chemo');
+}
+
 
 // ═══════════════════════════════════════════
 // SYMPTOMS
