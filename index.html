@@ -485,6 +485,10 @@ input:checked+.tslider::before{transform:translateX(20px)}
   .meal-slot-btn.active small { color:#b2dfdb; font-weight:700; }
   .meal-slot-btn.active span  { color:#fff; }
   .meal-slot-btn:hover:not(.active) { background:#dcedc8; border-color:#8bc34a; }
+
+.sym-session-row{display:flex;gap:8px;margin-bottom:14px;padding:0 2px}
+.sym-sess-btn{flex:1;padding:9px 4px;border-radius:22px;border:2px solid var(--border);background:var(--surface);font-size:.85rem;font-weight:600;cursor:pointer;transition:all .18s;color:var(--muted)}
+.sym-sess-btn.sel{background:var(--primary);color:#fff;border-color:var(--primary);box-shadow:0 2px 8px rgba(58,140,126,.35)}
 </style>
 </head>
 <body>
@@ -553,7 +557,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
     </button>
     <button class="flash-card fc-vitals" onclick="showTab('health')">
       <div class="fc-icon">❤️‍🩹</div><div class="fc-label">Health</div>
-      <div class="fc-next" id="fcVitNext" style="min-height:80px;align-items:flex-start">Loading…</div>
+      <div class="fc-next" id="fcVitNext" style="min-height:80px;max-height:130px;overflow-y:auto;align-items:flex-start;justify-content:flex-start;text-align:left">Loading…</div>
       <div class="fc-done-row" id="fcVitDone" onclick="event.stopPropagation()"></div>
     </button>
     <button class="flash-card fc-tests" onclick="showTab('careplan');showSub('careplan','tests',null)">
@@ -668,6 +672,11 @@ input:checked+.tslider::before{transform:translateX(20px)}
       <div class="card">
         <div class="card-header"><div class="card-title">🩺 How are you feeling?</div></div>
         <div class="card-body">
+          <div class="sym-session-row">
+            <button class="sym-sess-btn" id="symSess0" onclick="selectSymSess(0)">🌅 Morning</button>
+            <button class="sym-sess-btn" id="symSess1" onclick="selectSymSess(1)">☀️ Noon</button>
+            <button class="sym-sess-btn" id="symSess2" onclick="selectSymSess(2)">🌙 Night</button>
+          </div>
           <div class="sym-row">
             <div class="sym-label"><span>🤢 Nausea</span><span class="sym-val v3" id="vN">3</span></div>
             <input type="range" min="1" max="5" value="3" id="sN" oninput="updSym('N',this.value)">
@@ -1355,6 +1364,7 @@ function normalizeAll(){
 }
 
 function renderAll(){
+  setTimeout(initSymSession, 100);
   try{renderNext3Strip();}catch(e){console.error('strip',e);}
   try{renderFlashCards();}catch(e){console.error('flash',e);}
   try{renderTasks();}catch(e){console.error('tasks',e);}
@@ -1740,30 +1750,41 @@ function renderFlashCards(){
     const nextVit=vSlots.find(v=>v.mins>nowMins&&!doneL.includes(v.label));
     const pendingSlots=vSlots.filter(v=>!doneL.includes(v.label));
     const doneSlots=vSlots.filter(v=>doneL.includes(v.label));
+    const isDoneTapped=fcState.vit===true;
+    // When Done is tapped: show ONLY pending. Otherwise show all with status.
+    const slotsToRender=isDoneTapped ? pendingSlots : vSlots;
     let vitHTML='';
-    // Slot status rows: ✅ logged | ⏳ pending | 🔜 next
-    vitHTML+='<div style="display:flex;flex-direction:column;gap:3px;margin-bottom:5px">';
-    vSlots.forEach(slot=>{
-      const isDone=doneL.includes(slot.label);
-      const isNext=nextVit&&nextVit.label===slot.label;
-      const entry=isDone?todayVitals.find(v=>('After '+(v.meal||'')).trim()===slot.label):null;
-      const bpStr=entry&&entry.sys?` · ${entry.sys}/${entry.dia} mmHg`:'';
-      const pulseStr=entry&&entry.pulse?` · 💓${entry.pulse}`:'';
-      const icon=isDone?'✅':isNext?'🔜':'⏳';
-      const color=isDone?'var(--success)':isNext?'#fff':'rgba(255,255,255,0.55)';
-      const weight=isDone||isNext?'700':'400';
-      vitHTML+=`<div style="font-size:.82rem;font-weight:${weight};color:${color};display:flex;align-items:center;gap:5px">
-        <span>${icon}</span><span>${slot.label}${bpStr}${pulseStr}</span>
-      </div>`;
-    });
-    vitHTML+='</div>';
-    // Summary line
-    if(doneSlots.length===vSlots.length){
-      vitHTML+=`<div style="font-size:.8rem;opacity:.85;margin-top:2px">✅ All 3 slots logged today</div>`;
-    } else if(doneSlots.length>0){
-      vitHTML+=`<div style="font-size:.8rem;opacity:.85;margin-top:2px">${doneSlots.length}/${vSlots.length} logged${nextVit?' · 🔜 '+nextVit.label+' up next':' · ✅ rest pending'}</div>`;
+    if(isDoneTapped && pendingSlots.length===0){
+      vitHTML='<div style="font-size:.9rem;font-weight:700;color:rgba(255,255,255,.9)">✅ All 3 slots logged today!<br><span style="font-size:.78rem;font-weight:400;opacity:.75">Great job keeping up 🎉</span></div>';
     } else {
-      vitHTML+=`<div style="font-size:.85rem;font-weight:700;opacity:.9;margin-top:2px">⚠️ No vitals logged yet${nextVit?' · 🔜 '+nextVit.label+' up next':''}</div>`;
+      vitHTML+='<div style="display:flex;flex-direction:column;gap:4px;width:100%">';
+      if(isDoneTapped){
+        vitHTML+='<div style="font-size:.75rem;font-weight:600;opacity:.7;margin-bottom:2px;text-transform:uppercase;letter-spacing:.04em">Pending</div>';
+      }
+      slotsToRender.forEach(slot=>{
+        const logged=doneL.includes(slot.label);
+        const isNext=nextVit&&nextVit.label===slot.label;
+        const entry=logged?todayVitals.find(v=>('After '+(v.meal||'')).trim()===slot.label):null;
+        const bpStr=entry&&entry.sys?` ${entry.sys}/${entry.dia}`:'';
+        const pulseStr=entry&&entry.pulse?` 💓${entry.pulse}`:'';
+        const icon=logged?'✅':isNext?'🔜':'⏳';
+        const rowColor=logged?'rgba(255,255,255,.9)':isNext?'#fff':'rgba(255,255,255,0.55)';
+        const rowWeight=logged||isNext?'700':'500';
+        const bg=logged?'rgba(255,255,255,.08)':isNext?'rgba(255,255,255,.14)':'transparent';
+        vitHTML+=`<div style="display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:8px;background:${bg};font-size:.82rem;font-weight:${rowWeight};color:${rowColor}">
+          <span>${icon}</span>
+          <span style="flex:1">${slot.label}</span>
+          ${bpStr||pulseStr?`<span style="font-size:.76rem;opacity:.85">${bpStr}${pulseStr}</span>`:''}
+        </div>`;
+      });
+      vitHTML+='</div>';
+      if(!isDoneTapped){
+        if(doneSlots.length===0){
+          vitHTML+=`<div style="font-size:.78rem;opacity:.7;margin-top:4px;text-align:center">⚠️ No vitals logged yet today</div>`;
+        } else {
+          vitHTML+=`<div style="font-size:.78rem;opacity:.75;margin-top:4px;text-align:center">${doneSlots.length}/${vSlots.length} logged today</div>`;
+        }
+      }
     }
     setFC('fcVitNext','fcVitDone','vit',vitHTML,true);
 
@@ -2254,7 +2275,7 @@ function deleteChemo(id){
 // ═══════════════════════════════════════════
 function updSym(k,v){const el=document.getElementById('v'+k);if(el){el.textContent=v;el.className='sym-val v'+v;}}
 function _saveSymInternal(){
-  const entry={id:S.nextId++,date:today,nausea:+document.getElementById('sN').value,fatigue:+document.getElementById('sF').value,pain:+document.getElementById('sP').value,mood:+document.getElementById('sM').value,appetite:+document.getElementById('sA').value,extras:chips('extraChips'),notes:document.getElementById('symNotes').value,chemoId:S.chemoSessions.length?S.chemoSessions[S.chemoSessions.length-1].id:null};
+  const entry={id:S.nextId++,date:today,session:symSession,nausea:+document.getElementById('sN').value,fatigue:+document.getElementById('sF').value,pain:+document.getElementById('sP').value,mood:+document.getElementById('sM').value,appetite:+document.getElementById('sA').value,extras:chips('extraChips'),notes:document.getElementById('symNotes').value,chemoId:S.chemoSessions.length?S.chemoSessions[S.chemoSessions.length-1].id:null};
   S.symptoms.unshift(entry);
   const ex=entry.extras.length?' | Also: '+entry.extras.join(', '):'';
   S.notes.unshift({date:today,email:'patient@anbucare',note:`📊 Symptoms — Nausea:${entry.nausea} | Fatigue:${entry.fatigue} | Pain:${entry.pain} | Mood:${entry.mood} | Appetite:${entry.appetite}${ex}`});
@@ -2262,6 +2283,16 @@ function _saveSymInternal(){
   resetChips('extraChips');document.getElementById('symNotes').value='';
 }
 // keep saveSym callable directly too
+var symSession=(function(){var h=new Date().getHours();return h<12?'Morning':h<17?'Noon':'Night';})();
+function selectSymSess(idx){
+  var labels=['Morning','Noon','Night'];
+  symSession=labels[idx];
+  document.querySelectorAll('.sym-sess-btn').forEach(function(b,i){b.classList.toggle('sel',i===idx);});
+}
+function initSymSession(){
+  var h=new Date().getHours(),idx=h<12?0:h<17?1:2;
+  document.querySelectorAll('.sym-sess-btn').forEach(function(b,i){b.classList.toggle('sel',i===idx);});
+}
 function saveSym(){
   const btn=document.getElementById('btnSaveAllLog');
   if(btn){btn.disabled=true;btn.textContent='⏳ Saving…';}
@@ -2314,7 +2345,7 @@ function renderSymHist(){
     return `<div style="padding:12px 0;border-bottom:1px solid var(--border)">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
         <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:.78rem;font-weight:700;color:var(--muted)">${fmtDate(e.date)}</span>
+          <span style="font-size:.78rem;font-weight:700;color:var(--muted)">${fmtDate(e.date)}</span>${e.session?`<span style="font-size:.7rem;font-weight:700;background:var(--primary-l);color:var(--primary);padding:2px 8px;border-radius:8px">${e.session==="Morning"?"🌅":e.session==="Noon"?"☀️":"🌙"} ${e.session}</span>`:""}
           ${cs?`<span style="font-size:.7rem;font-weight:700;background:var(--chemo-l);color:var(--chemo);padding:2px 8px;border-radius:8px">C${cs.cycle}S${cs.session}</span>`:''}
         </div>
         <button onclick="deleteSymEntry('${entryId}',${i})" style="background:#fff0f0;border:1.5px solid #ffcdd2;color:#e53935;border-radius:8px;padding:3px 10px;font-size:.72rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:3px">🗑 Delete</button>
