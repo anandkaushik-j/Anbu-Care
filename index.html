@@ -1731,23 +1731,39 @@ function renderFlashCards(){
 
     // ── VITALS FLASHCARD ──
     const todayVitals=(S.vitals||[]).filter(v=>v.date===localToday);
-    const vSlots=[{label:'After Breakfast',mins:8*60+30},{label:'After Lunch',mins:13*60},{label:'After Dinner',mins:20*60}];
-    const doneL=todayVitals.map(v=>`After ${v.meal}`);
+    const vSlots=[
+      {label:'After Breakfast',key:'Breakfast',mins:8*60+30},
+      {label:'After Lunch',    key:'Lunch',    mins:13*60},
+      {label:'After Dinner',   key:'Dinner',   mins:20*60}
+    ];
+    const doneL=todayVitals.map(v=>('After '+(v.meal||'')).trim());
     const nextVit=vSlots.find(v=>v.mins>nowMins&&!doneL.includes(v.label));
     const pendingSlots=vSlots.filter(v=>!doneL.includes(v.label));
+    const doneSlots=vSlots.filter(v=>doneL.includes(v.label));
     let vitHTML='';
-    if(todayVitals.length>0){
-      const last=todayVitals[todayVitals.length-1];
-      vitHTML+=`<div style="font-size:1.1rem;font-weight:800;margin-bottom:4px">`;
-      if(last.sys&&last.dia) vitHTML+=`❤️ BP: ${last.sys}/${last.dia} mmHg<br>`;
-      if(last.pulse)         vitHTML+=`💓 Pulse: ${last.pulse} bpm<br>`;
-      if(last.temp)          vitHTML+=`🌡️ Temp: ${last.temp}°F`;
-      vitHTML+=`</div>`;
-      if(pendingSlots.length>0) vitHTML+=`<div style="font-size:.9rem;margin-top:4px;opacity:.9">⏰ Next: ${pendingSlots[0].label}</div>`;
-      else vitHTML+=`<div style="font-size:.9rem;margin-top:4px;opacity:.9">✅ All slots logged today</div>`;
+    // Slot status rows: ✅ logged | ⏳ pending | 🔜 next
+    vitHTML+='<div style="display:flex;flex-direction:column;gap:3px;margin-bottom:5px">';
+    vSlots.forEach(slot=>{
+      const isDone=doneL.includes(slot.label);
+      const isNext=nextVit&&nextVit.label===slot.label;
+      const entry=isDone?todayVitals.find(v=>('After '+(v.meal||'')).trim()===slot.label):null;
+      const bpStr=entry&&entry.sys?` · ${entry.sys}/${entry.dia} mmHg`:'';
+      const pulseStr=entry&&entry.pulse?` · 💓${entry.pulse}`:'';
+      const icon=isDone?'✅':isNext?'🔜':'⏳';
+      const color=isDone?'var(--success)':isNext?'#fff':'rgba(255,255,255,0.55)';
+      const weight=isDone||isNext?'700':'400';
+      vitHTML+=`<div style="font-size:.82rem;font-weight:${weight};color:${color};display:flex;align-items:center;gap:5px">
+        <span>${icon}</span><span>${slot.label}${bpStr}${pulseStr}</span>
+      </div>`;
+    });
+    vitHTML+='</div>';
+    // Summary line
+    if(doneSlots.length===vSlots.length){
+      vitHTML+=`<div style="font-size:.8rem;opacity:.85;margin-top:2px">✅ All 3 slots logged today</div>`;
+    } else if(doneSlots.length>0){
+      vitHTML+=`<div style="font-size:.8rem;opacity:.85;margin-top:2px">${doneSlots.length}/${vSlots.length} logged${nextVit?' · 🔜 '+nextVit.label+' up next':' · ✅ rest pending'}</div>`;
     } else {
-      vitHTML=`<div style="font-size:1.05rem;font-weight:700">⚠️ Not logged yet today</div>`;
-      if(nextVit) vitHTML+=`<div style="font-size:.9rem;margin-top:4px;opacity:.9">📋 Next: ${nextVit.label}</div>`;
+      vitHTML+=`<div style="font-size:.85rem;font-weight:700;opacity:.9;margin-top:2px">⚠️ No vitals logged yet${nextVit?' · 🔜 '+nextVit.label+' up next':''}</div>`;
     }
     setFC('fcVitNext','fcVitDone','vit',vitHTML,true);
 
