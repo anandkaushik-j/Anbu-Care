@@ -1168,10 +1168,11 @@ async function loadFromSheets(){
 
   try{
     const r = await Promise.race([
-      fetch(url, {method:'POST', body:JSON.stringify({action:'loadAll'}), redirect:'follow'}),
-      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),8000))
+      fetch(url + (url.includes('?') ? '&' : '?') + 'action=loadAll', {redirect:'follow'}),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),12000))
     ]);
-    const d = await r.json();
+    const rawText = await r.text();
+    const d = JSON.parse(rawText);
     if(d.ok){
       const loaded = d.data;
       // Merge each key into S (only known keys)
@@ -1195,7 +1196,8 @@ const MERGE_KEYS = ['tasks','medicines','dietPlan','tests','chemoSessions',
       toast('✅ Data loaded from Sheets');
     }
   }catch(e){
-    toast('⚠️ Could not load from Sheets — working offline');
+    console.error('Sheets load error:', e);
+    toast('⚠️ Could not load from Sheets: ' + e.message);
   }
   const lb = document.getElementById('sheetsLoadBanner');
   if(lb) lb.style.display = 'none';
@@ -2602,7 +2604,8 @@ function uploadVoice(){
 function callGAS(payload){
   const url=localStorage.getItem('anbucare_url');
   if(!url) return Promise.resolve({success:false,error:'No GAS URL configured'});
-  return fetch(url,{method:'POST',body:JSON.stringify(payload),redirect:'follow'})
+  const getUrl = url + (url.includes('?') ? '&' : '?') + 'payload=' + encodeURIComponent(JSON.stringify(payload));
+  return fetch(getUrl,{redirect:'follow'})
     .then(r=>r.json())
     .catch(e=>({success:false,error:String(e)}));
 }
