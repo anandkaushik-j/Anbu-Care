@@ -1196,6 +1196,17 @@ const MERGE_KEYS = ['tasks','medicines','dietPlan','tests','chemoSessions',
         loaded.notes=[...localOnly,...loaded.notes];
       }
       MERGE_KEYS.forEach(k=>{ if(loaded[k] !== undefined) S[k] = loaded[k]; });
+      normalizeAll();
+      // Deduplicate: keep last entry per (name+start) combination
+      ['medicines','dietPlan','tests','chemoSessions'].forEach(k=>{
+        if(!Array.isArray(S[k])) return;
+        const seen=new Map();
+        S[k].forEach(item=>{
+          const key=(item.name||item.type||item.hospital||'')+'|'+(item.start||item.date||'');
+          seen.set(key, item); // last one wins
+        });
+        S[k]=Array.from(seen.values());
+      });
       // bowelLog is separate
       // Clear stale blob URLs (they expire on page reload)
       if(Array.isArray(S.voiceNotes)){
@@ -1276,6 +1287,35 @@ const SLOT_LABEL={'Morning':'8:00 AM','🌅 Morning':'8:00 AM','Afternoon':'1:00
 function slotMins(t){return SLOT_MINS[t]!==undefined?SLOT_MINS[t]:(SLOT_MINS[t.replace(/^\S+\s/,'')]||480);}
 function slotLabel(t){return SLOT_LABEL[t]||SLOT_LABEL[t.replace(/^\S+\s/,'')]||t;}
 
+
+
+// Normalize array fields that may come back from Sheets as JSON strings
+function normalizeMed(m){
+  if(typeof m.times === 'string'){try{m.times=JSON.parse(m.times);}catch(e){m.times=['Morning'];}}
+  if(!Array.isArray(m.times)||!m.times.length) m.times=['Morning'];
+  return m;
+}
+function normalizeDiet(d){
+  if(typeof d.tags === 'string'){try{d.tags=JSON.parse(d.tags);}catch(e){d.tags=[];}}
+  if(!Array.isArray(d.tags)) d.tags=[];
+  return d;
+}
+function normalizeSym(s){
+  if(typeof s.extras === 'string'){try{s.extras=JSON.parse(s.extras);}catch(e){s.extras=[];}}
+  if(!Array.isArray(s.extras)) s.extras=[];
+  return s;
+}
+function normalizeSleep(sl){
+  if(typeof sl.disruptions === 'string'){try{sl.disruptions=JSON.parse(sl.disruptions);}catch(e){sl.disruptions=[];}}
+  if(!Array.isArray(sl.disruptions)) sl.disruptions=[];
+  return sl;
+}
+function normalizeAll(){
+  if(Array.isArray(S.medicines))  S.medicines.forEach(normalizeMed);
+  if(Array.isArray(S.dietPlan))   S.dietPlan.forEach(normalizeDiet);
+  if(Array.isArray(S.symptoms))   S.symptoms.forEach(normalizeSym);
+  if(Array.isArray(S.sleepLogs))  S.sleepLogs.forEach(normalizeSleep);
+}
 
 function renderAll(){
   try{renderNext3Strip();}catch(e){console.error('strip',e);}
@@ -1976,7 +2016,7 @@ function submitMed(){
   const times=chips('mTimeChips');
   const ms=document.getElementById('mStart').value,md=parseInt(document.getElementById('mDays').value)||0;
   S.medicines.push({id:S.nextId++,name,qty:+document.getElementById('mQty').value||1,unit:document.getElementById('mUnit').value,freq:document.getElementById('mFreq').value,times:times.length?times:['Morning'],food:document.getElementById('mFood').value,start:ms,days:md,end:document.getElementById('mEnd').value||(ms&&md?addDays(ms,md-1):''),notes:document.getElementById('mNotes').value});
-  renderMeds();renderFlashCards();renderNext3Strip();closeModal('addModal');resetChips('mTimeChips');setTimeout(renderReminders,50);['mName','mNotes','mDays'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});const md2=document.getElementById('mEndDisplay');if(md2)md2.textContent='— set start & days';
+  normalizeMed(S.medicines[S.medicines.length-1]);renderMeds();renderFlashCards();renderNext3Strip();closeModal('addModal');resetChips('mTimeChips');setTimeout(renderReminders,50);['mName','mNotes','mDays'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});const md2=document.getElementById('mEndDisplay');if(md2)md2.textContent='— set start & days';
   toast('💊 Medicine added!');saveToSheets('medicines');
 }
 
@@ -2002,6 +2042,7 @@ function editDiet(id){
     document.getElementById('dFoods').value = d.foods||'';
     document.getElementById('dPrep').value  = d.prep||'';
     document.getElementById('dDays').value  = 1;
+    normalizeDiet(d);
     document.querySelectorAll('#dTagChips .chip').forEach(function(c){
       c.classList.toggle('sel',(d.tags||[]).includes(c.textContent.trim()));
     });
@@ -2028,6 +2069,7 @@ function editMed(id){
     document.getElementById('mEnd').value   = m.end||'';
     document.getElementById('mDays').value  = m.days||'';
     document.getElementById('mNotes').value = m.notes||'';
+    normalizeMed(m);
     document.querySelectorAll('#mTimeChips .chip').forEach(function(c){
       c.classList.toggle('sel',(m.times||[]).includes(c.textContent.trim()));
     });
@@ -2071,7 +2113,7 @@ function submitDiet(){
   const ds=document.getElementById('dDate').value||today,dn=Math.max(1,parseInt(document.getElementById('dDays').value)||1);
   const dm=document.getElementById('dMeal').value,dt=document.getElementById('dTime').value,dp=document.getElementById('dPrep').value,dtg=chips('dTagChips');
   for(let i=0;i<dn;i++) S.dietPlan.push({id:S.nextId++,mealType:dm,time:dt,foods,prep:dp,tags:dtg,date:addDays(ds,i)});
-  renderDiet();renderFlashCards();renderNext3Strip();closeModal('addModal');setTimeout(initMealSlots,50);resetChips('dTagChips');setTimeout(renderReminders,50);['dFoods','dPrep','dDays'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  S.dietPlan.forEach(normalizeDiet);renderDiet();renderFlashCards();renderNext3Strip();closeModal('addModal');setTimeout(initMealSlots,50);resetChips('dTagChips');setTimeout(renderReminders,50);['dFoods','dPrep','dDays'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   toast(dn>1?'🥗 Diet plan added for '+dn+' days!':'🥗 Diet item added!');saveToSheets('diet');
 }
 
