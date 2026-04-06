@@ -1305,16 +1305,53 @@ function normalizeSym(s){
   if(!Array.isArray(s.extras)) s.extras=[];
   return s;
 }
+function fixSheetTime(t){
+  if(!t) return '';
+  var s=String(t);
+  if(s.includes('1899-12-30T')||s.includes('1899-12-29T')){
+    var d=new Date(s);
+    return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  }
+  if(t instanceof Date){
+    return String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');
+  }
+  return s;
+}
 function normalizeSleep(sl){
-  if(typeof sl.disruptions === 'string'){try{sl.disruptions=JSON.parse(sl.disruptions);}catch(e){sl.disruptions=[];}}
+  sl.bedtime=fixSheetTime(sl.bedtime||'');
+  sl.wake=fixSheetTime(sl.wake||'');
+  if(typeof sl.disruptions==='string'){try{sl.disruptions=JSON.parse(sl.disruptions);}catch(e){sl.disruptions=[];}}
   if(!Array.isArray(sl.disruptions)) sl.disruptions=[];
+  if(!sl.hours||sl.hours>24){
+    try{const[bh,bm]=sl.bedtime.split(':').map(Number);const[wh,wm]=sl.wake.split(':').map(Number);let m=(wh*60+wm)-(bh*60+bm);if(m<0)m+=1440;sl.hours=parseFloat((m/60).toFixed(2));}catch(e){sl.hours=0;}
+  }
   return sl;
 }
 function normalizeAll(){
   if(Array.isArray(S.medicines))  S.medicines.forEach(normalizeMed);
-  if(Array.isArray(S.dietPlan))   S.dietPlan.forEach(normalizeDiet);
+  if(Array.isArray(S.dietPlan)){
+    // Migrate old multi-day entries (one per day) → one entry with date range
+    S.dietPlan.forEach(normalizeDiet);
+    const seen=new Map();
+    S.dietPlan.forEach(d=>{
+      const key=(d.foods||'')+'|'+(d.mealType||'');
+      if(!seen.has(key)){
+        seen.set(key,{...d, days:d.days||1, endDate:d.endDate||d.date});
+      } else {
+        const ex=seen.get(key);
+        const exStart=ex.date||''; const dDate=d.date||'';
+        const start=exStart<dDate?exStart:dDate;
+        const end=exStart>dDate?exStart:dDate;
+        const dayCount=Math.round((new Date(end)-new Date(start))/(86400000))+1;
+        ex.date=start; ex.endDate=end; ex.days=dayCount;
+      }
+    });
+    S.dietPlan=Array.from(seen.values());
+  }
   if(Array.isArray(S.symptoms))   S.symptoms.forEach(normalizeSym);
   if(Array.isArray(S.sleepLogs))  S.sleepLogs.forEach(normalizeSleep);
+  if(Array.isArray(S.vitals))     S.vitals.forEach(v=>{ v.time=fixSheetTime(v.time||''); });
+  if(Array.isArray(S.notes))      S.notes.forEach(n=>{ if(!n.note) n.note=''; });
 }
 
 function renderAll(){
@@ -2025,9 +2062,26 @@ function submitMed(){
 // ═══════════════════════════════════════════
 function renderDiet(){
   const el=document.getElementById('dietList');
-  const all=[...S.dietPlan].sort((a,b)=>a.time.localeCompare(b.time));
+  const all=[...S.dietPlan].sort((a,b)=>(a.date||'').localeCompare(b.date||''));
   if(!all.length){el.innerHTML='<div class="empty"><span class="emoji">🥗</span>No diet plan yet</div>';return;}
-  el.innerHTML=all.map(d=>`<div class="diet-card"><div class="card-row-actions"><div class="card-content"><div class="dcTop"><span class="dcBadge">${esc(d.mealType)}</span><span class="dcTime">🕐 ${(()=>{const s={'Early Morning':'7:00 AM','Breakfast':'9:00 AM','Mid-Morning':'10:30 AM','Lunch':'1:00 PM','Afternoon Snack':'4:00 PM','Dinner':'8:00 PM','Night':'9:30 PM'};return s[d.mealType]||d.time||'—';})()}&nbsp;·&nbsp;${fmtDate(d.date)}</span></div><div class="dcFoods">${esc(d.foods)}</div>${d.prep?`<div class="dcPrep">📝 ${esc(d.prep)}</div>`:''}<div class="dcTags">${d.tags.map(t=>`<span class="dctag">${esc(t)}</span>`).join('')}</div></div><button class="edit-btn" onclick="editDiet(${d.id})">✏️ Edit</button><button class="del-btn" onclick="deleteDiet(${d.id})">🗑</button></div></div>`).join('');
+  el.innerHTML=all.map(d=>{
+    normalizeDiet(d);
+    const slotLabel={'Early Morning':'7:00 AM','Breakfast':'9:00 AM','Mid-Morning':'10:30 AM','Lunch':'1:00 PM','Afternoon Snack':'4:00 PM','Dinner':'8:00 PM','Night':'9:30 PM'};
+    const timeStr=slotLabel[d.mealType]||d.time||'—';
+    const dateRange=d.days>1?`${fmtDate(d.date)} → ${fmtDate(d.endDate||d.date)}`:`${fmtDate(d.date)}`;
+    return `<div class="med-card"><div class="card-row-actions"><div class="card-content">
+      <div class="med-name">${esc(d.foods)}</div>
+      <div class="med-dose">${esc(d.mealType)} · ${timeStr} · ${esc(d.prep||'')}</div>
+      <div class="med-tags">
+        ${d.tags.map(t=>`<span class="mtag mtag-time">${esc(t)}</span>`).join('')}
+        <span class="mtag mtag-dates">📅 ${dateRange}</span>
+        ${d.days>1?`<span class="mtag" style="background:#e8f4f0;color:var(--primary)">⏱ ${d.days} day${d.days>1?'s':''}</span>`:''}
+      </div>
+    </div>
+    <button class="edit-btn" onclick="editDiet(${d.id})">✏️ Edit</button>
+    <button class="del-btn" onclick="deleteDiet(${d.id})">🗑</button>
+    </div></div>`;
+  }).join('');
 }
 
 function editDiet(id){
@@ -2112,7 +2166,8 @@ function submitDiet(){
   const foods=document.getElementById('dFoods').value.trim();if(!foods){toast('⚠️ Food items required');return;}
   const ds=document.getElementById('dDate').value||today,dn=Math.max(1,parseInt(document.getElementById('dDays').value)||1);
   const dm=document.getElementById('dMeal').value,dt=document.getElementById('dTime').value,dp=document.getElementById('dPrep').value,dtg=chips('dTagChips');
-  for(let i=0;i<dn;i++) S.dietPlan.push({id:S.nextId++,mealType:dm,time:dt,foods,prep:dp,tags:dtg,date:addDays(ds,i)});
+  const de=addDays(ds,dn-1);
+  S.dietPlan.push({id:S.nextId++,mealType:dm,time:dt,foods,prep:dp,tags:dtg,date:ds,days:dn,endDate:de});
   S.dietPlan.forEach(normalizeDiet);renderDiet();renderFlashCards();renderNext3Strip();closeModal('addModal');setTimeout(initMealSlots,50);resetChips('dTagChips');setTimeout(renderReminders,50);['dFoods','dPrep','dDays'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   toast(dn>1?'🥗 Diet plan added for '+dn+' days!':'🥗 Diet item added!');saveToSheets('diet');
 }
@@ -2253,8 +2308,20 @@ function renderSymHist(){
       ${e.notes?`<div style="font-size:.75rem;color:var(--muted);margin-top:2px">💬 ${esc(e.notes)}</div>`:''}
     </div>`;
   }).join('');
-}
 
+  // Bowel summary
+  if(typeof bowelLog!=='undefined' && bowelLog.length){
+    const recent=bowelLog.slice(0,7);
+    el.innerHTML += '<div style="margin-top:16px;padding:12px 14px;background:var(--surface2);border-radius:12px;border:1.5px solid var(--border)">'
+      +'<div style="font-weight:700;font-size:.88rem;color:var(--primary);margin-bottom:8px">🚽 Bowel Log — Last 7 Days</div>'
+      +recent.map(b=>'<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:.82rem">'
+        +'<span>'+fmtDate(b.date)+'</span>'
+        +'<span style="color:'+(bowelColors[b.type]||'var(--text)')+';font-weight:600">'+(bowelLabels[b.type]||'—')+'</span>'
+        +'<span style="color:var(--muted)">'+(b.count||0)+' time'+((b.count||0)!==1?'s':'')+'</span>'
+        +'</div>').join('')
+      +'</div>';
+  }
+}
 function updBowelSlider(v){selectedBowel=+v;const el=document.getElementById('vBwl');if(el){el.textContent=v;el.className='sym-val v'+v;}}
 
 function renderBowelHistory(){
@@ -2267,7 +2334,13 @@ function renderBowelHistory(){
 // ═══════════════════════════════════════════
 // VITALS
 // ═══════════════════════════════════════════
+function deleteVital(idx){
+  if(!confirm('Remove this vitals entry?')) return;
+  S.vitals.splice(idx,1);
+  renderVitHist();saveToSheets('vitals');toast('🗑 Vitals entry removed');
+}
 function saveVitals(){
+  const btn=document.querySelector('button[onclick="saveVitals()"]');
   const sys=document.getElementById('vitSys').value,dia=document.getElementById('vitDia').value,pulse=document.getElementById('vitPulse').value,meal=document.getElementById('vitMeal').value;
   if(!sys||!dia||!pulse){toast('⚠️ BP and Pulse required');return;}
   const entry={date:today,time:new Date().toTimeString().substring(0,5),meal,sys:+sys,dia:+dia,pulse:+pulse,temp:+document.getElementById('vitTemp').value||null,spo2:+document.getElementById('vitSpo2').value||null,weight:+document.getElementById('vitWeight').value||null};
@@ -2277,6 +2350,7 @@ function saveVitals(){
   ['vitSys','vitDia','vitPulse','vitTemp','vitSpo2','vitWeight'].forEach(id=>document.getElementById(id).value='');
   saveToSheets('vitals');
   toast(`🫀 Vitals logged after ${meal}!`);
+  if(btn){btn.textContent='✅ Vitals Saved!';btn.style.background='var(--success)';setTimeout(()=>{btn.textContent='💾 Save Vitals';btn.style.background='';},2500);}
 }
 function submitVitals(){
   const sys=document.getElementById('vmSys').value,dia=document.getElementById('vmDia').value,pulse=document.getElementById('vmPulse').value,meal=document.getElementById('vmMeal').value;
@@ -2292,11 +2366,11 @@ function submitVitals(){
 function renderVitHist(){
   const el=document.getElementById('vitHistList');if(!el)return;
   if(!S.vitals.length){el.innerHTML='<div class="empty"><span class="emoji">🫀</span>No vitals yet</div>';return;}
-  el.innerHTML=S.vitals.map(v=>{
+  el.innerHTML=S.vitals.map((v,i)=>{
     const bpc=v.sys>140||v.dia>90?'var(--warn)':v.sys<90?'var(--accent)':'var(--success)';
     const sc=v.spo2&&v.spo2<95?'var(--warn)':'var(--success)';
     const tc=v.temp&&v.temp>99.5?'var(--warn)':'var(--success)';
-    return `<div class="ventry"><div class="veTop"><span class="vemeta">${fmtDate(v.date)} · ${v.time}</span><span class="vemeal">After ${esc(v.meal)}</span></div><div class="vevals"><div class="vreading" style="color:${bpc}">${v.sys}/${v.dia} <span>mmHg</span></div><div class="vreading">💓 ${v.pulse} <span>bpm</span></div>${v.temp?`<div class="vreading" style="color:${tc}">🌡️ ${v.temp}<span>°F</span></div>`:''} ${v.spo2?`<div class="vreading" style="color:${sc}">💨 ${v.spo2}<span>%</span></div>`:''} ${v.weight?`<div class="vreading">⚖️ ${v.weight}<span>kg</span></div>`:''}</div></div>`;
+    return `<div class="ventry"><div class="veTop" style="display:flex;align-items:center;gap:6px"><span class="vemeta">${fmtDate(v.date)} · ${v.time||''}</span><span class="vemeal">After ${esc(v.meal||'')}</span><button onclick="deleteVital(${i})" style="margin-left:auto;background:#fff0f0;border:1.5px solid #ffcdd2;color:#e53935;border-radius:8px;padding:2px 10px;font-size:.72rem;font-weight:700;cursor:pointer">🗑 Delete</button></div><div class="vevals"><div class="vreading" style="color:${bpc}">${v.sys}/${v.dia} <span>mmHg</span></div><div class="vreading">💓 ${v.pulse} <span>bpm</span></div>${v.temp?`<div class="vreading" style="color:${tc}">🌡️ ${v.temp}<span>°F</span></div>`:''} ${v.spo2?`<div class="vreading" style="color:${sc}">💨 ${v.spo2}<span>%</span></div>`:''} ${v.weight?`<div class="vreading">⚖️ ${v.weight}<span>kg</span></div>`:''}</div></div>`;
   }).join('');
 }
 
@@ -2307,7 +2381,7 @@ function calcH(b,w){const[bh,bm]=b.split(':').map(Number);const[wh,wm]=w.split('
 function renderSleepSum(){
   const a=document.getElementById('sleepSumArea');if(!a)return;
   const l=S.sleepLogs[0];if(!l){a.innerHTML='';return;}
-  a.innerHTML=`<div class="sleep-sum"><div class="ss-title">🌙 Last Night — ${fmtDate(l.date)}</div><div class="ss-grid"><div class="ss-box"><div class="ss-val">${l.hours}h</div><div class="ss-lbl">Duration</div></div><div class="ss-box"><div class="ss-val">${l.bedtime}</div><div class="ss-lbl">Bedtime</div></div><div class="ss-box"><div class="ss-val">${l.wake}</div><div class="ss-lbl">Wake up</div></div></div><div style="text-align:center;margin-top:9px;font-size:.88rem;font-weight:600;color:var(--purple)">${'⭐'.repeat(l.quality)}${'☆'.repeat(5-l.quality)} ${l.quality}/5</div>${l.disruptions.length?`<div style="text-align:center;font-size:.75rem;color:var(--muted);margin-top:3px">⚡ ${l.disruptions.join(' · ')}</div>`:''}</div>`;
+  a.innerHTML=`<div class="sleep-sum"><div class="ss-title">🌙 Last Night — ${fmtDate(l.date)}</div><div class="ss-grid"><div class="ss-box"><div class="ss-val">${l.hours}h</div><div class="ss-lbl">Duration</div></div><div class="ss-box"><div class="ss-val">${l.bedtime}</div><div class="ss-lbl">Bedtime</div></div><div class="ss-box"><div class="ss-val">${l.wake}</div><div class="ss-lbl">Wake up</div></div></div><div style="text-align:center;margin-top:9px;font-size:.88rem;font-weight:600;color:var(--purple)">${'⭐'.repeat(l.quality)}${'☆'.repeat(5-l.quality)} ${l.quality}/5</div>${(l.disruptions||[]).length?`<div style="text-align:center;font-size:.75rem;color:var(--muted);margin-top:3px">⚡ ${(l.disruptions||[]).join(' · ')}</div>`:''}</div>`;
 }
 function saveSleep(){
   const btn=document.getElementById('btnSaveSleep');btn.disabled=true;btn.textContent='⏳ Saving…';
@@ -2363,7 +2437,7 @@ function deleteNote(id){
   toast('🗑 Note deleted');
 }
 function noteHTML(n){
-  var sl=n.note.startsWith('🌙'),sy=n.note.startsWith('📊'),vt=n.note.startsWith('🫀');
+  var note_=n.note||'';var sl=note_.startsWith('🌙'),sy=note_.startsWith('📊'),vt=note_.startsWith('🫀');
   var tag=sl?'ntag-sl':sy?'ntag-sym':vt?'ntag-vit':'ntag-n';
   var lbl=sl?'😴 Sleep':sy?'📊 Symptoms':vt?'🫀 Vitals':'📝 Note';
   var del=n.id?'<button onclick="deleteNote('+n.id+')" style="background:none;border:none;color:#e53935;font-size:.9rem;cursor:pointer;padding:2px 6px;float:right;line-height:1" title="Delete">🗑</button>':'';
