@@ -1172,8 +1172,7 @@ async function loadFromSheets(){
       new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),12000))
     ]);
     const rawText = await r.text();
-    let d;
-    try{ d = JSON.parse(rawText); }catch(pe){ throw new Error('Bad JSON from server: '+rawText.substring(0,120)); }
+    let d; try{ d=JSON.parse(rawText); }catch(pe){ throw new Error('Invalid response: '+rawText.slice(0,80)); }
     if(d.ok){
       const loaded = d.data;
       // Merge each key into S (only known keys)
@@ -1196,10 +1195,10 @@ const MERGE_KEYS = ['tasks','medicines','dietPlan','tests','chemoSessions',
       }
       toast('✅ Data loaded from Sheets');
     } else {
-      toast('❌ Sheets error: ' + (d.error || 'Check Sheet ID in Connect settings'));
+      toast('❌ Sheets error: ' + (d.error||'Check Sheet ID in Connect settings'));
     }
   }catch(e){
-    toast('⚠️ Cannot connect to Sheets: ' + e.message);
+    toast('⚠️ Cannot connect: ' + e.message);
   }
   const lb = document.getElementById('sheetsLoadBanner');
   if(lb) lb.style.display = 'none';
@@ -1208,11 +1207,12 @@ const MERGE_KEYS = ['tasks','medicines','dietPlan','tests','chemoSessions',
 
 async function saveToSheets(section){
   const url = localStorage.getItem('anbucare_url');
-  if(!url) return; // no connection — data stays in memory
-
+  if(!url) return;
+  const sid = localStorage.getItem('anbucare_sid')||'';
   const payload = {
     action: 'saveAll',
     section: section || 'all',
+    sheetId: sid,
     data:{
       tasks:           S.tasks,
       medicines:       S.medicines,
@@ -1229,13 +1229,16 @@ async function saveToSheets(section){
       treatmentProfile:S.treatmentProfile,
       nextId:          S.nextId,
       bowelLog:        bowelLog,
-      savedAt:         new Date().toISOString(),
-      sheetId:         localStorage.getItem('anbucare_sid')||''
+      sheetId:         sid,
+      savedAt:         new Date().toISOString()
     }
   };
   try{
-    fetch(url, {method:'POST', body:JSON.stringify(payload), redirect:'follow'});
-  }catch(_){}
+    const r = await fetch(url, {method:'POST', body:JSON.stringify(payload), redirect:'follow'});
+    const txt = await r.text();
+    const res = JSON.parse(txt);
+    if(!res.ok && res.error) toast('⚠️ Save error: '+res.error);
+  }catch(e){ toast('⚠️ Save failed: '+e.message); }
 }
 
 window.onload = async () => {
@@ -2144,10 +2147,10 @@ function saveAllLog(){
   const btn=document.getElementById('btnSaveAllLog');
   btn.disabled=true;btn.textContent='⏳ Saving…';
   setTimeout(()=>{
-    _saveSymInternal();
-    _saveBowelInternal();
+    try{_saveSymInternal();}catch(e){toast('⚠️ Symptom save error: '+e.message);}
+    try{_saveBowelInternal();}catch(e){toast('⚠️ Bowel save error: '+e.message);}
     btn.disabled=false;btn.textContent='💾 Save Daily Log';
-    toast('✅ Symptoms & Bowel log saved!');saveToSheets('health');saveToSheets('health');
+    toast('✅ Daily log saved!');saveToSheets('health');
   },500);
 }
 function deleteSymEntry(entryId, fallbackIdx){
@@ -2246,14 +2249,17 @@ function renderSleepSum(){
 function saveSleep(){
   const btn=document.getElementById('btnSaveSleep');btn.disabled=true;btn.textContent='⏳ Saving…';
   setTimeout(()=>{
-    const bed=document.getElementById('slBed').value||'22:00',wake=document.getElementById('slWake').value||'06:30';
-    const hours=calcH(bed,wake),quality=+document.getElementById('sSQ').value;
-    const disruptions=chips('sleepChips'),notes=document.getElementById('slNotes').value;
-    S.sleepLogs.unshift({date:today,bedtime:bed,wake,hours,quality,disruptions,notes});
-    S.notes.unshift({date:today,email:'patient@anbucare',note:`🌙 Sleep — ${bed} → ${wake} | ${hours}h | Quality: ${quality}/5${disruptions.length?' | '+disruptions.join(', '):''}${notes?' | '+notes:''}`});
-    renderNotes();renderAllNotes();renderSleepSum();renderSlHist();
-    resetChips('sleepChips');document.getElementById('slNotes').value='';
-    btn.disabled=false;btn.textContent='🌙 Save Sleep Log';toast('🌙 Sleep logged!');saveToSheets('sleep');
+    try{
+      const bed=document.getElementById('slBed').value||'22:00',wake=document.getElementById('slWake').value||'06:30';
+      const hours=calcH(bed,wake),quality=+document.getElementById('sSQ').value;
+      const disruptions=chips('sleepChips'),notes=document.getElementById('slNotes').value;
+      S.sleepLogs.unshift({date:today,bedtime:bed,wake,hours,quality,disruptions,notes});
+      S.notes.unshift({date:today,email:'patient@anbucare',note:`🌙 Sleep — ${bed} → ${wake} | ${hours}h | Quality: ${quality}/5${disruptions.length?' | '+disruptions.join(', '):''}${notes?' | '+notes:''}`});
+      renderNotes();renderAllNotes();renderSleepSum();renderSlHist();
+      resetChips('sleepChips');document.getElementById('slNotes').value='';
+      toast('🌙 Sleep logged!');saveToSheets('sleep');
+    }catch(e){toast('⚠️ Sleep save error: '+e.message);}
+    btn.disabled=false;btn.textContent='🌙 Save Sleep Log';
   },600);
 }
 function renderSlHist(){
@@ -2608,10 +2614,8 @@ function callGAS(payload){
   const url=localStorage.getItem('anbucare_url');
   if(!url) return Promise.resolve({success:false,error:'No GAS URL configured'});
   payload.sheetId = localStorage.getItem('anbucare_sid')||'';
-  const getUrl = url + (url.includes('?') ? '&' : '?') + 'payload=' + encodeURIComponent(JSON.stringify(payload));
-  return fetch(getUrl,{redirect:'follow'})
-    .then(r=>r.json())
-    .catch(e=>({success:false,error:String(e)}));
+  const getUrl = url+(url.includes('?')?'&':'?')+'payload='+encodeURIComponent(JSON.stringify(payload));
+  return fetch(getUrl,{redirect:'follow'}).then(r=>r.json()).catch(e=>({success:false,error:String(e)}));
 }
 
 function playVoiceNote(noteId){
