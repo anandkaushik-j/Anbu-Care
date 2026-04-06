@@ -1168,11 +1168,12 @@ async function loadFromSheets(){
 
   try{
     const r = await Promise.race([
-      fetch(url + (url.includes('?') ? '&' : '?') + 'action=loadAll', {redirect:'follow'}),
+      fetch(url + (url.includes('?') ? '&' : '?') + 'action=loadAll&sid=' + encodeURIComponent(localStorage.getItem('anbucare_sid')||''), {redirect:'follow'}),
       new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),12000))
     ]);
     const rawText = await r.text();
-    const d = JSON.parse(rawText);
+    let d;
+    try{ d = JSON.parse(rawText); }catch(pe){ throw new Error('Bad JSON from server: '+rawText.substring(0,120)); }
     if(d.ok){
       const loaded = d.data;
       // Merge each key into S (only known keys)
@@ -1194,10 +1195,11 @@ const MERGE_KEYS = ['tasks','medicines','dietPlan','tests','chemoSessions',
         loaded.bowelLog.forEach(x=>bowelLog.push(x));
       }
       toast('✅ Data loaded from Sheets');
+    } else {
+      toast('❌ Sheets error: ' + (d.error || 'Check Sheet ID in Connect settings'));
     }
   }catch(e){
-    console.error('Sheets load error:', e);
-    toast('⚠️ Could not load from Sheets: ' + e.message);
+    toast('⚠️ Cannot connect to Sheets: ' + e.message);
   }
   const lb = document.getElementById('sheetsLoadBanner');
   if(lb) lb.style.display = 'none';
@@ -1227,12 +1229,12 @@ async function saveToSheets(section){
       treatmentProfile:S.treatmentProfile,
       nextId:          S.nextId,
       bowelLog:        bowelLog,
-      savedAt:         new Date().toISOString()
+      savedAt:         new Date().toISOString(),
+      sheetId:         localStorage.getItem('anbucare_sid')||''
     }
   };
   try{
     fetch(url, {method:'POST', body:JSON.stringify(payload), redirect:'follow'});
-    // Fire-and-forget — don't await so UI stays snappy
   }catch(_){}
 }
 
@@ -2563,13 +2565,14 @@ function uploadVoice(){
       mimeType,
       date:     today,
       note:     noteText,
-      email:    'caregiver@anbucare'
+      email:    'caregiver@anbucare',
+      sheetId:  localStorage.getItem('anbucare_sid')||''
     });
 
     fetch(url, {method:'POST', body:payload})
       .then(r=>r.json())
       .then(res=>{
-        if(res.fileId || res.success){
+        if(res.ok || res.fileId || res.success){
           S.voiceNotes.unshift({
             id:S.nextId++,
             date:today,
@@ -2604,6 +2607,7 @@ function uploadVoice(){
 function callGAS(payload){
   const url=localStorage.getItem('anbucare_url');
   if(!url) return Promise.resolve({success:false,error:'No GAS URL configured'});
+  payload.sheetId = localStorage.getItem('anbucare_sid')||'';
   const getUrl = url + (url.includes('?') ? '&' : '?') + 'payload=' + encodeURIComponent(JSON.stringify(payload));
   return fetch(getUrl,{redirect:'follow'})
     .then(r=>r.json())
