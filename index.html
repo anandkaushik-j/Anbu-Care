@@ -804,7 +804,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
   <div id="health-symptoms">
     <div class="sub-tabs" style="margin-top:0">
       <button class="sub-tab active" onclick="showSub('sym','log',this)">📋 Log Now</button>
-      <button class="sub-tab" onclick="showSub('sym','history',this)">📈 History</button>
+      <button class="sub-tab" onclick="showSub('sym','history',this);renderSymHist()">📈 History</button>
     </div>
     <div id="sym-log">
       <div class="card">
@@ -877,7 +877,22 @@ input:checked+.tslider::before{transform:translateX(20px)}
       </button>
     </div>
     <div id="sym-history" class="hidden">
-      <div class="card"><div class="card-header"><div class="card-title">📈 Symptom History</div></div><div class="card-body"><div id="symHistList"></div></div></div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📈 Symptom History</div>
+        </div>
+        <div class="card-body">
+          <!-- Bulk delete by session -->
+          <div id="symBulkDeleteBar" style="background:var(--surface2);border-radius:10px;padding:10px 12px;margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span style="font-size:.75rem;font-weight:700;color:var(--muted)">🗑 Delete by session:</span>
+            <select id="symBulkSession" style="flex:1;min-width:140px;border:1.5px solid var(--border);border-radius:8px;padding:6px 10px;font-size:.78rem;background:var(--surface);color:var(--text)">
+              <option value="">— Select a session —</option>
+            </select>
+            <button onclick="bulkDeleteSymBySession()" style="background:#fff0f0;border:1.5px solid #ffcdd2;color:#e53935;border-radius:8px;padding:7px 14px;font-size:.75rem;font-weight:700;cursor:pointer;white-space:nowrap">🗑 Delete All</button>
+          </div>
+          <div id="symHistList"></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -914,7 +929,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
   <div id="health-sleep" class="hidden">
     <div class="sub-tabs" style="margin-top:0">
       <button class="sub-tab active" onclick="showSub('sl','log',this)">🌙 Log Sleep</button>
-      <button class="sub-tab" onclick="showSub('sl','history',this)">📊 History</button>
+      <button class="sub-tab" onclick="showSub('sl','history',this);renderSlHist()">📊 History</button>
     </div>
     <div id="sl-log">
       <div id="sleepSumArea"></div>
@@ -2590,6 +2605,28 @@ function saveAllLog(){
     toast('✅ Daily log saved!');saveToSheets('health');
   },500);
 }
+function bulkDeleteSymBySession(){
+  const sel=document.getElementById('symBulkSession');
+  if(!sel||!sel.value){toast('⚠️ Please select a session first');return;}
+  const val=sel.value;
+  let count=0;
+  if(val==='__none__'){
+    count=S.symptoms.filter(e=>!e.chemoId).length;
+    if(!count){toast('No unlinked entries found');return;}
+    if(!confirm(`Remove all ${count} unlinked symptom entries? This cannot be undone.`)) return;
+    S.symptoms=S.symptoms.filter(e=>e.chemoId);
+  } else {
+    count=S.symptoms.filter(e=>String(e.chemoId)===String(val)).length;
+    if(!count){toast('No entries found for this session');return;}
+    const cs=S.chemoSessions.find(s=>String(s.id)===String(val));
+    const lbl=cs?`Cycle ${cs.cycle} · Session ${cs.session}`:'this session';
+    if(!confirm(`Remove all ${count} symptom entries for ${lbl}? This cannot be undone.`)) return;
+    S.symptoms=S.symptoms.filter(e=>String(e.chemoId)!==String(val));
+  }
+  renderSymHist();
+  toast(`🗑 ${count} symptom entries removed`);
+  saveToSheets('health');
+}
 function deleteSymEntry(entryId, fallbackIdx){
   if(!confirm('Remove this symptom entry?')) return;
   // try by id first, fallback to index
@@ -2605,6 +2642,23 @@ function deleteSymEntry(entryId, fallbackIdx){
 
 function renderSymHist(){
   const el=document.getElementById('symHistList');if(!el)return;
+
+  // Populate bulk-delete session dropdown
+  const sel=document.getElementById('symBulkSession');
+  if(sel){
+    const sessions=[...new Set(S.symptoms.filter(e=>e.chemoId).map(e=>e.chemoId))];
+    const sessionOpts=sessions.map(cid=>{
+      const cs=S.chemoSessions.find(s=>s.id===cid);
+      const lbl=cs?`Cycle ${cs.cycle} · Session ${cs.session} (${fmtDate(cs.date)})`:`Session ${cid}`;
+      return `<option value="${cid}">${lbl}</option>`;
+    }).join('');
+    sel.innerHTML='<option value="">— Select a session —</option>'+sessionOpts;
+    // Also add "No session" option if unlinked entries exist
+    const unlinked=S.symptoms.filter(e=>!e.chemoId).length;
+    if(unlinked) sel.innerHTML+=`<option value="__none__">Unlinked entries (${unlinked})</option>`;
+    document.getElementById('symBulkDeleteBar').style.display=sessions.length||unlinked?'flex':'none';
+  }
+
   if(!S.symptoms.length){el.innerHTML='<div class="empty"><span class="emoji">📊</span>No history yet</div>';return;}
   const lbs={nausea:'🤢 Nausea',fatigue:'😴 Fatigue',pain:'🩹 Pain',mood:'😊 Mood',appetite:'🍽️ Appetite'};
   el.innerHTML=S.symptoms.map((e,i)=>{
@@ -2729,10 +2783,42 @@ function saveSleep(){
 function renderSlHist(){
   const el=document.getElementById('slHistList');if(!el)return;
   if(!S.sleepLogs.length){el.innerHTML='<div class="empty"><span class="emoji">😴</span>No sleep logs yet</div>';return;}
-  el.innerHTML=S.sleepLogs.map(s=>{
+  el.innerHTML=[...S.sleepLogs].sort((a,b)=>b.date.localeCompare(a.date)).map((s,i)=>{
     const col=s.hours>=7?'var(--success)':s.hours>=6?'#f0b429':'var(--warn)';
-    return `<div style="padding:12px 0;border-bottom:1px solid var(--border)"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:.8rem;font-weight:700;color:var(--muted)">${fmtDate(s.date)}</span><span style="font-size:1.05rem;font-weight:800;color:${col}">${s.hours}h</span></div><div style="display:flex;gap:12px;font-size:.76rem;color:var(--muted);margin-bottom:4px"><span>🛏️ ${s.bedtime}</span><span>☀️ ${s.wake}</span></div><div style="font-size:.85rem;margin-bottom:2px">${'⭐'.repeat(s.quality)}${'☆'.repeat(5-s.quality)}</div>${s.disruptions.length?`<div style="font-size:.74rem;color:var(--warn)">⚡ ${s.disruptions.join(' · ')}</div>`:''} ${s.notes?`<div style="font-size:.75rem;color:var(--muted)">💬 ${esc(s.notes)}</div>`:''}</div>`;
+    const entryId=s.id!=null?s.id:i;
+    return `<div style="padding:12px 0;border-bottom:1px solid var(--border)">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:.8rem;font-weight:700;color:var(--muted)">${fmtDate(s.date)}</span>
+          <span style="font-size:1.05rem;font-weight:800;color:${col}">${s.hours}h</span>
+        </div>
+        <button onclick="deleteSleepEntry('${entryId}',${i})"
+          style="background:#fff0f0;border:1.5px solid #ffcdd2;color:#e53935;border-radius:8px;
+                 padding:3px 10px;font-size:.72rem;font-weight:700;cursor:pointer;
+                 display:inline-flex;align-items:center;gap:3px">🗑 Delete</button>
+      </div>
+      <div style="display:flex;gap:12px;font-size:.76rem;color:var(--muted);margin-bottom:4px">
+        <span>🛏️ ${s.bedtime}</span><span>☀️ ${s.wake}</span>
+      </div>
+      <div style="font-size:.85rem;margin-bottom:3px">${'⭐'.repeat(s.quality)}${'☆'.repeat(5-s.quality)}</div>
+      ${s.disruptions&&s.disruptions.length?`<div style="font-size:.74rem;color:var(--warn)">⚡ ${s.disruptions.join(' · ')}</div>`:''}
+      ${s.notes?`<div style="font-size:.75rem;color:var(--muted);margin-top:2px">💬 ${esc(s.notes)}</div>`:''}
+    </div>`;
   }).join('');
+}
+
+function deleteSleepEntry(entryId, fallbackIdx){
+  if(!confirm('Remove this sleep log entry? This cannot be undone.')) return;
+  const byId=S.sleepLogs.findIndex(e=>String(e.id)===String(entryId));
+  if(byId>=0){
+    S.sleepLogs.splice(byId,1);
+  } else {
+    S.sleepLogs.splice(fallbackIdx,1);
+  }
+  renderSlHist();
+  renderSleepSum();
+  toast('🗑 Sleep entry removed');
+  saveToSheets('health');
 }
 
 // ═══════════════════════════════════════════
