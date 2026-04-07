@@ -355,7 +355,9 @@ input:checked+.tslider::before{transform:translateX(20px)}
 #printReport{display:none}
 @media print{
   body>*{display:none!important}
-  #printReport{display:block!important;font-size:12px;line-height:1.5;color:#000;padding:20px;font-family:Arial,sans-serif}
+  #printReport{display:block!important;font-size:12px;line-height:1.55;color:#000;padding:20px;font-family:Georgia,'Times New Roman',serif;max-width:720px;margin:0 auto}
+  @page{margin:15mm 14mm;size:A4}
+  #printReport *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
   .pr-header{border-bottom:3px solid #3a8c7e;padding-bottom:12px;margin-bottom:18px}
   .pr-title{font-size:22px;font-weight:800;color:#3a8c7e}
   .pr-sub{font-size:12px;color:#555;margin-top:3px}
@@ -1103,7 +1105,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
         </div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-primary btn-block" onclick="previewReport()" style="flex:2">👁️ Preview</button>
-          <button class="btn btn-outline" onclick="generatePDF()" style="flex:1" title="Print">🖨️</button>
+          <button class="btn btn-accent" onclick="generatePDF()" style="flex:1">⬇️ Download PDF</button>
         </div>
         <div id="reportPreview" class="hidden" style="margin-top:14px;background:#f7fbf9;border-radius:12px;border:1.5px solid var(--border);padding:14px;font-size:1.05rem;line-height:1.6"></div>
       </div>
@@ -1584,69 +1586,125 @@ async function fetchAffirmation(){
   const BAD_WORDS=['politic','democrat','republican','liberal','conserv','feminist','woke','lgbtq','gender','protest','activist','oppress','privilege','capitali','marxis','jesus','christ','allah','hindu','muslim','jewish','bible','quran','temple','church','mosque','pray','prayer','heaven','hell','sin','god bless','lord','prophet','blm','resist','revolution','systemic','patriot','socialist'];
   function isGoodQuote(text){const t=text.toLowerCase();return !BAD_WORDS.some(b=>t.includes(b))&&text.length>=30&&text.length<=200;}
 
+  // ── Symptom-score-aware affirmation pools ──────────────────────
+  // Tier: 'high' = distress avg 3.5+  |  'mid' = 2.2–3.4  |  'low' = <2.2
   const LOCAL = {
-    Morning:[
-      ['Every morning you wake up is a small victory. Be proud of it.','AnbuCare 🌸'],
-      ['You are stronger than you think. Today is proof of that.','AnbuCare 🌸'],
-      ['Take it one hour at a time. You are doing beautifully.','AnbuCare 🌸'],
-      ['Small steps forward still count as moving ahead.','AnbuCare 🌸'],
-      ['Your courage through this journey inspires everyone around you.','AnbuCare 🌸'],
-      ['Good things are coming. Keep going, one day at a time.','AnbuCare 🌸'],
-      ['You woke up today — that is already something to be proud of.','AnbuCare 🌸'],
-      ['Healing is not always visible, but it is always happening inside you.','AnbuCare 🌸'],
-      ['The fact that you keep showing up makes you remarkable.','AnbuCare 🌸'],
-      ['You have handled hard days before. You can handle today too.','AnbuCare 🌸'],
-      ['Your body is on your side. Work with it, not against it.','AnbuCare 🌸'],
-      ['Each new day is a chance to feel a little better than yesterday.','AnbuCare 🌸'],
-      ['Breathe in. You are here. That is enough for this moment.','AnbuCare 🌸'],
-      ['Hard days do not last forever. Better days are ahead.','AnbuCare 🌸'],
-      ['You do not need to be positive every minute. Just keep moving.','AnbuCare 🌸'],
-      ['The people around you love you more than words can express.','AnbuCare 🌸'],
-      ['Today is a new page. Write it gently, one hour at a time.','AnbuCare 🌸'],
-    ],
-    Afternoon:[
-      ['Your body is working hard to heal right now. Trust it.','AnbuCare 🌸'],
-      ['Rest when you need to. Resting is part of healing.','AnbuCare 🌸'],
-      ['You are not defined by how you feel today.','AnbuCare 🌸'],
-      ['Every treatment session is one step closer to feeling better.','AnbuCare 🌸'],
-      ['The people who love you are cheering for you right now.','AnbuCare 🌸'],
-      ['Even one small smile today counts as a win. 😊','AnbuCare 🌸'],
-      ['You do not have to feel strong every moment. Just keep going.','AnbuCare 🌸'],
-      ['Progress happens quietly. Your body knows exactly what it is doing.','AnbuCare 🌸'],
-      ['It is okay to have a slow day. Your body is doing heavy work.','AnbuCare 🌸'],
-      ['You are not alone in this. Every single step is taken together.','AnbuCare 🌸'],
-      ['Discomfort is temporary. Your strength is permanent.','AnbuCare 🌸'],
-      ['You have already come so far. Look how much you have handled.','AnbuCare 🌸'],
-      ['Give your body kindness, water, and patience today.','AnbuCare 🌸'],
-      ['The hardest part of treatment is showing up. You keep doing that.','AnbuCare 🌸'],
-      ['A warm drink, a gentle breath — small comforts matter today.','AnbuCare 🌸'],
-      ['Your family is proud of you in ways they may not always say aloud.','AnbuCare 🌸'],
-      ['Keep going. The best chapters of your story are still being written.','AnbuCare 🌸'],
-    ],
-    Evening:[
-      ['You made it through another day. That is something to be proud of.','AnbuCare 🌸'],
-      ['Tonight, let your body rest and heal. You have truly earned it.','AnbuCare 🌸'],
-      ['You are loved more than you know. 🌙','AnbuCare 🌸'],
-      ['Tomorrow brings new strength and a fresh start.','AnbuCare 🌸'],
-      ['Be gentle with yourself tonight. You are doing more than enough.','AnbuCare 🌸'],
-      ['Every difficult day you get through builds something inside you.','AnbuCare 🌸'],
-      ['Today showed your quiet bravery. That matters more than you know.','AnbuCare 🌸'],
-      ['Sleep well. Your body heals most while you rest. 💙','AnbuCare 🌸'],
-      ['You showed up today. That is the whole victory.','AnbuCare 🌸'],
-      ['Your strength is not just in your body — it is in your heart too.','AnbuCare 🌸'],
-      ['Close your eyes knowing that tomorrow is another chance.','AnbuCare 🌸'],
-      ['The love around you does not go away at night. It stays close.','AnbuCare 🌸'],
-      ['You are healing. Even on the hard days, you are healing.','AnbuCare 🌸'],
-      ['Rest is not giving up. Rest is how fighters recharge.','AnbuCare 🌸'],
-      ['Today was tough. You were tougher.','AnbuCare 🌸'],
-      ['Let tonight be soft and healing. You deserve every bit of rest.','AnbuCare 🌸'],
-    ]
+    high:{
+      Morning:[
+        ['It is okay to feel the way you feel right now. You do not have to pretend otherwise.','AnbuCare 🌸'],
+        ['Hard moments are real, and so is the care around you.','AnbuCare 🌸'],
+        ['You do not need to push through alone. Let the people who love you carry some of this today.','AnbuCare 🌸'],
+        ['Even on the heaviest days, your body is quietly doing its work.','AnbuCare 🌸'],
+        ['Be as gentle with yourself today as you would be with someone you deeply love.','AnbuCare 🌸'],
+        ['Rest is not giving in. Rest is how your body heals.','AnbuCare 🌸'],
+      ],
+      Afternoon:[
+        ['Whatever you are feeling right now is valid. You do not have to minimise it.','AnbuCare 🌸'],
+        ['A slow, difficult day still counts. Your body is doing hard work inside.','AnbuCare 🌸'],
+        ['You are allowed to ask for help. That is not weakness — it is wisdom.','AnbuCare 🌸'],
+        ['On the days that feel heaviest, the love around you is closest.','AnbuCare 🌸'],
+        ['Give yourself full permission to rest. Healing asks for exactly that.','AnbuCare 🌸'],
+        ['This too will soften. You do not have to carry it alone.','AnbuCare 🌸'],
+      ],
+      Evening:[
+        ['Tonight, all that is asked of you is rest. Nothing more.','AnbuCare 🌸'],
+        ['You felt a lot today. That is enough. Let it all go with the night.','AnbuCare 🌸'],
+        ['Breathe out the day. Breathe in peace. You are safe and loved.','AnbuCare 🌸'],
+        ['The love around you does not go away at night. It stays close.','AnbuCare 🌸'],
+        ['You are healing. Even on the hard days, healing is quietly happening.','AnbuCare 🌸'],
+        ['Be very gentle with yourself tonight. You truly deserve it.','AnbuCare 🌸'],
+      ]
+    },
+    mid:{
+      Morning:[
+        ['Take it one hour at a time. You are doing beautifully.','AnbuCare 🌸'],
+        ['Small steps forward still count as moving ahead.','AnbuCare 🌸'],
+        ['Healing is not always visible, but it is always happening inside you.','AnbuCare 🌸'],
+        ['Your body is on your side. Work with it gently today.','AnbuCare 🌸'],
+        ['The people around you love you more than words can express.','AnbuCare 🌸'],
+        ['Today is a new page. Write it gently, one hour at a time.','AnbuCare 🌸'],
+        ['A gentle morning brings gentle energy. Let your day begin softly.','AnbuCare 🌸'],
+      ],
+      Afternoon:[
+        ['Your body is working hard to heal right now. Trust it.','AnbuCare 🌸'],
+        ['Rest when you need to. Resting is part of healing.','AnbuCare 🌸'],
+        ['You are not defined by how you feel today.','AnbuCare 🌸'],
+        ['Progress happens quietly. Your body knows exactly what it is doing.','AnbuCare 🌸'],
+        ['You are not alone in this. Every single step is taken together.','AnbuCare 🌸'],
+        ['A warm drink, a gentle breath — small comforts matter today.','AnbuCare 🌸'],
+        ['Your family is proud of you in ways they may not always say aloud.','AnbuCare 🌸'],
+      ],
+      Evening:[
+        ['Tonight, let your body rest and heal. You have truly earned it.','AnbuCare 🌸'],
+        ['You are loved more than you know. 🌙','AnbuCare 🌸'],
+        ['Be gentle with yourself tonight. You are doing more than enough.','AnbuCare 🌸'],
+        ['Sleep well. Your body heals most while you rest. 💙','AnbuCare 🌸'],
+        ['The love around you does not go away at night. It stays close.','AnbuCare 🌸'],
+        ['Good care, good rest, good love — that is what tonight holds for you.','AnbuCare 🌸'],
+      ]
+    },
+    low:{
+      Morning:[
+        ['You are stronger than you think. Today is a beautiful reminder of that.','AnbuCare 🌸'],
+        ['Each new day is a chance to feel a little better than yesterday.','AnbuCare 🌸'],
+        ['Your courage through this journey inspires everyone around you.','AnbuCare 🌸'],
+        ['You are surrounded by love — let that feeling carry you today.','AnbuCare 🌸'],
+        ['Hard days do not last forever. Better days are ahead.','AnbuCare 🌸'],
+        ['Every treatment session is one step closer to feeling your best.','AnbuCare 🌸'],
+      ],
+      Afternoon:[
+        ['Even one small smile today counts as a win. 😊','AnbuCare 🌸'],
+        ['Every treatment session is one step closer to feeling better.','AnbuCare 🌸'],
+        ['The people who love you are cheering for you right now.','AnbuCare 🌸'],
+        ['Give your body kindness, water, and patience today.','AnbuCare 🌸'],
+        ['It is okay to have a slow day. Your body is doing beautiful work.','AnbuCare 🌸'],
+        ['The best chapters of your story are still being written. 🌿','AnbuCare 🌸'],
+      ],
+      Evening:[
+        ['Tomorrow brings new strength and a fresh start.','AnbuCare 🌸'],
+        ['Today showed your quiet bravery. That matters more than you know.','AnbuCare 🌸'],
+        ['Your strength is not just in your body — it is in your heart too.','AnbuCare 🌸'],
+        ['You are healing. Every single day, you are healing.','AnbuCare 🌸'],
+        ['Let tonight be soft and healing. You deserve every bit of rest.','AnbuCare 🌸'],
+        ['You are loved deeply. Rest well tonight. 🌙','AnbuCare 🌸'],
+      ]
+    }
   };
 
+  // ── Symptom-aware tier selection ─────────────────────────────
+  function getSymptomTier(){
+    try{
+      const today = new Date().toISOString().slice(0,10);
+      const todaySym = (S.symptoms||[]).filter(s=>
+        s.date && String(s.date).slice(0,10)===today
+      );
+      if(!todaySym.length) return 'mid';
+      const last = todaySym[todaySym.length-1];
+      const scores = [
+        Number(last.nausea)||3,
+        Number(last.fatigue)||3,
+        Number(last.pain)||3,
+        Number(last.mood)||3,
+        Number(last.appetite)||3
+      ];
+      const avg = scores.reduce((a,b)=>a+b,0)/scores.length;
+      return avg >= 3.5 ? 'high' : avg < 2.2 ? 'low' : 'mid';
+    }catch(_){ return 'mid'; }
+  }
+
   // Show local quote instantly — shimmer card while API loads
-  const picks = LOCAL[cat];
-  const localPick = picks[Math.floor(Math.random() * picks.length)];
-  setAff(area, cat, localPick[0], localPick[1], 'local', true);
+  const tier  = getSymptomTier();
+  const pool  = LOCAL[tier][cat];
+  const localPick = pool[Math.floor(Math.random() * pool.length)];
+
+  // Gentle contextual label based on how patient is feeling
+  const tierLabel = tier==='high'
+    ? '💙 A gentle message for how you are feeling today'
+    : tier==='low'
+    ? '🌿 You are having a good day — here is something to carry forward'
+    : '🌸 Your daily affirmation';
+
+  setAff(area, cat, localPick[0], localPick[1], tierLabel, true);
 
   // ── Try live APIs in sequence ─────────────────────────────────
   const apis = [
@@ -2425,11 +2483,34 @@ function submitTest(){
 // ═══════════════════════════════════════════
 function renderChemo(){
   const el=document.getElementById('chemoList');if(!S.chemoSessions.length){el.innerHTML='<div class="empty"><span class="emoji">💉</span>No sessions logged</div>';return;}
-  el.innerHTML=[...S.chemoSessions].sort((a,b)=>b.date.localeCompare(a.date)).map(s=>{
+  el.innerHTML=[...S.chemoSessions].sort((a,b)=>b.date.localeCompare(a.date)).map((s,i)=>{
     const syms=S.symptoms.filter(x=>x.chemoId===s.id);
     const avg=syms.length?(Math.round(syms.reduce((a,x)=>a+x.nausea,0)/syms.length*10)/10):null;
-    return `<div class="chemo-card"><span class="chemo-badge">Cycle ${s.cycle} · Session ${s.session}</span>${s.treatType?`<span class="chemo-badge" style="background:var(--purple-l);color:var(--purple);margin-left:5px">🧪 ${esc(s.treatType)}</span>`:''}<div class="chemo-date">💉 ${fmtDate(s.date)}</div><div class="chemo-info">🏥 ${esc(s.hospital)}</div>${s.notes?`<div class="chemo-info">📝 ${esc(s.notes)}</div>`:''} ${avg!==null?`<div class="chemo-sym">📊 Post-session avg — Nausea: ${avg}/5 · ${syms.length} log${syms.length>1?'s':''}</div>`:''}</div>`;
+    return `<div class="chemo-card">
+      <div class="card-row-actions">
+        <div class="card-content">
+          <span class="chemo-badge">Cycle ${s.cycle} · Session ${s.session}</span>${s.treatType?`<span class="chemo-badge" style="background:var(--purple-l);color:var(--purple);margin-left:5px">🧪 ${esc(s.treatType)}</span>`:''}
+          <div class="chemo-date">💉 ${fmtDate(s.date)}</div>
+          <div class="chemo-info">🏥 ${esc(s.hospital)}</div>
+          ${s.notes?`<div class="chemo-info">📝 ${esc(s.notes)}</div>`:''}
+          ${avg!==null?`<div class="chemo-sym">📊 Post-session avg — Nausea: ${avg}/5 · ${syms.length} log${syms.length>1?'s':''}</div>`:''}
+        </div>
+        <button class="del-btn" onclick="deleteChemoSession('${s.id}',${i})" title="Delete session">🗑 Delete</button>
+      </div>
+    </div>`;
   }).join('');
+}
+function deleteChemoSession(sessionId, fallbackIdx){
+  if(!confirm('Remove this treatment session? This cannot be undone.')) return;
+  const byId = S.chemoSessions.findIndex(e=>String(e.id)===String(sessionId));
+  if(byId>=0){
+    S.chemoSessions.splice(byId,1);
+  } else {
+    S.chemoSessions.splice(fallbackIdx,1);
+  }
+  renderChemo();
+  toast('🗑 Session removed');
+  saveToSheets('chemo');
 }
 function renderChemoBySym(){
   const el=document.getElementById('chemoSymList');if(!S.chemoSessions.length){el.innerHTML='<div class="empty"><span class="emoji">📊</span>No sessions yet</div>';return;}
@@ -3672,7 +3753,303 @@ function previewReport(){
   const el=document.getElementById('reportPreview');el.innerHTML=html;el.classList.remove('hidden');el.scrollIntoView({behavior:'smooth',block:'start'});
   toast('👁️ Preview ready — tap 🖨️ to print');
 }
-function generatePDF(){const{from,to}=getDateRange();document.getElementById('printReport').innerHTML=`<div class="pr-header"><div class="pr-title">🌸 AnbuCare Report</div><div class="pr-sub">Period: ${from} to ${to} · Generated: ${today}</div></div><p>Please use the Preview button first, then print.</p>`;setTimeout(()=>window.print(),100);toast('🖨️ Print dialog…');}
+function generatePDF(){
+  const{from,to}=getDateRange(),
+        patient=document.getElementById('pdfPatient').value||'Patient',
+        prepBy=document.getElementById('pdfPrepared').value||'Caregiver';
+  const inR=d=>d>=from&&d<=to;
+  const fS=S.symptoms.filter(s=>inR(s.date)),
+        fV=S.vitals.filter(v=>inR(v.date)),
+        fSl=S.sleepLogs.filter(s=>inR(s.date)),
+        fC=S.chemoSessions.filter(s=>inR(s.date)),
+        fN=S.notes.filter(n=>inR(n.date)),
+        fM=S.medicines||[],
+        fD=S.dietPlan||[],
+        fT=S.tests||[];
+  const bar=v=>{const col=v<=2?'#43a87a':v===3?'#f0b429':'#e07b54';return`<span style="display:inline-block;width:${v*20}px;height:7px;background:${col};border-radius:3px;vertical-align:middle;margin-right:4px"></span><b style="color:${col}">${v}/5</b>`;};
+  const avgSym=k=>fS.length?(fS.reduce((a,e)=>a+Number(e[k]||0),0)/fS.length).toFixed(1):null;
+  const scCol=v=>v===null?'#888':+v<=2?'#43a87a':+v<=3?'#f0b429':'#e07b54';
+  const treatName=S.treatmentProfile?.name||'—',oncologist=S.treatmentProfile?.oncologist||'—',protocol=S.treatmentProfile?.protocol||'';
+  const avgBP_s=fV.length?(fV.reduce((a,v)=>a+(+v.systolic||0),0)/fV.length).toFixed(0):null;
+  const avgBP_d=fV.length?(fV.reduce((a,v)=>a+(+v.diastolic||0),0)/fV.length).toFixed(0):null;
+  const avgSleep=fSl.length?(fSl.reduce((a,s)=>a+(+s.hours||0),0)/fSl.length).toFixed(1):null;
+
+  /* ─── helpers ─── */
+  const SEC=(icon,title,colour='#3a8c7e')=>`
+    <div style="display:flex;align-items:center;gap:8px;margin:0 0 14px;padding-bottom:8px;border-bottom:2.5px solid ${colour}">
+      <span style="font-size:1.3rem">${icon}</span>
+      <span style="font-size:14px;font-weight:800;color:${colour};letter-spacing:.3px;text-transform:uppercase">${title}</span>
+    </div>`;
+  const PAGE_BREAK=`<div style="page-break-before:always;padding-top:0"></div>`;
+  const FOOTER=`<div style="position:running(footer);font-size:10px;color:#aaa;text-align:right;border-top:1px solid #eee;padding-top:4px;margin-top:18px">AnbuCare · ${patient} · ${from} – ${to} · Generated ${today}</div>`;
+  const statBox=(val,lbl,col='#3a8c7e')=>`<div style="background:#fff;border:1.5px solid #e0e0e0;border-radius:10px;padding:12px 8px;text-align:center;min-width:90px"><div style="font-size:1.4rem;font-weight:800;color:${col}">${val}</div><div style="font-size:.65rem;color:#888;font-weight:600;margin-top:2px">${lbl}</div></div>`;
+
+  /* ════════════════════════════════════════
+     PAGE 1 — COVER + SUMMARY
+  ════════════════════════════════════════ */
+  let out=`
+  <!-- PAGE 1: COVER -->
+  <div style="min-height:90vh;display:flex;flex-direction:column;justify-content:space-between">
+    <!-- Header band -->
+    <div style="background:linear-gradient(135deg,#3a8c7e,#6baed6);color:#fff;padding:28px 30px;border-radius:0 0 18px 18px;margin:-20px -20px 0">
+      <div style="font-size:26px;font-weight:900;letter-spacing:.5px;margin-bottom:6px">AnbuCare</div>
+      <div style="font-size:13px;opacity:.9;font-weight:600">Patient Health Report</div>
+    </div>
+
+    <!-- Patient card -->
+    <div style="margin:24px 0;background:#f7fbf9;border:1.5px solid #c8e0d8;border-radius:14px;padding:20px 22px">
+      <table style="width:100%;font-size:12px;border-collapse:collapse">
+        <tr><td style="padding:6px 0;color:#888;width:120px;font-weight:600">Patient</td><td style="padding:6px 0;font-weight:800;font-size:14px">${esc(patient)}</td></tr>
+        <tr><td style="padding:6px 0;color:#888;font-weight:600">Report Period</td><td style="padding:6px 0;font-weight:700">${from} &nbsp;→&nbsp; ${to}</td></tr>
+        <tr><td style="padding:6px 0;color:#888;font-weight:600">Treatment</td><td style="padding:6px 0">${esc(treatName)}${protocol?` <span style="color:#888;font-weight:400">(${esc(protocol)})</span>`:''}</td></tr>
+        <tr><td style="padding:6px 0;color:#888;font-weight:600">Oncologist</td><td style="padding:6px 0">${esc(oncologist)}</td></tr>
+        <tr><td style="padding:6px 0;color:#888;font-weight:600">Prepared by</td><td style="padding:6px 0">${esc(prepBy)}</td></tr>
+        <tr><td style="padding:6px 0;color:#888;font-weight:600">Generated</td><td style="padding:6px 0">${today}</td></tr>
+      </table>
+    </div>
+
+    <!-- Stats grid -->
+    <div style="margin-bottom:18px">
+      <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Records in this period</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        ${statBox(fS.length,'Symptom Logs','#3a8c7e')}
+        ${statBox(fV.length,'Vitals Checks','#1565c0')}
+        ${statBox(fC.length,'Chemo Sessions','#e8496a')}
+        ${statBox(fSl.length,'Sleep Logs','#7c6fcf')}
+        ${statBox(fN.length,'Notes','#607870')}
+      </div>
+    </div>
+
+    <!-- Symptom averages summary -->
+    ${fS.length?`
+    <div style="background:#fff;border:1.5px solid #e0e0e0;border-radius:12px;padding:14px 16px;margin-bottom:18px">
+      <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">Average Symptom Scores</div>
+      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        ${['nausea','fatigue','pain','mood','appetite'].map(k=>{
+          const avg=avgSym(k),col=scCol(avg);
+          const icons={nausea:'🤢',fatigue:'😴',pain:'🩹',mood:'😊',appetite:'🍽️'};
+          return `<div style="text-align:center;min-width:56px">
+            <div style="font-size:1.5rem;font-weight:900;color:${col}">${avg}</div>
+            <div style="font-size:.85rem;line-height:1.4">${icons[k]}</div>
+            <div style="font-size:.58rem;color:#888;font-weight:600;text-transform:uppercase">${k}</div>
+          </div>`;
+        }).join('')}
+      </div>
+      ${(()=>{const alerts=[];
+        if(+avgSym('pain')>=4) alerts.push('<span style="background:#fff3e0;color:#e65100;border-radius:5px;padding:2px 8px;font-size:.68rem;font-weight:700">⚠️ High avg pain</span>');
+        if(+avgSym('nausea')>=4) alerts.push('<span style="background:#fff3e0;color:#e65100;border-radius:5px;padding:2px 8px;font-size:.68rem;font-weight:700">⚠️ High avg nausea</span>');
+        if(+avgSym('fatigue')>=4) alerts.push('<span style="background:#fff3e0;color:#e65100;border-radius:5px;padding:2px 8px;font-size:.68rem;font-weight:700">⚠️ High avg fatigue</span>');
+        if(+avgSym('mood')<=2) alerts.push('<span style="background:#fce4ec;color:#c62828;border-radius:5px;padding:2px 8px;font-size:.68rem;font-weight:700">⚠️ Low mood</span>');
+        return alerts.length?`<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:5px">${alerts.join('')}</div>`:'<div style="margin-top:8px;font-size:.7rem;color:#43a87a;font-weight:600">✅ All averages within normal range</div>';
+      })()}
+    </div>`:
+    `<div style="background:#f7fbf9;border-radius:10px;padding:12px;font-size:.8rem;color:#888;text-align:center">No symptom data for this period</div>`}
+
+    ${fV.length?`
+    <div style="background:#fff;border:1.5px solid #e0e0e0;border-radius:12px;padding:12px 16px;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Average Vitals</div>
+      <div style="display:flex;flex-wrap:wrap;gap:16px;font-size:.88rem">
+        ${avgBP_s?`<span>🫀 BP: <b>${avgBP_s}/${avgBP_d} mmHg</b></span>`:''}
+        ${avgSleep?`<span>🌙 Sleep: <b>${avgSleep} hrs/night</b></span>`:''}
+        ${fC.length?`<span>💉 Chemo sessions: <b>${fC.length}</b></span>`:''}
+      </div>
+    </div>`:''}
+
+    <div style="text-align:center;color:#c0d0cc;font-size:.7rem;margin-top:auto;padding-top:12px">Page 1 — Summary</div>
+  </div>`;
+
+  /* ════════════════════════════════════════
+     PAGE 2 — SYMPTOMS DETAIL
+  ════════════════════════════════════════ */
+  if(fS.length){
+    out+=PAGE_BREAK+`
+    <div>${SEC('🩺','Symptom Log Detail','#3a8c7e')}
+      <p style="font-size:.75rem;color:#888;margin-bottom:14px">${fS.length} entries · ${from} – ${to}</p>
+      ${[...fS].sort((a,b)=>b.date.localeCompare(a.date)).map(e=>{
+        const cs=e.chemoId?S.chemoSessions.find(s=>s.id===e.chemoId):null;
+        return `<div style="border:1px solid #e0e0e0;border-radius:10px;padding:10px 13px;margin-bottom:9px;background:#fafafa;page-break-inside:avoid">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
+            <b style="font-size:.86rem">${fmtDate(e.date)}</b>
+            ${cs?`<span style="font-size:.65rem;font-weight:700;background:#fde8ed;color:#e8496a;padding:2px 7px;border-radius:6px">Cycle ${cs.cycle} · Sess ${cs.session}</span>`:''}
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;text-align:center;margin-bottom:6px">
+            ${['nausea','fatigue','pain','mood','appetite'].map(k=>{
+              const icons={nausea:'🤢',fatigue:'😴',pain:'🩹',mood:'😊',appetite:'🍽️'};
+              const col=scCol(e[k]);
+              return `<div><div style="font-size:.95rem;font-weight:800;color:${col}">${e[k]||'—'}</div><div style="font-size:.58rem;color:#aaa">${icons[k]}</div></div>`;
+            }).join('')}
+          </div>
+          ${e.extras?.length?`<div style="font-size:.7rem;color:#e65100;margin-top:2px">⚡ ${e.extras.join(' · ')}</div>`:''}
+          ${e.notes?`<div style="font-size:.7rem;color:#888;margin-top:3px;font-style:italic">💬 ${esc(e.notes)}</div>`:''}
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  /* ════════════════════════════════════════
+     PAGE 3 — VITALS
+  ════════════════════════════════════════ */
+  if(fV.length){
+    out+=PAGE_BREAK+`
+    <div>${SEC('🫀','Vitals Detail','#1565c0')}
+      <p style="font-size:.75rem;color:#888;margin-bottom:12px">${fV.length} readings · ${from} – ${to}</p>
+      <table style="width:100%;border-collapse:collapse;font-size:.75rem">
+        <thead>
+          <tr style="background:#e3f2fd">
+            <th style="padding:8px;text-align:left;border-bottom:2px solid #90caf9;font-weight:700">Date</th>
+            <th style="padding:8px;border-bottom:2px solid #90caf9;font-weight:700">Meal</th>
+            <th style="padding:8px;border-bottom:2px solid #90caf9;font-weight:700">BP (mmHg)</th>
+            <th style="padding:8px;border-bottom:2px solid #90caf9;font-weight:700">Pulse</th>
+            <th style="padding:8px;border-bottom:2px solid #90caf9;font-weight:700">Temp °F</th>
+            <th style="padding:8px;border-bottom:2px solid #90caf9;font-weight:700">SpO₂ %</th>
+            <th style="padding:8px;border-bottom:2px solid #90caf9;font-weight:700">Weight kg</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${[...fV].sort((a,b)=>b.date.localeCompare(a.date)).map((v,i)=>`
+          <tr style="background:${i%2===0?'#fff':'#f0f7ff'}">
+            <td style="padding:7px;font-weight:600">${fmtDate(v.date)} ${v.time||''}</td>
+            <td style="padding:7px;color:#888">${esc(v.meal||'')}</td>
+            <td style="padding:7px;font-weight:700;color:${(+v.systolic||0)>140?'#e07b54':'#3a8c7e'}">${v.systolic||'—'}/${v.diastolic||'—'}</td>
+            <td style="padding:7px">${v.pulse||'—'}</td>
+            <td style="padding:7px;color:${(+v.temp||0)>99?'#e07b54':'#555'}">${v.temp||'—'}</td>
+            <td style="padding:7px">${v.spo2||'—'}</td>
+            <td style="padding:7px">${v.weight||'—'}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  }
+
+  /* ════════════════════════════════════════
+     PAGE 4 — TREATMENT / CHEMO
+  ════════════════════════════════════════ */
+  if(fC.length){
+    out+=PAGE_BREAK+`
+    <div>${SEC('💉','Treatment Sessions','#e8496a')}
+      <p style="font-size:.75rem;color:#888;margin-bottom:14px">${fC.length} sessions · ${from} – ${to}</p>
+      ${[...fC].sort((a,b)=>b.date.localeCompare(a.date)).map(s=>{
+        const syms=fS.filter(x=>x.chemoId===s.id);
+        const avg=k=>syms.length?(syms.reduce((a,x)=>a+Number(x[k]||0),0)/syms.length).toFixed(1):null;
+        return `<div style="border-left:4px solid #e8496a;border-radius:0 10px 10px 0;background:#fff5f7;padding:13px 15px;margin-bottom:11px;page-break-inside:avoid">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+            <div>
+              <span style="font-weight:800;font-size:.95rem">Cycle ${s.cycle} · Session ${s.session}</span>
+              ${s.treatType?`<span style="font-size:.68rem;font-weight:700;background:#ede9ff;color:#7c6fcf;padding:2px 7px;border-radius:5px;margin-left:6px">${esc(s.treatType)}</span>`:''}
+            </div>
+            <span style="font-weight:700;font-size:.85rem;color:#e8496a">💉 ${fmtDate(s.date)}</span>
+          </div>
+          <div style="font-size:.8rem;color:#555;margin-bottom:6px">🏥 ${esc(s.hospital)}</div>
+          ${s.notes?`<div style="font-size:.76rem;color:#888;font-style:italic;margin-bottom:8px">📝 ${esc(s.notes)}</div>`:''}
+          ${syms.length?`
+          <div style="background:#fff;border-radius:8px;padding:9px 11px;border:1px solid #f5c6cb">
+            <div style="font-size:.68rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px">Post-session symptom avg (${syms.length} log${syms.length>1?'s':''})</div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px">
+              ${['nausea','fatigue','pain','mood','appetite'].map(k=>{
+                const v=avg(k);const col=scCol(v);
+                const icons={nausea:'🤢',fatigue:'😴',pain:'🩹',mood:'😊',appetite:'🍽️'};
+                return v?`<span style="font-size:.75rem">${icons[k]} <b style="color:${col}">${v}/5</b></span>`:'';
+              }).join('')}
+            </div>
+          </div>`:'<div style="font-size:.73rem;color:#aaa;font-style:italic">No symptom logs linked to this session</div>'}
+        </div>`;
+      }).join('')}
+    </div>`;
+  }
+
+  /* ════════════════════════════════════════
+     PAGE 5 — MEDICINES & CARE PLAN
+  ════════════════════════════════════════ */
+  if(fM.length||fD.length||fT.length){
+    out+=PAGE_BREAK+`
+    <div>
+      ${fM.length?`
+      ${SEC('💊','Current Medicines','#1565c0')}
+      <table style="width:100%;border-collapse:collapse;font-size:.75rem;margin-bottom:20px">
+        <thead><tr style="background:#e3f2fd">
+          <th style="padding:8px;text-align:left;border-bottom:2px solid #90caf9">Medicine</th>
+          <th style="padding:8px;border-bottom:2px solid #90caf9">Dose</th>
+          <th style="padding:8px;border-bottom:2px solid #90caf9">When</th>
+          <th style="padding:8px;border-bottom:2px solid #90caf9">Food</th>
+          <th style="padding:8px;border-bottom:2px solid #90caf9">From</th>
+          <th style="padding:8px;border-bottom:2px solid #90caf9">Until</th>
+        </tr></thead>
+        <tbody>${fM.map((m,i)=>`
+        <tr style="background:${i%2===0?'#fff':'#f0f7ff'}">
+          <td style="padding:7px;font-weight:700">${esc(m.name)}</td>
+          <td style="padding:7px">${esc(m.dose)} ${esc(m.unit||'')}</td>
+          <td style="padding:7px">${esc(m.time||'')}</td>
+          <td style="padding:7px">${esc(m.food||'')}</td>
+          <td style="padding:7px">${fmtDate(m.start)}</td>
+          <td style="padding:7px">${m.end?fmtDate(m.end):'Ongoing'}</td>
+        </tr>`).join('')}</tbody>
+      </table>`:''}
+
+      ${fT.length?`
+      ${SEC('🧪','Upcoming Tests','#7c6fcf')}
+      <table style="width:100%;border-collapse:collapse;font-size:.75rem;margin-bottom:20px">
+        <thead><tr style="background:#ede9ff">
+          <th style="padding:8px;text-align:left;border-bottom:2px solid #b39ddb">Test</th>
+          <th style="padding:8px;border-bottom:2px solid #b39ddb">Due Date</th>
+          <th style="padding:8px;border-bottom:2px solid #b39ddb">Status</th>
+          <th style="padding:8px;border-bottom:2px solid #b39ddb">Notes</th>
+        </tr></thead>
+        <tbody>${fT.map((t,i)=>`
+        <tr style="background:${i%2===0?'#fff':'#f5f0ff'}">
+          <td style="padding:7px;font-weight:700">${esc(t.name)}</td>
+          <td style="padding:7px">${fmtDate(t.date)}</td>
+          <td style="padding:7px"><span style="font-weight:700;color:${t.status==='Done'?'#43a87a':t.status==='Overdue'?'#e07b54':'#7c6fcf'}">${esc(t.status||'Upcoming')}</span></td>
+          <td style="padding:7px;color:#888">${esc(t.notes||'')}</td>
+        </tr>`).join('')}</tbody>
+      </table>`:''}
+    </div>`;
+  }
+
+  /* ════════════════════════════════════════
+     PAGE 6 — SLEEP & NOTES
+  ════════════════════════════════════════ */
+  if(fSl.length||fN.length){
+    out+=PAGE_BREAK+`
+    <div>
+      ${fSl.length?`
+      ${SEC('🌙','Sleep Log','#7c6fcf')}
+      <p style="font-size:.75rem;color:#888;margin-bottom:12px">${fSl.length} nights logged · Avg ${avgSleep} hrs</p>
+      <table style="width:100%;border-collapse:collapse;font-size:.75rem;margin-bottom:22px">
+        <thead><tr style="background:#ede9ff">
+          <th style="padding:8px;text-align:left;border-bottom:2px solid #b39ddb">Date</th>
+          <th style="padding:8px;border-bottom:2px solid #b39ddb">Bedtime</th>
+          <th style="padding:8px;border-bottom:2px solid #b39ddb">Wake</th>
+          <th style="padding:8px;border-bottom:2px solid #b39ddb">Hours</th>
+          <th style="padding:8px;border-bottom:2px solid #b39ddb">Quality</th>
+          <th style="padding:8px;border-bottom:2px solid #b39ddb">Disruptions</th>
+        </tr></thead>
+        <tbody>${[...fSl].sort((a,b)=>b.date.localeCompare(a.date)).map((s,i)=>`
+        <tr style="background:${i%2===0?'#fff':'#f5f0ff'}">
+          <td style="padding:7px;font-weight:600">${fmtDate(s.date)}</td>
+          <td style="padding:7px">${s.bedtime||'—'}</td>
+          <td style="padding:7px">${s.wake||'—'}</td>
+          <td style="padding:7px;font-weight:700;color:${(+s.hours||0)<6?'#e07b54':(+s.hours||0)<7?'#f0b429':'#43a87a'}">${s.hours||'—'} h</td>
+          <td style="padding:7px">${'★'.repeat(+s.quality||0)}${'☆'.repeat(5-(+s.quality||0))}</td>
+          <td style="padding:7px;font-size:.7rem;color:#888">${s.disruptions?.length?s.disruptions.join(', '):'None'}</td>
+        </tr>`).join('')}</tbody>
+      </table>`:''}
+
+      ${fN.length?`
+      ${SEC('📝','Care Notes','#607870')}
+      <p style="font-size:.75rem;color:#888;margin-bottom:12px">${fN.length} notes</p>
+      ${[...fN].sort((a,b)=>b.date.localeCompare(a.date)).map(n=>`
+      <div style="border-left:3px solid #c8e0d8;padding:8px 12px;margin-bottom:8px;background:#fafafa;border-radius:0 8px 8px 0;page-break-inside:avoid">
+        <div style="font-size:.7rem;color:#888;margin-bottom:3px">${fmtDate(n.date)} · ${esc(n.email||'')}</div>
+        <div style="font-size:.82rem;line-height:1.55">${esc(n.note||'')}</div>
+      </div>`).join('')}`:''}
+    </div>`;
+  }
+
+  /* ── Inject into printReport and trigger print/save ── */
+  document.getElementById('printReport').innerHTML=out;
+  toast('📄 Opening Download PDF dialog…');
+  setTimeout(()=>window.print(),400);
+}
 
 // ═══════════════════════════════════════════
 // CONNECT
