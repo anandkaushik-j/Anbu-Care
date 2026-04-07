@@ -629,7 +629,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
         <div class="form-group"><label class="form-label">Oncologist</label>
           <input type="text" class="form-input" id="cgTpOncologist" placeholder="Dr. Name"></div>
         <div class="form-group"><label class="form-label">Start Date</label>
-          <input type="date" class="form-input" id="cgTpStartDate"></div>
+          <input type="date" lang="en-GB" class="form-input" id="cgTpStartDate"></div>
       </div>
       <button class="btn btn-chemo btn-block" onclick="saveTreatmentProfile()">💾 Save Treatment</button>
     </div>
@@ -651,7 +651,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
     <div class="card"><div class="card-header"><div class="card-title">💉 Log Treatment Session</div></div>
       <div class="card-body">
         <div class="form-row">
-          <div class="form-group"><label class="form-label">Date</label><input type="date" class="form-input" id="cDate"></div>
+          <div class="form-group"><label class="form-label">Date</label><input type="date" lang="en-GB" class="form-input" id="cDate"></div>
           <div class="form-group"><label class="form-label">Cycle No.</label><input type="number" class="form-input" id="cCycle" min="1" placeholder="1"></div>
         </div>
         <div class="form-group"><label class="form-label">Session No.</label><input type="number" class="form-input" id="cSession" min="1" placeholder="1"></div>
@@ -970,8 +970,8 @@ input:checked+.tslider::before{transform:translateX(20px)}
           <button class="rbtn" onclick="setRange('custom',this)">Custom</button>
         </div>
         <div id="customRange" class="form-row hidden">
-          <div class="form-group"><label class="form-label">From</label><input type="date" class="form-input" id="rangeFrom"></div>
-          <div class="form-group"><label class="form-label">To</label><input type="date" class="form-input" id="rangeTo"></div>
+          <div class="form-group"><label class="form-label">From</label><input type="date" lang="en-GB" class="form-input" id="rangeFrom"></div>
+          <div class="form-group"><label class="form-label">To</label><input type="date" lang="en-GB" class="form-input" id="rangeTo"></div>
         </div>
         <div class="form-row">
           <div class="form-group"><label class="form-label">Patient Name</label><input type="text" class="form-input" id="pdfPatient" value="Patient"></div>
@@ -1020,12 +1020,12 @@ input:checked+.tslider::before{transform:translateX(20px)}
     <div id="af-medicine">
       <div class="form-group"><label class="form-label">Medicine Name</label><input class="form-input" id="mName" list="mSug" placeholder="e.g. Capecitabine"><datalist id="mSug"><option value="Capecitabine"><option value="Ondansetron"><option value="Dexamethasone"><option value="Pantoprazole"><option value="Vitamin D3"><option value="Iron tablet"><option value="Paracetamol"></datalist></div>
       <div class="form-group"><label class="form-label">Dosage</label><div class="dose-row"><input type="number" class="form-input" id="mQty" placeholder="2" min="0.5" step="0.5"><select class="form-select" id="mUnit"><option>tablet(s)</option><option>ml</option><option>capsule(s)</option><option>drops</option></select></div></div>
-      <div class="form-group"><label class="form-label">Frequency</label><select class="form-select" id="mFreq"><option>Once daily</option><option selected>Twice daily</option><option>Three times daily</option><option>As needed</option></select></div>
+      <input type="hidden" id="mFreq" value="Once daily">
       <div class="form-group"><label class="form-label">When to take</label><div class="chip-row" id="mTimeChips"><div class="chip" onclick="this.classList.toggle('sel')">🌅 Morning</div><div class="chip" onclick="this.classList.toggle('sel')">☀️ Afternoon</div><div class="chip" onclick="this.classList.toggle('sel')">🌆 Evening</div><div class="chip" onclick="this.classList.toggle('sel')">🌙 Night</div></div></div>
       <div class="form-group"><label class="form-label">Food Instructions</label><select class="form-select" id="mFood"><option>After food</option><option>Before food</option><option>With food</option><option>Empty stomach</option><option>No restriction</option></select></div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Start Date</label>
-          <input type="date" class="form-input" id="mStart" oninput="calcMedEnd()"></div>
+          <input type="date" lang="en-GB" class="form-input" id="mStart" oninput="calcMedEnd()"></div>
         <div class="form-group"><label class="form-label">No. of Days</label>
           <div style="display:flex;gap:6px;align-items:center">
             <input type="number" class="form-input" id="mDays" min="1" max="365" placeholder="e.g. 30" oninput="calcMedEnd()">
@@ -1061,7 +1061,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
       <div class="form-group"><label class="form-label">Dietary Tags</label><div class="chip-row" id="dTagChips"><div class="chip" onclick="this.classList.toggle('sel')">🌾 Low fiber</div><div class="chip" onclick="this.classList.toggle('sel')">✂️ Low residue</div><div class="chip" onclick="this.classList.toggle('sel')">💪 High protein</div><div class="chip" onclick="this.classList.toggle('sel')">🥣 Soft/mashed</div><div class="chip" onclick="this.classList.toggle('sel')">🚫 No spice</div><div class="chip" onclick="this.classList.toggle('sel')">🧂 Low salt</div><div class="chip" onclick="this.classList.toggle('sel')">🫙 Strained</div></div></div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Start Date</label>
-          <input type="date" class="form-input" id="dDate" oninput="calcDietEnd()"></div>
+          <input type="date" lang="en-GB" class="form-input" id="dDate" oninput="calcDietEnd()"></div>
         <div class="form-group"><label class="form-label">No. of Days</label>
           <div style="display:flex;gap:6px;align-items:center">
             <input type="number" class="form-input" id="dDays" min="1" max="365" placeholder="e.g. 7" oninput="calcDietEnd()">
@@ -1080,7 +1080,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
     </div>
     <div id="af-test" class="hidden">
       <div class="form-group"><label class="form-label">Test Type</label><select class="form-select" id="tType"><option>Blood CBC</option><option>Blood Chemistry</option><option>Stool Routine</option><option>Urine Routine</option><option>CT Scan</option><option>MRI</option><option>X-Ray</option><option>PET Scan</option><option>ECG</option><option>Echocardiogram</option><option>Biopsy</option><option>Other</option></select></div>
-      <div class="form-row"><div class="form-group"><label class="form-label">Scheduled Date</label><input type="date" class="form-input" id="tDate"></div><div class="form-group"><label class="form-label">Fasting?</label><select class="form-select" id="tFasting"><option>No</option><option>Yes – 8 hours</option><option>Yes – 12 hours</option><option>Yes – overnight</option></select></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label">Scheduled Date</label><input type="date" lang="en-GB" class="form-input" id="tDate"></div><div class="form-group"><label class="form-label">Fasting?</label><select class="form-select" id="tFasting"><option>No</option><option>Yes – 8 hours</option><option>Yes – 12 hours</option><option>Yes – overnight</option></select></div></div>
       <div class="form-group"><label class="form-label">Lab / Hospital</label><input type="text" class="form-input" id="tLab" placeholder="e.g. Apollo Diagnostics"></div>
       <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="tNotes" rows="2" placeholder="Bring previous reports…"></textarea></div>
       <button class="btn btn-purple btn-block" onclick="submitTest()">🧪 Schedule Test</button>
@@ -1386,7 +1386,13 @@ function normalizeAll(){
       vn.filename = 'VoiceNote_'+vn.date+'.webm';
     }
     if(!vn.filename || vn.filename==='null') vn.filename='Voice Note';
-    if(!vn.email || vn.email.includes('T') || vn.email.match(/^\d{4}-/)) vn.email='caregiver@anbucare';
+    // Safely coerce to string before .includes() — Sheets can return numbers/dates
+    var _em=String(vn.email||'');
+    if(!_em || _em==='null' || _em==='undefined' || _em.includes('T') || /^\d{4}-/.test(_em)) vn.email='caregiver@anbucare';
+    var _fn=String(vn.filename||'');
+    if(!_fn || _fn==='null' || _fn==='undefined') vn.filename='Voice Note';
+    // Also coerce vn.date safely
+    if(vn.date && typeof vn.date!=='string') vn.date=String(vn.date).substring(0,10);
   });
   if(Array.isArray(S.dietPlan)){
     // Migrate old multi-day entries (one per day) → one entry with date range
@@ -2552,7 +2558,7 @@ function deleteNote(id){
 }
 function deleteVoiceNote(id){
   if(!confirm('Delete this voice note? This cannot be undone.')) return;
-  var idx=S.voiceNotes.findIndex(function(v){return v.id===id;});
+  var _delId=String(id);var idx=S.voiceNotes.findIndex(function(v){return String(v.id)===_delId;});
   if(idx===-1) return;
   var vn=S.voiceNotes[idx];
   if(vn.blobUrl && vn.blobUrl.startsWith('blob:')) try{URL.revokeObjectURL(vn.blobUrl);}catch(e){}
@@ -3007,9 +3013,13 @@ function vHTML(n){
   // Inline player HTML — blob plays immediately; drive files load on first click
   let playerHTML = '';
   if(hasBlob){
-    playerHTML = `<audio id="${pid}" src="${n.blobUrl}" controls
-      style="width:100%;border-radius:10px;margin-top:8px;height:40px;accent-color:var(--primary)"
-      preload="metadata"></audio>`;
+    // iOS Safari: no autoplay, show controls only. Call load() via inline onloadedmetadata.
+    playerHTML = `<div style="margin-top:8px">
+      <audio id="${pid}" src="${n.blobUrl}" controls
+        style="width:100%;border-radius:10px;height:40px;accent-color:var(--primary)"
+        preload="metadata"
+        oncanplay="this.removeAttribute('data-loading')"></audio>
+    </div>`;
   } else if(hasDrive){
     playerHTML = `<div id="${pid}_wrap" style="margin-top:8px">
       <button onclick="loadDriveAudio('${n.id}','${pid}')"
@@ -3034,7 +3044,11 @@ function vHTML(n){
       ${hasDrive?`<a href="${n.driveUrl||'https://drive.google.com/file/d/'+n.driveFileId+'/view'}"
         target="_blank"
         style="background:#e8f5e9;color:#2e7d32;border-radius:8px;padding:4px 10px;font-size:.7rem;font-weight:700;text-decoration:none">
-        ☁️ Drive ↗</a>`:(n.isMock?`<span style="background:#e3f2fd;color:#1565c0;border-radius:8px;padding:4px 10px;font-size:.7rem;font-weight:700">🧪 Test save</span>`:'')}
+        ☁️ Open in Drive ↗</a>
+        <a href="https://drive.google.com/uc?export=download&id=${n.driveFileId}"
+        target="_blank"
+        style="background:#e3f2fd;color:#1565c0;border-radius:8px;padding:4px 10px;font-size:.7rem;font-weight:700;text-decoration:none">
+        📥 Download</a>`:(n.isMock?`<span style="background:#e3f2fd;color:#1565c0;border-radius:8px;padding:4px 10px;font-size:.7rem;font-weight:700">🧪 Test save</span>`:'')}
       ${!hasDrive&&hasBlob?`<span style="background:#fff3e0;color:#e65100;border-radius:8px;padding:4px 10px;font-size:.7rem">⚠️ Local only — save to Drive to keep</span>`:''}
       ${sizeKb?`<span style="font-size:.65rem;color:var(--muted)">${sizeKb}</span>`:''}
     </div>
@@ -3050,26 +3064,26 @@ function loadDriveAudio(noteId, pid){
 
   // Already fetched this session
   if(n.blobUrl && n.blobUrl.startsWith('blob:')){
-    wrap.innerHTML = `<audio src="${n.blobUrl}" controls autoplay
-      style="width:100%;border-radius:10px;height:40px;accent-color:var(--primary)"
-      preload="auto"></audio>`;
+    _renderIOSAudioPlayer(wrap, n.blobUrl, n);
     return;
   }
 
-  // Show loading spinner in place of button
   wrap.innerHTML = `<div style="text-align:center;padding:10px;color:var(--muted);font-size:.8rem">
     ⏳ Loading audio from Drive…</div>`;
 
   callGAS({action:'getVoiceNote', fileId:n.driveFileId})
     .then(res=>{
       if(res && res.base64){
-        const mime  = res.mimeType||'audio/webm';
+        // Detect mime — iOS needs audio/mp4, not audio/webm
+        const ua = navigator.userAgent||'';
+        const isIOS = /iPhone|iPad|iPod/i.test(ua);
+        let mime = res.mimeType || 'audio/webm';
+        // If stored as webm but on iOS, try mp4 container
+        if(isIOS && mime.includes('webm')) mime = 'audio/mp4';
         const bytes = Uint8Array.from(atob(res.base64), c=>c.charCodeAt(0));
         const blob  = new Blob([bytes],{type:mime});
         n.blobUrl   = URL.createObjectURL(blob);
-        wrap.innerHTML = `<audio src="${n.blobUrl}" controls autoplay
-          style="width:100%;border-radius:10px;height:40px;accent-color:var(--primary)"
-          preload="auto"></audio>`;
+        _renderIOSAudioPlayer(wrap, n.blobUrl, n);
       } else {
         wrap.innerHTML = `<div style="font-size:.75rem;color:#c62828;padding:6px">
           ⚠️ ${(res&&res.error)||'Could not load — ensure GAS is connected'}</div>`;
@@ -3078,6 +3092,32 @@ function loadDriveAudio(noteId, pid){
     .catch(e=>{
       wrap.innerHTML = `<div style="font-size:.75rem;color:#c62828;padding:6px">⚠️ ${esc(String(e))}</div>`;
     });
+}
+
+function _renderIOSAudioPlayer(wrap, blobUrl, n){
+  const ua = navigator.userAgent||'';
+  const isIOS = /iPhone|iPad|iPod/i.test(ua);
+  if(isIOS){
+    // iOS Safari needs user-initiated play — show a styled play button instead of autoplay
+    wrap.innerHTML = `
+      <div style="margin-top:8px">
+        <audio id="iosAudio_${n.id}" src="${blobUrl}" preload="auto"
+          style="width:100%;border-radius:10px;height:40px;accent-color:var(--primary)"
+          controls></audio>
+        <div style="font-size:.7rem;color:var(--muted);margin-top:4px;text-align:center">
+          📱 Tap the play button above to listen
+        </div>
+      </div>`;
+    // Force load on iOS
+    const audioEl = document.getElementById('iosAudio_'+n.id);
+    if(audioEl){
+      audioEl.load();
+    }
+  } else {
+    wrap.innerHTML = `<audio src="${blobUrl}" controls autoplay
+      style="width:100%;border-radius:10px;height:40px;accent-color:var(--primary)"
+      preload="auto"></audio>`;
+  }
 }
 
 function renderVoice(){
