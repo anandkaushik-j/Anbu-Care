@@ -1749,21 +1749,11 @@ async function fetchAffirmation(){
 }
 
 function setAff(area, cat, q, author, src, loading){
-  // Force re-trigger animation by replacing the node
   area.innerHTML = `
     <div class="affirmation-card${loading?' aff-loading':''}"
          onclick="fetchAffirmation()"
          title="Tap for a new affirmation">
-      <div class="aff-label">
-        <span>✨ ${cat} Affirmation</span>
-        <span style="display:flex;align-items:center;gap:5px">
-          ${loading ? `<span style="font-size:.62rem;font-style:italic;opacity:.75;animation:affLoadingPulse 1.2s ease-in-out infinite">Fetching fresh quote…</span>` : ''}
-          <span style="font-size:.63rem;background:rgba(255,255,255,.18);border-radius:6px;padding:2px 7px;font-weight:700;letter-spacing:.3px">${esc(src)}</span>
-          <span style="font-size:.78rem;opacity:.75" title="Tap for new quote">🔄</span>
-        </span>
-      </div>
       <div class="aff-text">${esc(q)}</div>
-      <div class="aff-author">— ${esc(author)}</div>
     </div>`;
 }
 
