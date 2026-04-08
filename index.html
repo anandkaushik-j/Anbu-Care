@@ -2536,7 +2536,7 @@ function deleteChemoSession(sessionId, fallbackIdx){
   saveNow();
 }
 function renderChemoBySym(){
-  const el=document.getElementById('chemoSymList');if(!S.chemoSessions.length){el.innerHTML='<div class="empty"><span class="emoji">📊</span>No sessions yet</div>';return;}
+  const el=document.getElementById('chemoSymList');if(!el) return; // By Session tab removedif(!S.chemoSessions.length){el.innerHTML='<div class="empty"><span class="emoji">📊</span>No sessions yet</div>';return;}
   const lbs={nausea:'🤢',fatigue:'😴',pain:'🩹',mood:'😊',appetite:'🍽️'};
   el.innerHTML=[...S.chemoSessions].sort((a,b)=>b.date.localeCompare(a.date)).map(s=>{
     const syms=S.symptoms.filter(x=>x.chemoId===s.id);
@@ -2560,8 +2560,15 @@ function editChemo(id){
   _editingChemoId=s.id;
   const btn=document.getElementById('btnSubmitChemo');
   if(btn) btn.textContent='✏️ Update Session';
-  const logTab=document.querySelector('[onclick="showSub('chemo','log',this)"]');
-  if(logTab) showSub('chemo','log',logTab);
+  // Switch to Log Session tab safely
+  document.querySelectorAll('#tab-chemo .sub-tab').forEach((btn,i)=>{
+    btn.classList.toggle('active', i===0);
+  });
+  document.querySelectorAll('#tab-chemo [id^="chemo-"]').forEach(div=>{
+    div.classList.add('hidden');
+  });
+  const logDiv=document.getElementById('chemo-log');
+  if(logDiv) logDiv.classList.remove('hidden');
   document.getElementById('chemo-log')?.scrollIntoView({behavior:'smooth',block:'start'});
   toast('✏️ Edit mode — update and save');
 }
@@ -2595,9 +2602,9 @@ function submitChemo(){
 function deleteChemo(id){
   if(!confirm('Remove this treatment session?')) return;
   S.chemoSessions = S.chemoSessions.filter(x=>x.id!==id);
-  renderChemo();renderChemoBySym();
+  renderChemo();
   toast('🗑 Session removed');
-  saveToSheets('chemo');
+  saveNow();
 }
 
 
