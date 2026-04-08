@@ -1,3 +1,4 @@
+<!-- AnbuCare v25 | Built: 2026-04-07 | setAff: text-only -->
 <!DOCTYPE html>
 <html lang="en-IN">
 <head>
@@ -1296,22 +1297,8 @@ const S = {
   sleepLogs:[],
   reports:[],
 
-  reminders:[
-    {name:'Water / ORS', time:'8:00 AM',  type:'Hydration', enabled:true},
-    {name:'Water / ORS', time:'10:00 AM', type:'Hydration', enabled:true},
-    {name:'Water / ORS', time:'12:00 PM', type:'Hydration', enabled:true},
-    {name:'Water / ORS', time:'2:00 PM',  type:'Hydration', enabled:true},
-    {name:'Water / ORS', time:'4:00 PM',  type:'Hydration', enabled:true},
-    {name:'Check Vitals', time:'8:30 AM', type:'Vitals', enabled:true},
-    {name:'Check Vitals', time:'1:00 PM', type:'Vitals', enabled:true},
-    {name:'Check Vitals', time:'8:00 PM', type:'Vitals', enabled:true},
-  ],
-  helplines:[
-    {name:'Apollo Support Team',           number:'8300330033',  icon:'🏥', priority:false},
-    {name:'Apollo Cancer Centre — OPD',    number:'18004252575', icon:'🏥', priority:false},
-    {name:'Seeli Dr. Ramanan (Secretary)', number:'9790724536',  icon:'🩺', priority:false},
-    {name:'Apollo Ambulance',              number:'1066',        icon:'🚑', priority:true},
-  ],
+  reminders:[],
+  helplines:[],
   notes:[],
   voiceNotes:[],
   nextId:50,
@@ -1416,6 +1403,27 @@ const MERGE_KEYS = ['tasks','medicines','dietPlan','tests','chemoSessions',
 }
 
 let _saveTimer=null, _saving=false;
+function saveNow(){
+  clearTimeout(_saveTimer);
+  const url=localStorage.getItem('anbucare_url');
+  if(!url) return;
+  const body=JSON.stringify({
+    action:'saveAll', section:'all',
+    data:{
+      tasks:S.tasks, medicines:S.medicines, dietPlan:S.dietPlan,
+      tests:S.tests, chemoSessions:S.chemoSessions,
+      symptoms:S.symptoms, vitals:S.vitals, sleepLogs:S.sleepLogs,
+      notes:S.notes, voiceNotes:S.voiceNotes.filter(n=>!n.isMock),
+      helplines:S.helplines, reminders:S.reminders,
+      treatmentProfile:S.treatmentProfile, nextId:S.nextId,
+      bowelLog:bowelLog, savedAt:new Date().toISOString()
+    }
+  });
+  fetch(url,{method:'POST',body,redirect:'follow'})
+    .then(r=>r.json())
+    .then(res=>{ if(res.ok||res.success) toast('☁️ Saved'); })
+    .catch(()=>{});
+}
 async function saveToSheets(section){
   const url = localStorage.getItem('anbucare_url');
   if(!url) return;
@@ -2243,12 +2251,12 @@ function renderTreatProfileBanner(){
 function deleteMed(id){
   if(!confirm('Delete this medicine?'))return;
   S.medicines=S.medicines.filter(m=>m.id!==id);
-  renderMeds();toast('🗑 Medicine removed');saveToSheets('medicines');
+  renderMeds();toast('🗑 Medicine removed');saveNow();
 }
 function deleteDiet(id){
   if(!confirm('Delete this diet entry?'))return;
   S.dietPlan=S.dietPlan.filter(d=>d.id!==id);
-  renderDiet();toast('🗑 Diet entry removed');saveToSheets('diet');
+  renderDiet();toast('🗑 Diet entry removed');saveNow();
 }
 
 function editTest(id){
@@ -2297,7 +2305,7 @@ function updateTest(){
 function deleteTest(id){
   if(!confirm('Delete this test?'))return;
   S.tests=S.tests.filter(t=>t.id!==id);
-  renderTests();toast('🗑 Test removed');saveToSheets('tests');
+  renderTests();toast('🗑 Test removed');saveNow();
 }
 function markTestDone(id){
   const t=S.tests.find(t=>t.id===id);
@@ -2515,7 +2523,7 @@ function deleteChemoSession(sessionId, fallbackIdx){
   }
   renderChemo();
   toast('🗑 Session removed');
-  saveToSheets('chemo');
+  saveNow();
 }
 function renderChemoBySym(){
   const el=document.getElementById('chemoSymList');if(!S.chemoSessions.length){el.innerHTML='<div class="empty"><span class="emoji">📊</span>No sessions yet</div>';return;}
@@ -2615,7 +2623,7 @@ function bulkDeleteSymBySession(){
   }
   renderSymHist();
   toast(`🗑 ${count} symptom entries removed`);
-  saveToSheets('health');
+  saveNow();
 }
 function deleteSymEntry(entryId, fallbackIdx){
   if(!confirm('Remove this symptom entry?')) return;
@@ -2627,7 +2635,7 @@ function deleteSymEntry(entryId, fallbackIdx){
     S.symptoms.splice(fallbackIdx,1);
   }
   renderSymHist();
-  toast('🗑 Entry removed');saveToSheets('health');
+  toast('🗑 Entry removed');saveNow();
 }
 
 function renderSymHist(){
@@ -2808,7 +2816,7 @@ function deleteSleepEntry(entryId, fallbackIdx){
   renderSlHist();
   renderSleepSum();
   toast('🗑 Sleep entry removed');
-  saveToSheets('health');
+  saveNow();
 }
 
 // ═══════════════════════════════════════════
