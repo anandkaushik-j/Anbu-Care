@@ -186,7 +186,7 @@ input,textarea,select{font-family:inherit;font-size:16px;-webkit-appearance:none
 .fc-diet{background:linear-gradient(135deg,#7A9E7E,#99A98F);box-shadow:0 4px 18px rgba(122,158,126,.35)}
 .fc-medicine{background:linear-gradient(135deg,#A0789A,#BE9AB8);box-shadow:0 4px 18px rgba(160,120,154,.38)}
 .fc-vitals{background:linear-gradient(135deg,#C97A5A,#D68E70);box-shadow:0 4px 18px rgba(214,142,112,.4)}
-.fc-tests{background:linear-gradient(135deg,#C49B00,#E1AD01);box-shadow:0 4px 18px rgba(225,173,1,.4)}
+.fc-tests{background:linear-gradient(135deg,#7070a8,#8a8ac4);box-shadow:0 4px 18px rgba(112,112,168,.35)}
 
 /* ALERT */
 .alert-card{background:#FDF5F2;border-left:4px solid #C0714F;border-radius:var(--radius);padding:13px 15px;margin-bottom:14px}
@@ -1341,19 +1341,12 @@ async function loadFromSheets(){
   if(loadBanner) loadBanner.style.display = 'block';
 
   try{
-    const _sid = localStorage.getItem('anbucare_sid')||'';
     const r = await Promise.race([
-      fetch(url, {
-        method: 'POST',
-        headers: {'Content-Type': 'text/plain;charset=utf-8'},
-        body: JSON.stringify({action:'loadAll', sheetId:_sid}),
-        redirect: 'follow'
-      }),
-      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),15000))
+      fetch(url, {method:'POST', body:JSON.stringify({action:'loadAll'}), redirect:'follow'}),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000))
     ]);
-    const rawText = await r.text();
-    let d; try{ d=JSON.parse(rawText); }catch(pe){ throw new Error('Invalid response: '+rawText.slice(0,80)); }
-    if(d.ok){
+    const d = await r.json();
+    if(d.ok || d.success){
       const loaded = d.data;
       // Merge each key into S (only known keys)
       
@@ -1392,7 +1385,7 @@ const MERGE_KEYS = ['tasks','medicines','dietPlan','tests','chemoSessions',
       }
       toast('✅ Data loaded from Sheets');
     } else {
-      toast('❌ Sheets error: ' + (d.error||'Check Sheet ID in Connect settings'));
+      toast('⚠️ Sheets load failed: ' + (d.error||'Unexpected response from GAS'));
     }
   }catch(e){
     toast('⚠️ Cannot connect: ' + e.message);
@@ -1403,26 +1396,33 @@ const MERGE_KEYS = ['tasks','medicines','dietPlan','tests','chemoSessions',
 }
 
 let _saveTimer=null, _saving=false;
-function saveNow(){
+async function saveNow(){
   clearTimeout(_saveTimer);
   const url=localStorage.getItem('anbucare_url');
   if(!url) return;
-  const body=JSON.stringify({
-    action:'saveAll', section:'all',
-    data:{
-      tasks:S.tasks, medicines:S.medicines, dietPlan:S.dietPlan,
-      tests:S.tests, chemoSessions:S.chemoSessions,
-      symptoms:S.symptoms, vitals:S.vitals, sleepLogs:S.sleepLogs,
-      notes:S.notes, voiceNotes:S.voiceNotes.filter(n=>!n.isMock),
-      helplines:S.helplines, reminders:S.reminders,
-      treatmentProfile:S.treatmentProfile, nextId:S.nextId,
-      bowelLog:bowelLog, savedAt:new Date().toISOString()
-    }
-  });
-  fetch(url,{method:'POST',body,redirect:'follow'})
-    .then(r=>r.json())
-    .then(res=>{ if(res.ok||res.success) toast('☁️ Saved'); })
-    .catch(()=>{});
+  // Wait up to 3s if a saveToSheets is already in-flight
+  let waited=0;
+  while(_saving && waited<3000){ await new Promise(r=>setTimeout(r,200)); waited+=200; }
+  _saving=true;
+  try{
+    const body=JSON.stringify({
+      action:'saveAll', section:'all',
+      data:{
+        tasks:S.tasks, medicines:S.medicines, dietPlan:S.dietPlan,
+        tests:S.tests, chemoSessions:S.chemoSessions,
+        symptoms:S.symptoms, vitals:S.vitals, sleepLogs:S.sleepLogs,
+        notes:S.notes, voiceNotes:S.voiceNotes.filter(n=>!n.isMock),
+        helplines:S.helplines, reminders:S.reminders,
+        treatmentProfile:S.treatmentProfile, nextId:S.nextId,
+        bowelLog:bowelLog, savedAt:new Date().toISOString()
+      }
+    });
+    const r=await fetch(url,{method:'POST',body,redirect:'follow'});
+    const d=await r.json();
+    if(d.ok||d.success) toast('☁️ Saved');
+    else toast('⚠️ '+(d.error||'Delete save failed'));
+  }catch(e){ toast('⚠️ Save failed: '+e.message); }
+  finally{ _saving=false; }
 }
 async function saveToSheets(section){
   const url = localStorage.getItem('anbucare_url');
@@ -1431,11 +1431,10 @@ async function saveToSheets(section){
   _saveTimer = setTimeout(async ()=>{
     if(_saving){ _saveTimer=setTimeout(()=>saveToSheets(section),1500); return; }
     _saving=true;
-    const sid = localStorage.getItem('anbucare_sid')||'';
     let bodyStr;
     try{
       bodyStr = JSON.stringify({
-        action:'saveAll', section:section||'all', sheetId:sid,
+        action:'saveAll', section:section||'all',
         data:{
           tasks:S.tasks, medicines:S.medicines, dietPlan:S.dietPlan,
           tests:S.tests, chemoSessions:S.chemoSessions,
@@ -1443,16 +1442,15 @@ async function saveToSheets(section){
           notes:S.notes, voiceNotes:S.voiceNotes.filter(n=>!n.isMock),
           helplines:S.helplines, reminders:S.reminders,
           treatmentProfile:S.treatmentProfile, nextId:S.nextId,
-          bowelLog:bowelLog, sheetId:sid, savedAt:new Date().toISOString()
+          bowelLog:bowelLog, savedAt:new Date().toISOString()
         }
       });
     }catch(je){ _saving=false; toast('⚠️ Data error: '+je.message); return; }
     try{
-      const r = await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:bodyStr,redirect:'follow'});
-      const txt = await r.text();
-      let res; try{ res=JSON.parse(txt); }catch(pe){ throw new Error('Bad response: '+txt.slice(0,60)); }
-      if(res.ok||res.success){ toast('☁️ Saved to Sheets'); }
-      else { toast('⚠️ '+(res.error||'Save failed — check Sheet ID')); }
+      const r = await fetch(url,{method:'POST',body:bodyStr,redirect:'follow'});
+      const d = await r.json();
+      if(d.ok||d.success){ toast('☁️ Saved to Sheets'); }
+      else { toast('⚠️ '+(d.error||'Save failed')); }
     }catch(e){ toast('⚠️ Save failed: '+e.message); }
     finally{ _saving=false; }
   }, 800);
