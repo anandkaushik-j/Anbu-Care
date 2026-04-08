@@ -748,6 +748,8 @@ input:checked+.tslider::before{transform:translateX(20px)}
       <span style="color:var(--muted);font-style:italic">No treatment set — tap Edit to define.</span>
     </div>
     <div id="cgTreatEditBox" class="hidden" style="margin-top:12px">
+      <div class="form-group"><label class="form-label">Patient Name</label>
+        <input type="text" class="form-input" id="cgTpPatient" placeholder="Patient's full name"></div>
       <div class="form-group"><label class="form-label">Treatment Name / Protocol</label>
         <input type="text" class="form-input" id="cgTpName" placeholder="e.g. Capecitabine, FOLFOX, Radiation…"></div>
       <div class="form-group"><label class="form-label">Drug / Regimen details</label>
@@ -764,15 +766,11 @@ input:checked+.tslider::before{transform:translateX(20px)}
 </div>
 
 <div class="sub-tabs">
-    <button class="sub-tab active" onclick="showSub('chemo','log',this)">➕ Log</button>
-    <button class="sub-tab" onclick="showSub('chemo','sessions',this)">📅 Sessions</button>
-    <button class="sub-tab" onclick="showSub('chemo','bysession',this)">📊 By Session</button>
+    <button class="sub-tab active" onclick="showSub('chemo','log',this)">💉 Log Session</button>
+    <button class="sub-tab" onclick="showSub('chemo','sessions',this)">📋 Sessions</button>
   </div>
   <div id="chemo-sessions" class="hidden">
     <div class="card"><div class="card-header"><div class="card-title">💉 Session History</div></div><div class="card-body"><div id="chemoList"></div></div></div>
-  </div>
-  <div id="chemo-bysession" class="hidden">
-    <div class="card"><div class="card-header"><div class="card-title">📊 Symptoms by Session</div></div><div class="card-body"><div id="chemoSymList"></div></div></div>
   </div>
   <div id="chemo-log">
     <div class="card"><div class="card-header"><div class="card-title">💉 Log Treatment Session</div></div>
@@ -788,7 +786,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
         </div>
         <div class="form-group"><label class="form-label">Hospital / Centre</label><input type="text" class="form-input" id="cHospital" placeholder="e.g. Apollo Cancer Centre"></div>
         <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="cNotes" rows="3" placeholder="Observations during session…"></textarea></div>
-        <button class="btn btn-chemo btn-block" onclick="submitChemo()">💉 Save Session</button>
+        <button class="btn btn-chemo btn-block" id="btnSubmitChemo" onclick="submitChemo()">💉 Save Session</button>
       </div>
     </div>
   </div>
@@ -1341,6 +1339,7 @@ async function loadFromSheets(){
   if(loadBanner) loadBanner.style.display = 'block';
 
   try{
+    const _sid = localStorage.getItem('anbucare_sid')||'';
     const r = await Promise.race([
       fetch(url, {method:'POST', body:JSON.stringify({action:'loadAll'}), redirect:'follow'}),
       new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000))
@@ -1396,13 +1395,13 @@ const MERGE_KEYS = ['tasks','medicines','dietPlan','tests','chemoSessions',
 }
 
 let _saveTimer=null, _saving=false;
+let _editingChemoId=null;
 async function saveNow(){
   clearTimeout(_saveTimer);
   const url=localStorage.getItem('anbucare_url');
   if(!url) return;
-  // Wait up to 3s if a saveToSheets is already in-flight
   let waited=0;
-  while(_saving && waited<3000){ await new Promise(r=>setTimeout(r,200)); waited+=200; }
+  while(_saving && waited<3000){await new Promise(r=>setTimeout(r,200));waited+=200;}
   _saving=true;
   try{
     const body=JSON.stringify({
@@ -1420,10 +1419,11 @@ async function saveNow(){
     const r=await fetch(url,{method:'POST',body,redirect:'follow'});
     const d=await r.json();
     if(d.ok||d.success) toast('☁️ Saved');
-    else toast('⚠️ '+(d.error||'Delete save failed'));
-  }catch(e){ toast('⚠️ Save failed: '+e.message); }
-  finally{ _saving=false; }
+    else toast('⚠️ '+(d.error||'Save failed'));
+  }catch(e){toast('⚠️ Save failed: '+e.message);}
+  finally{_saving=false;}
 }
+
 async function saveToSheets(section){
   const url = localStorage.getItem('anbucare_url');
   if(!url) return;
@@ -2215,16 +2215,25 @@ function renderMeds(){
 function saveTreatmentProfile(){
   const nm=document.getElementById('cgTpName').value.trim();
   if(!nm){toast('⚠️ Enter treatment name');return;}
-  S.treatmentProfile={name:nm,protocol:document.getElementById('cgTpProtocol').value.trim(),oncologist:document.getElementById('cgTpOncologist').value.trim(),startDate:document.getElementById('cgTpStartDate').value,setOn:today};
+  S.treatmentProfile={
+    patientName:document.getElementById('cgTpPatient').value.trim(),
+    name:nm,
+    protocol:document.getElementById('cgTpProtocol').value.trim(),
+    oncologist:document.getElementById('cgTpOncologist').value.trim(),
+    startDate:document.getElementById('cgTpStartDate').value,
+    setOn:today
+  };
+  try{localStorage.setItem('anbucare_treatprofile',JSON.stringify(S.treatmentProfile));}catch(e){}
   renderTreatProfileBanner();
   document.getElementById('cgTreatEditBox').classList.add('hidden');
-  toast('✅ Treatment saved!');saveToSheets('profile');
+  toast('✅ Treatment saved!');saveNow();
 }
 function toggleTreatEdit(){
   const box=document.getElementById('cgTreatEditBox');
   box.classList.toggle('hidden');
   if(!box.classList.contains('hidden')){
-    const p=S.treatmentProfile;
+    const p=S.treatmentProfile||{};
+    document.getElementById('cgTpPatient').value=p.patientName||'';
     document.getElementById('cgTpName').value=p.name||'';
     document.getElementById('cgTpProtocol').value=p.protocol||'';
     document.getElementById('cgTpOncologist').value=p.oncologist||'';
@@ -2238,7 +2247,7 @@ function renderTreatProfileBanner(){
     if(!p||!p.name){
       disp.innerHTML='<span style="color:var(--muted);font-style:italic">No treatment set — tap Edit to define.</span>';
     } else {
-      disp.innerHTML='<span style="font-weight:800;font-size:1rem;color:var(--chemo)">'+esc(p.name)+'</span>'+(p.protocol?'<br><span style="color:var(--muted)">💊 '+esc(p.protocol)+'</span>':'')+(p.oncologist?'<br><span style="color:var(--muted)">👨‍⚕️ '+esc(p.oncologist)+'</span>':'')+(p.startDate?'<br><span style="color:var(--muted)">📅 Started: '+esc(p.startDate)+'</span>':'');
+      disp.innerHTML=(p.patientName?'<span style="font-weight:800;font-size:1rem;color:var(--text)">👤 '+esc(p.patientName)+'</span><br>':'')+'<span style="font-weight:800;font-size:1rem;color:var(--chemo)">'+esc(p.name)+'</span>'+(p.protocol?'<br><span style="color:var(--muted)">💊 '+esc(p.protocol)+'</span>':'')+(p.oncologist?'<br><span style="color:var(--muted)">👨‍⚕️ '+esc(p.oncologist)+'</span>':'')+(p.startDate?'<br><span style="color:var(--muted)">📅 Started: '+esc(p.startDate)+'</span>':'');
     }
   }
   const ld=document.getElementById('treatProfileDisplay');
@@ -2506,7 +2515,10 @@ function renderChemo(){
           ${s.notes?`<div class="chemo-info">📝 ${esc(s.notes)}</div>`:''}
           ${avg!==null?`<div class="chemo-sym">📊 Post-session avg — Nausea: ${avg}/5 · ${syms.length} log${syms.length>1?'s':''}</div>`:''}
         </div>
-        <button class="del-btn" onclick="deleteChemoSession('${s.id}',${i})" title="Delete session">🗑 Delete</button>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <button class="edit-btn" onclick="editChemo('${s.id}')">✏️ Edit</button>
+          <button class="del-btn" onclick="deleteChemoSession('${s.id}',${i})" title="Delete">🗑 Delete</button>
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -2537,12 +2549,48 @@ function renderChemoBySym(){
     return `<div class="chemo-card"><span class="chemo-badge">Cycle ${s.cycle} · Session ${s.session}</span><div class="chemo-date">${fmtDate(s.date)} · ${syms.length} log${syms.length>1?'s':''}</div><div class="chemo-sym">${bars}</div></div>`;
   }).join('');
 }
+function editChemo(id){
+  const s=S.chemoSessions.find(x=>String(x.id)===String(id));
+  if(!s) return;
+  document.getElementById('cDate').value=s.date||today;
+  document.getElementById('cCycle').value=s.cycle||1;
+  document.getElementById('cSession').value=s.session||1;
+  document.getElementById('cHospital').value=s.hospital||'';
+  document.getElementById('cNotes').value=s.notes||'';
+  _editingChemoId=s.id;
+  const btn=document.getElementById('btnSubmitChemo');
+  if(btn) btn.textContent='✏️ Update Session';
+  const logTab=document.querySelector('[onclick="showSub('chemo','log',this)"]');
+  if(logTab) showSub('chemo','log',logTab);
+  document.getElementById('chemo-log')?.scrollIntoView({behavior:'smooth',block:'start'});
+  toast('✏️ Edit mode — update and save');
+}
 function submitChemo(){
-  const hosp=document.getElementById('cHospital').value.trim();if(!hosp){toast('⚠️ Hospital required');return;}
-  S.chemoSessions.push({id:S.nextId++,date:document.getElementById('cDate').value||today,cycle:+document.getElementById('cCycle').value||1,session:+document.getElementById('cSession').value||1,treatType:(S.treatmentProfile&&S.treatmentProfile.name)||'',hospital:hosp,notes:document.getElementById('cNotes').value});
-  renderChemo();renderChemoBySym();renderTreatProfileBanner();
+  const hosp=document.getElementById('cHospital').value.trim();
+  if(!hosp){toast('⚠️ Hospital required');return;}
+  const entry={
+    id:_editingChemoId||S.nextId++,
+    date:document.getElementById('cDate').value||today,
+    cycle:+document.getElementById('cCycle').value||1,
+    session:+document.getElementById('cSession').value||1,
+    treatType:(S.treatmentProfile&&S.treatmentProfile.name)||'',
+    hospital:hosp,
+    notes:document.getElementById('cNotes').value
+  };
+  if(_editingChemoId){
+    const idx=S.chemoSessions.findIndex(x=>String(x.id)===String(_editingChemoId));
+    if(idx>=0) S.chemoSessions[idx]=entry; else S.chemoSessions.push(entry);
+    _editingChemoId=null;
+    const btn=document.getElementById('btnSubmitChemo');
+    if(btn) btn.textContent='💉 Save Session';
+    toast('✅ Session updated!');
+  } else {
+    S.chemoSessions.push(entry);
+    toast('💉 Treatment session logged!');
+  }
+  renderChemo();renderTreatProfileBanner();
   ['cHospital','cNotes'].forEach(id=>document.getElementById(id).value='');
-  toast('💉 Treatment session logged!');saveToSheets('chemo');
+  saveNow();
 }
 function deleteChemo(id){
   if(!confirm('Remove this treatment session?')) return;
