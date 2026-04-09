@@ -1360,7 +1360,7 @@ async function loadFromSheets(){
     }
   }catch(ex){}
   const url = localStorage.getItem('anbucare_url');
-  if(!url){ loadFcState(); renderAll(); return; }
+  if(!url){ renderAll(); return; }
 
   // Show loading banner below affirmation — don't overwrite it
   const loadBanner = document.getElementById('sheetsLoadBanner');
@@ -1442,9 +1442,8 @@ const MERGE_KEYS = ['tasks','medicines','dietPlan','tests','chemoSessions',
   }catch(e){
     toast('⚠️ Cannot connect: ' + e.message);
   }
-  var lb = document.getElementById('sheetsLoadBanner');
+  const lb = document.getElementById('sheetsLoadBanner');
   if(lb) lb.style.display = 'none';
-  loadFcState();   // restore today's Done/Skip marks before rendering
   renderAll();
 }
 
@@ -2163,35 +2162,6 @@ function setFC(nId,dId,key,txt,html){
   else{dEl.innerHTML=`<button class="fc-yes" onclick="event.stopPropagation();markFC('${key}',true)">✓ Done</button><button class="fc-no" onclick="event.stopPropagation();markFC('${key}',false)">✗ Skip</button>`;}
 }
 let fcPopupCallback=null;
-
-// ── Daily FC state persistence ──────────────────────────────────
-// Saves Done/Skip marks to localStorage keyed by today's date.
-// On page reload, restores if still the same day, auto-clears next day.
-function saveFcState(){
-  try{
-    localStorage.setItem('anbucare_fcstate', JSON.stringify({
-      date: today,
-      fcState: fcState
-    }));
-  }catch(e){}
-}
-function loadFcState(){
-  try{
-    var raw=localStorage.getItem('anbucare_fcstate');
-    if(!raw) return;
-    var saved=JSON.parse(raw);
-    // Only restore if it was saved today — otherwise silently discard (new day)
-    if(saved && saved.date === today && saved.fcState){
-      Object.keys(saved.fcState).forEach(function(k){
-        fcState[k]=saved.fcState[k];
-      });
-    } else {
-      // New day — wipe the stale entry
-      localStorage.removeItem('anbucare_fcstate');
-    }
-  }catch(e){}
-}
-
 function getNextFCInfo(key){
   const now=new Date(),nm=now.getHours()*60+now.getMinutes();
   const tM={Morning:480,Afternoon:780,Evening:1080,Night:1260};
@@ -2242,7 +2212,7 @@ function showFCNextPopup(key,val,info){
     document.getElementById('fcPopupNextDetail').textContent='';
     document.getElementById('fcPopupNextExtra').textContent='';
   }
-  fcPopupCallback=function(){fcState[key]=val;saveFcState();renderFlashCards();};
+  fcPopupCallback=function(){fcState[key]=val;renderFlashCards();};
   document.getElementById('fcNextPopup').style.display='flex';
 }
 function closeFCPopup(){
