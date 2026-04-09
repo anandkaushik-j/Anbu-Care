@@ -3,9 +3,7 @@
 <html lang="en-IN">
 <head>
 <meta charset="UTF-8"/>
-<meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate"/>
-<meta http-equiv="Pragma" content="no-cache"/>
-<meta http-equiv="Expires" content="0"/><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"/>
+<meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate"/><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"/>
 <meta name="theme-color" content="#1a237e"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
@@ -564,7 +562,6 @@ input:checked+.tslider::before{transform:translateX(20px)}
 .sos-modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.52);z-index:350;align-items:flex-end;justify-content:center}
 .sos-modal-box{background:var(--surface);border-radius:24px 24px 0 0;padding:20px 16px 34px;width:100%;max-width:480px;max-height:80vh;overflow-y:auto}
 .sos-modal-item{padding:12px 14px;border-radius:12px;background:var(--surface2);margin-bottom:10px}
-.sos-modal-item:last-child{margin-bottom:0}
 .sos-modal-name{font-weight:700;font-size:1rem;color:var(--text)}
 .sos-modal-detail{font-size:.83rem;color:var(--muted);margin-top:3px}
 .sos-modal-note{font-size:.83rem;color:var(--text);margin-top:8px;background:#fffbeb;border-radius:8px;padding:7px 10px;border-left:3px solid #d97706}
@@ -706,7 +703,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
       <div class="fc-done-row" id="fcDietDone" onclick="event.stopPropagation()"></div>
     </button>
     <button class="flash-card fc-medicine" onclick="showTab('careplan');showSub('careplan','meds',null)">
-      <span class="sos-fc-badge" onclick="event.stopPropagation();openSOSModal()" title="SOS Medicines">🆘 SOS</span>
+      <span class="sos-fc-badge" onclick="event.stopPropagation();openSOSModal()">🆘 SOS</span>
       <div class="fc-icon">💊</div><div class="fc-label">Medicines</div>
       <div class="fc-next" id="fcMedNext">Loading…</div>
       <div class="fc-done-row" id="fcMedDone" onclick="event.stopPropagation()"></div>
@@ -1182,7 +1179,6 @@ input:checked+.tslider::before{transform:translateX(20px)}
         <div class="form-group" style="background:#fffbeb;border-radius:10px;padding:10px 12px;border:1px solid #fcd34d">
           <label class="form-label" style="color:#b45309">📌 When to use / Symptom</label>
           <input type="text" class="form-input" id="mSosNote" placeholder="e.g. For nausea, Take for fever above 38 C" style="border-color:#fcd34d">
-          <div style="font-size:.75rem;color:#b45309;margin-top:4px">Shown in SOS quick-view on dashboard</div>
         </div>
       </div>
       <div class="form-group"><label class="form-label">Food Instructions</label><select class="form-select" id="mFood"><option>After food</option><option>Before food</option><option>With food</option><option>Empty stomach</option><option>No restriction</option></select></div>
@@ -1299,11 +1295,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
 <div id="printReport"></div>
 
 <script>
-window.onerror=function(msg,src,line){
-  var b=document.getElementById('errBanner');
-  if(b){b.textContent='JS Error: '+msg+' (line '+line+')';b.style.display='block';}
-  return false;
-};
+window.onerror=function(m,s,l){var b=document.getElementById('errBanner');if(b){b.textContent='JS Error: '+m+' (line '+l+')';b.style.display='block';}return false;};
 // ═══════════════════════════════════════════
 // DATA
 // ═══════════════════════════════════════════
@@ -1360,7 +1352,7 @@ async function loadFromSheets(){
     }
   }catch(ex){}
   const url = localStorage.getItem('anbucare_url');
-  if(!url){ renderAll(); return; }
+  if(!url){ loadFcState(); renderAll(); return; }
 
   // Show loading banner below affirmation — don't overwrite it
   const loadBanner = document.getElementById('sheetsLoadBanner');
@@ -1397,24 +1389,12 @@ const MERGE_KEYS = ['tasks','medicines','dietPlan','tests','chemoSessions',
       }
       MERGE_KEYS.forEach(function(k){
         if(k==='treatmentProfile'){
-          var tp=loaded[k];
-          if(tp&&typeof tp==='object'&&!Array.isArray(tp)&&tp.name){
-            S.treatmentProfile=tp;
-          } else if(Array.isArray(tp)&&tp.length&&tp[0]&&tp[0].name){
-            S.treatmentProfile=tp[0];
-          }
-          // else keep existing — never wipe with null
-        } else {
-          if(loaded[k]!==undefined) S[k]=loaded[k];
-        }
+          var _t=loaded[k];
+          if(_t&&typeof _t==='object'&&!Array.isArray(_t)&&_t.name){S.treatmentProfile=_t;}
+          else if(Array.isArray(_t)&&_t[0]&&_t[0].name){S.treatmentProfile=_t[0];}
+          // else: keep existing — null/empty never overwrites
+        }else{if(loaded[k]!==undefined)S[k]=loaded[k];}
       });
-      // Fallback: if treatmentProfile still empty, read localStorage cache
-      if(!S.treatmentProfile||!S.treatmentProfile.name){
-        try{
-          var _tc=localStorage.getItem('anbucare_treatprofile');
-          if(_tc){var _tp=JSON.parse(_tc);if(_tp&&_tp.name)S.treatmentProfile=_tp;}
-        }catch(_te){}
-      }
       normalizeAll();
       // Deduplicate: keep last entry per (name+start) combination
       ['medicines','dietPlan','tests','chemoSessions'].forEach(k=>{
@@ -1435,6 +1415,9 @@ const MERGE_KEYS = ['tasks','medicines','dietPlan','tests','chemoSessions',
         bowelLog.length = 0;
         loaded.bowelLog.forEach(x=>bowelLog.push(x));
       }
+      if(S.treatmentProfile&&S.treatmentProfile.name){
+        try{localStorage.setItem('anbucare_treatprofile',JSON.stringify(S.treatmentProfile));}catch(_e){}
+      }
       toast('✅ Data loaded from Sheets');
     } else {
       toast('❌ Sheets error: ' + (d.error||'Check Sheet ID in Connect settings'));
@@ -1442,62 +1425,83 @@ const MERGE_KEYS = ['tasks','medicines','dietPlan','tests','chemoSessions',
   }catch(e){
     toast('⚠️ Cannot connect: ' + e.message);
   }
-  const lb = document.getElementById('sheetsLoadBanner');
-  if(lb) lb.style.display = 'none';
+  var _lb=document.getElementById('sheetsLoadBanner');if(_lb)_lb.style.display='none';
+  if(!S.treatmentProfile||!S.treatmentProfile.name){loadTreatmentProfileFromSheets();}
+  loadFcState();
   renderAll();
 }
 
-// ── SOS chip toggle ─────────────────────────────
+let _saveTimer=null,_saving=false,_editingChemoId=null,fcMedState={};
+
+// ── SOS ──────────────────────────────────────────────────────
 function toggleSOSChip(el){
   el.classList.toggle('sel');
-  var row=document.getElementById('sosNoteRow');
-  if(row)row.style.display=el.classList.contains('sel')?'block':'none';
-  if(el.classList.contains('sel')){
-    setTimeout(function(){var n=document.getElementById('mSosNote');if(n)n.focus();},100);
-  }
+  var r=document.getElementById('sosNoteRow');
+  if(r)r.style.display=el.classList.contains('sel')?'block':'none';
+  if(el.classList.contains('sel')){setTimeout(function(){var n=document.getElementById('mSosNote');if(n)n.focus();},100);}
 }
-
-// ── SOS modal open/close ─────────────────────────
-function closeSOSModal(){
-  var m=document.getElementById('sosModal');if(m)m.style.display='none';
-}
+function closeSOSModal(){var m=document.getElementById('sosModal');if(m)m.style.display='none';}
 function openSOSModal(){
-  var sosMeds=(S.medicines||[]).filter(function(m){
-    return Array.isArray(m.times)&&m.times.some(function(t){return t.includes('SOS');});
-  });
-  var list=document.getElementById('sosModalList');
-  if(!list)return;
-  if(!sosMeds.length){
-    list.innerHTML='<div style="text-align:center;padding:24px 16px;color:var(--muted)">No SOS medicines added yet.<br><span style="font-size:.85rem">Add a medicine and select SOS as the time.</span></div>';
+  var meds=(S.medicines||[]).filter(function(m){return Array.isArray(m.times)&&m.times.some(function(t){return t.includes('SOS');});});
+  var list=document.getElementById('sosModalList');if(!list)return;
+  if(!meds.length){
+    list.innerHTML='<div style="text-align:center;padding:24px;color:var(--muted)">No SOS medicines yet.</div>';
   }else{
-    var rows=sosMeds.map(function(m){
-      var noteHtml=m.notes
-        ?'<div class="sos-modal-note">&#128205; '+esc(m.notes)+'</div>'
-        :'<div style="font-size:.78rem;color:var(--muted);margin-top:6px;font-style:italic">No symptom note added</div>';
+    list.innerHTML=meds.map(function(m){
+      var nt=m.notes?'<div class="sos-modal-note">&#128205; '+esc(m.notes)+'</div>':'<div style="font-size:.78rem;color:var(--muted);margin-top:5px;font-style:italic">No symptom note</div>';
       return '<div class="sos-modal-item">'
         +'<div class="sos-modal-name">&#128138; '+esc(m.name)+'</div>'
         +'<div class="sos-modal-detail">'+(m.qty||1)+' '+esc(m.unit||'tablet(s)')+' &middot; As needed'+(m.food?' &middot; '+esc(m.food):'')+' </div>'
-        +noteHtml
-        +'</div>';
-    });
-    list.innerHTML=rows.join('');
+        +nt+'</div>';
+    }).join('');
   }
-  var modal=document.getElementById('sosModal');
-  if(modal)modal.style.display='flex';
+  var modal=document.getElementById('sosModal');if(modal)modal.style.display='flex';
 }
 
-// ── Test type datalist ───────────────────────────
+// ── Test type datalist ────────────────────────────────────────
 function refreshTestTypeDatalist(){
-  var dl=document.getElementById('tTypeDatalist');
-  if(!dl)return;
+  var dl=document.getElementById('tTypeDatalist');if(!dl)return;
   var types=[];
   (S.tests||[]).forEach(function(t){if(t.type&&types.indexOf(t.type)<0)types.push(t.type);});
   dl.innerHTML=types.map(function(t){return '<option value="'+esc(t)+'"/>';}).join('');
 }
 
-let _saveTimer=null, _saving=false;
-let _editingChemoId=null;
-let fcMedState={};
+// ── FC state daily persistence ────────────────────────────────
+function saveFcState(){
+  try{localStorage.setItem('anbucare_fcstate',JSON.stringify({date:today,fcState:fcState}));}catch(e){}
+}
+function loadFcState(){
+  try{
+    var raw=localStorage.getItem('anbucare_fcstate');if(!raw)return;
+    var sv=JSON.parse(raw);
+    if(sv&&sv.date===today&&sv.fcState){Object.keys(sv.fcState).forEach(function(k){fcState[k]=sv.fcState[k];});}
+    else{localStorage.removeItem('anbucare_fcstate');}
+  }catch(e){}
+}
+
+// ── Dedicated treatment profile save / load ───────────────────
+function saveTreatmentProfileToSheets(){
+  var url=localStorage.getItem('anbucare_url');
+  if(!url||!S.treatmentProfile||!S.treatmentProfile.name)return;
+  fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body:JSON.stringify({action:'saveTreatmentProfile',sheetId:localStorage.getItem('anbucare_sid')||'',
+      data:{treatmentProfile:S.treatmentProfile}}),redirect:'follow'})
+  .then(function(r){return r.json();}).catch(function(){});
+}
+async function loadTreatmentProfileFromSheets(){
+  var url=localStorage.getItem('anbucare_url');if(!url)return;
+  try{
+    var r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({action:'loadTreatmentProfile',sheetId:localStorage.getItem('anbucare_sid')||''}),
+      redirect:'follow'});
+    var d=await r.json();
+    if((d.ok||d.success)&&d.data&&d.data.name){
+      S.treatmentProfile=d.data;
+      try{localStorage.setItem('anbucare_treatprofile',JSON.stringify(d.data));}catch(_e){}
+      renderTreatProfileBanner();
+    }
+  }catch(_e){}
+}
 function saveNow(){
   clearTimeout(_saveTimer);
   const url=localStorage.getItem('anbucare_url');
@@ -1510,7 +1514,7 @@ function saveNow(){
       symptoms:S.symptoms, vitals:S.vitals, sleepLogs:S.sleepLogs,
       notes:S.notes, voiceNotes:S.voiceNotes.filter(n=>!n.isMock),
       helplines:S.helplines, reminders:S.reminders,
-      treatmentProfile:S.treatmentProfile, nextId:S.nextId,
+      treatmentProfile:(S.treatmentProfile&&S.treatmentProfile.name)?S.treatmentProfile:undefined, nextId:S.nextId,
       bowelLog:bowelLog, savedAt:new Date().toISOString()
     }
   });
@@ -1565,7 +1569,8 @@ window.onload = async () => {
   loadConn();
   try{var ci=localStorage.getItem('anbucare_cal_id');var ce=document.getElementById('calendarIdInput');if(ci&&ce)ce.value=ci;}catch(ex){}
   document.getElementById('calendarIdInput')?.addEventListener('input',function(){localStorage.setItem('anbucare_cal_id',this.value);});
-  fetchAffirmation(); // non-blocking
+  try{var _pc=localStorage.getItem('anbucare_treatprofile');if(_pc){var _pp=JSON.parse(_pc);if(_pp&&_pp.name)S.treatmentProfile=_pp;}}catch(_pe){}
+  fetchAffirmation();
   await loadFromSheets(); // loads data then calls renderAll()
   fetchAffirmation(); // re-run after data load to ensure affirmation is visible
   setInterval(renderNext3Strip, 60000);
@@ -2212,7 +2217,7 @@ function showFCNextPopup(key,val,info){
     document.getElementById('fcPopupNextDetail').textContent='';
     document.getElementById('fcPopupNextExtra').textContent='';
   }
-  fcPopupCallback=function(){fcState[key]=val;renderFlashCards();};
+  fcPopupCallback=function(){fcState[key]=val;saveFcState();renderFlashCards();};
   document.getElementById('fcNextPopup').style.display='flex';
 }
 function closeFCPopup(){
@@ -2305,7 +2310,7 @@ function renderHelplines(){
 function renderMeds(){
   const el=document.getElementById('medList');
   if(!S.medicines.length){el.innerHTML='<div class="empty"><span class="emoji">💊</span>No medicines yet</div>';return;}
-  el.innerHTML=S.medicines.map(function(m){var hasSOS=Array.isArray(m.times)&&m.times.some(function(t){return t.includes('SOS');});return `<div class="med-card"><div class="card-row-actions"><div class="card-content"><div class="med-name">${esc(m.name)}${hasSOS?' <span style="font-size:.72rem;background:#fffbeb;color:#b45309;border:1px solid #fcd34d;border-radius:5px;padding:1px 6px;font-weight:700">SOS</span>':''}</div><div class="med-dose">${m.qty} ${m.unit} · ${esc(m.food)}</div><div class="med-tags">${m.times.map(function(t){return '<span class="mtag '+(t.includes('SOS')?'mtag-sos':'mtag-time')+'">'+t+'</span>';}).join('')}<span class="mtag mtag-food">🍽️ ${esc(m.food)}</span><span class="mtag mtag-dates">📅 ${fmtDate(m.start)||'—'} → ${fmtDate(m.end)||'—'}</span>${m.days?`<span class="mtag" style="background:#e8f4f0;color:var(--primary)">⏱ ${m.days} day${m.days>1?'s':''}</span>`:''}</div>${m.notes?`<div style="font-size:.75rem;color:var(--muted);margin-top:6px">📌 ${esc(m.notes)}</div>`:''}</div><button class="edit-btn" onclick="editMed(${m.id})">✏️ Edit</button><button class="del-btn" onclick="deleteMed(${m.id})">🗑</button></div></div>`}).join('');
+  el.innerHTML=S.medicines.map(function(m){var hS=Array.isArray(m.times)&&m.times.some(function(t){return t.includes('SOS');});return `<div class="med-card"><div class="card-row-actions"><div class="card-content"><div class="med-name">${esc(m.name)}${hS?' <span style="font-size:.72rem;background:#fffbeb;color:#b45309;border:1px solid #fcd34d;border-radius:5px;padding:1px 6px;font-weight:700">SOS</span>':''}</div><div class="med-dose">${m.qty} ${m.unit} · ${esc(m.food)}</div><div class="med-tags">${m.times.map(function(t){return '<span class="mtag '+(t.includes('SOS')?'mtag-sos':'mtag-time')+'">'+t+'</span>';}).join('')}<span class="mtag mtag-food">🍽️ ${esc(m.food)}</span><span class="mtag mtag-dates">📅 ${fmtDate(m.start)||'—'} → ${fmtDate(m.end)||'—'}</span>${m.days?`<span class="mtag" style="background:#e8f4f0;color:var(--primary)">⏱ ${m.days} day${m.days>1?'s':''}</span>`:''}</div>${m.notes?`<div style="font-size:.75rem;color:var(--muted);margin-top:6px">📌 ${esc(m.notes)}</div>`:''}</div><button class="edit-btn" onclick="editMed(${m.id})">✏️ Edit</button><button class="del-btn" onclick="deleteMed(${m.id})">🗑</button></div></div>`}).join('');
 }
 
 // ═══ TREATMENT PROFILE ═══
@@ -2313,26 +2318,23 @@ function saveTreatmentProfile(){
   var nm=document.getElementById('cgTpName').value.trim();
   if(!nm){toast('⚠️ Enter treatment name');return;}
   var pf=document.getElementById('cgTpPatient');
-  S.treatmentProfile={
-    patientName:pf?pf.value.trim():'',
-    name:nm,
+  S.treatmentProfile={patientName:pf?pf.value.trim():'',name:nm,
     protocol:document.getElementById('cgTpProtocol').value.trim(),
     oncologist:document.getElementById('cgTpOncologist').value.trim(),
-    startDate:document.getElementById('cgTpStartDate').value,
-    setOn:today
-  };
+    startDate:document.getElementById('cgTpStartDate').value,setOn:today};
   try{localStorage.setItem('anbucare_treatprofile',JSON.stringify(S.treatmentProfile));}catch(_e){}
   renderTreatProfileBanner();
   document.getElementById('cgTreatEditBox').classList.add('hidden');
-  toast('✅ Treatment saved!');saveNow();
+  toast('✅ Treatment saved!');
+  saveTreatmentProfileToSheets();
+  saveNow();
 }
 function toggleTreatEdit(){
-  var box=document.getElementById('cgTreatEditBox');
-  box.classList.toggle('hidden');
-  if(!box.classList.contains('hidden')){
+  var bx=document.getElementById('cgTreatEditBox');
+  bx.classList.toggle('hidden');
+  if(!bx.classList.contains('hidden')){
     var p=Array.isArray(S.treatmentProfile)?S.treatmentProfile[0]||{}:(S.treatmentProfile||{});
-    var pf=document.getElementById('cgTpPatient');
-    if(pf)pf.value=p.patientName||'';
+    var pf=document.getElementById('cgTpPatient');if(pf)pf.value=p.patientName||'';
     document.getElementById('cgTpName').value=p.name||'';
     document.getElementById('cgTpProtocol').value=p.protocol||'';
     document.getElementById('cgTpOncologist').value=p.oncologist||'';
@@ -2459,15 +2461,13 @@ function submitMed(){
   const ms=document.getElementById('mStart').value,md=parseInt(document.getElementById('mDays').value)||0;
   S.medicines.push({id:S.nextId++,name,qty:+document.getElementById('mQty').value||1,unit:document.getElementById('mUnit').value,freq:document.getElementById('mFreq').value,times:times.length?times:['Morning'],food:document.getElementById('mFood').value,start:ms,days:md,end:document.getElementById('mEnd').value||(ms&&md?addDays(ms,md-1):''),notes:document.getElementById('mNotes').value});
   normalizeMed(S.medicines[S.medicines.length-1]);renderMeds();renderFlashCards();renderNext3Strip();closeModal('addModal');resetChips('mTimeChips');setTimeout(renderReminders,50);['mName','mNotes','mDays'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});const md2=document.getElementById('mEndDisplay');if(md2)md2.textContent='— set start & days';
-  var _hasSOS=times.some(function(t){return t.includes('SOS');});
-  var _sosNV=(document.getElementById('mSosNote')||{}).value||'';
-  var _mainN=document.getElementById('mNotes').value;
-  // Patch the last pushed medicine's notes
-  var _lastM=S.medicines[S.medicines.length-1];
-  if(_lastM) _lastM.notes=_hasSOS?(_sosNV||_mainN):_mainN;
-  var _snEl=document.getElementById('mSosNote');if(_snEl)_snEl.value='';
-  var _srEl=document.getElementById('sosNoteRow');if(_srEl)_srEl.style.display='none';
-  var _scEl=document.querySelector('#mTimeChips .sos-chip');if(_scEl)_scEl.classList.remove('sel');
+  var _hS=times.some(function(t){return t.includes('SOS');});
+  var _sv=(document.getElementById('mSosNote')||{}).value||'';
+  var _mn=document.getElementById('mNotes').value;
+  var _lm=S.medicines[S.medicines.length-1];if(_lm)_lm.notes=_hS?(_sv||_mn):_mn;
+  var _se=document.getElementById('mSosNote');if(_se)_se.value='';
+  var _sr=document.getElementById('sosNoteRow');if(_sr)_sr.style.display='none';
+  var _sc=document.querySelector('#mTimeChips .sos-chip');if(_sc)_sc.classList.remove('sel');
   toast('💊 Medicine added!');saveNow();
 }
 
@@ -2541,11 +2541,9 @@ function editMed(id){
     document.querySelectorAll('#mTimeChips .chip').forEach(function(c){
       c.classList.toggle('sel',(m.times||[]).includes(c.textContent.trim()));
     });
-    var _hasSOS_e=(m.times||[]).some(function(t){return t.includes('SOS');});
-    var _sosRow=document.getElementById('sosNoteRow');
-    var _sosInput=document.getElementById('mSosNote');
-    if(_sosRow)_sosRow.style.display=_hasSOS_e?'block':'none';
-    if(_sosInput)_sosInput.value=_hasSOS_e?(m.notes||''):'';
+    var _hS=(m.times||[]).some(function(t){return t.includes('SOS');});
+    var _sr=document.getElementById('sosNoteRow');if(_sr)_sr.style.display=_hS?'block':'none';
+    var _si=document.getElementById('mSosNote');if(_si)_si.value=_hS?(m.notes||''):'';
     saveToSheets('medicines');
     S.medicines = S.medicines.filter(function(x){return x.id!==id;});
     renderMeds(); renderFlashCards(); renderNext3Strip();
@@ -2629,10 +2627,7 @@ function renderChemo(){
           ${s.notes?`<div class="chemo-info">📝 ${esc(s.notes)}</div>`:''}
           ${avg!==null?`<div class="chemo-sym">📊 Post-session avg — Nausea: ${avg}/5 · ${syms.length} log${syms.length>1?'s':''}</div>`:''}
         </div>
-        <div style="display:flex;flex-direction:column;gap:6px">
-          <button class="edit-btn" style="font-size:.8rem;padding:5px 8px" onclick="editChemo('${s.id}')">✏️</button>
-          <button class="del-btn" onclick="deleteChemoSession('${s.id}',${i})">🗑</button>
-        </div>
+        <div style="display:flex;flex-direction:column;gap:6px"><button class="edit-btn" style="font-size:.8rem;padding:5px 8px" onclick="editChemo('${s.id}')">✏️</button><button class="del-btn" onclick="deleteChemoSession('${s.id}',${i})">🗑</button></div>
       </div>
     </div>`;
   }).join('');
@@ -2664,48 +2659,29 @@ function renderChemoBySym(){
   }).join('');
 }
 function editChemo(id){
-  var s=S.chemoSessions.find(function(x){return String(x.id)===String(id);});
-  if(!s)return;
-  document.getElementById('cDate').value=s.date||today;
-  document.getElementById('cCycle').value=s.cycle||1;
-  document.getElementById('cSession').value=s.session||1;
-  document.getElementById('cHospital').value=s.hospital||'';
-  document.getElementById('cNotes').value=s.notes||'';
-  _editingChemoId=s.id;
-  var btn=document.getElementById('btnSubmitChemo');
-  if(btn)btn.textContent='💉 Update Session';
+  var s=S.chemoSessions.find(function(x){return String(x.id)===String(id);});if(!s)return;
+  document.getElementById('cDate').value=s.date||today;document.getElementById('cCycle').value=s.cycle||1;
+  document.getElementById('cSession').value=s.session||1;document.getElementById('cHospital').value=s.hospital||'';
+  document.getElementById('cNotes').value=s.notes||'';_editingChemoId=s.id;
+  var btn=document.getElementById('btnSubmitChemo');if(btn)btn.textContent='💉 Update Session';
   document.querySelectorAll('#tab-chemo .sub-tab').forEach(function(b,i){b.classList.toggle('active',i===0);});
-  var logDiv=document.getElementById('chemo-log');
-  if(logDiv)logDiv.classList.remove('hidden');
-  var sesDiv=document.getElementById('chemo-sessions');
-  if(sesDiv)sesDiv.classList.add('hidden');
+  var ld=document.getElementById('chemo-log');if(ld)ld.classList.remove('hidden');
+  var sd=document.getElementById('chemo-sessions');if(sd)sd.classList.add('hidden');
   toast('✏️ Edit mode');
 }
 function submitChemo(){
   var hosp=document.getElementById('cHospital').value.trim();if(!hosp){toast('⚠️ Hospital required');return;}
-  var entry={
-    id:_editingChemoId||S.nextId++,
-    date:document.getElementById('cDate').value||today,
-    cycle:+document.getElementById('cCycle').value||1,
-    session:+document.getElementById('cSession').value||1,
-    treatType:(S.treatmentProfile&&S.treatmentProfile.name)||'',
-    hospital:hosp,
-    notes:document.getElementById('cNotes').value
-  };
+  var en={id:_editingChemoId||S.nextId++,date:document.getElementById('cDate').value||today,
+    cycle:+document.getElementById('cCycle').value||1,session:+document.getElementById('cSession').value||1,
+    treatType:(S.treatmentProfile&&S.treatmentProfile.name)||'',hospital:hosp,notes:document.getElementById('cNotes').value};
   if(_editingChemoId){
-    var idx=S.chemoSessions.findIndex(function(x){return String(x.id)===String(_editingChemoId);});
-    if(idx>=0)S.chemoSessions[idx]=entry;else S.chemoSessions.push(entry);
-    _editingChemoId=null;
-    var btn=document.getElementById('btnSubmitChemo');
-    if(btn)btn.textContent='💉 Save Session';
+    var ix=S.chemoSessions.findIndex(function(x){return String(x.id)===String(_editingChemoId);});
+    if(ix>=0)S.chemoSessions[ix]=en;else S.chemoSessions.push(en);
+    _editingChemoId=null;var btn=document.getElementById('btnSubmitChemo');if(btn)btn.textContent='💉 Save Session';
     toast('✅ Session updated!');
-  }else{
-    S.chemoSessions.push(entry);
-    toast('💉 Session logged!');
-  }
+  }else{S.chemoSessions.push(en);toast('💉 Session logged!');}
   renderChemo();renderTreatProfileBanner();
-  ['cHospital','cNotes'].forEach(function(id){document.getElementById(id).value='';});
-  saveNow();
+  ['cHospital','cNotes'].forEach(function(id){document.getElementById(id).value='';});saveNow();
 }
 function deleteChemo(id){
   if(!confirm('Remove this treatment session?')) return;
@@ -3879,10 +3855,9 @@ function mockSync(btn){ syncToCalendar(btn); }
 // ═══════════════════════════════════════════
 function renderReports(){
   var _rtp=Array.isArray(S.treatmentProfile)?S.treatmentProfile[0]||{}:(S.treatmentProfile||{});
-  var _rpn=document.getElementById('pdfPatient');
-  var _rpb=document.getElementById('pdfPrepared');
-  if(_rpn&&!_rpn.value)_rpn.value=_rtp.patientName||_rtp.name||'';
-  if(_rpb&&(!_rpb.value||_rpb.value==='Caregiver'))_rpb.value='AnbuCare';
+  var _rn=document.getElementById('pdfPatient');var _rb=document.getElementById('pdfPrepared');
+  if(_rn&&!_rn.value)_rn.value=_rtp.patientName||_rtp.name||'';
+  if(_rb&&(!_rb.value||_rb.value==='Caregiver'))_rb.value='AnbuCare';
   const el=document.getElementById('reportsList');if(!el)return;
   el.innerHTML=S.reports.length?S.reports.map(r=>`<div class="report-item"><div class="ri-icon">📄</div><div class="ri-meta"><div class="ri-name">${esc(r.name)}</div><div class="ri-date">${fmtDate(r.date)}${r.notes?' · '+esc(r.notes):''}</div></div><a class="ri-link" href="#" onclick="toast('🔗 Opens Drive');return false">Open ↗</a></div>`).join(''):'<div class="empty"><span class="emoji">📁</span>No reports yet</div>';
 }
@@ -3901,10 +3876,10 @@ function getDateRange(){
   return{from:document.getElementById('rangeFrom').value||t,to:document.getElementById('rangeTo').value||t};
 }
 function previewReport(){
-  var _pdfPt=document.getElementById('pdfPatient');
-  var _ptp=Array.isArray(S.treatmentProfile)?S.treatmentProfile[0]||{}:(S.treatmentProfile||{});
-  if(_pdfPt&&!_pdfPt.value)_pdfPt.value=_ptp.patientName||_ptp.name||'';
-  const{from,to}=getDateRange(),patient=(_pdfPt&&_pdfPt.value)||'Patient',prepBy=document.getElementById('pdfPrepared').value||'AnbuCare';
+  var _pp=document.getElementById('pdfPatient');
+  var _tp=Array.isArray(S.treatmentProfile)?S.treatmentProfile[0]||{}:(S.treatmentProfile||{});
+  if(_pp&&!_pp.value)_pp.value=_tp.patientName||_tp.name||'';
+  const{from,to}=getDateRange(),patient=(_pp&&_pp.value)||'Patient',prepBy=document.getElementById('pdfPrepared').value||'AnbuCare';
   const inR=d=>d>=from&&d<=to;
   const fS=S.symptoms.filter(s=>inR(s.date)),fV=S.vitals.filter(v=>inR(v.date)),fSl=S.sleepLogs.filter(s=>inR(s.date)),fC=S.chemoSessions.filter(s=>inR(s.date)),fN=S.notes.filter(n=>inR(n.date));
   const bar=v=>{const col=v<=2?'#43a87a':v===3?'#f0b429':'#e07b54';return `<span style="display:inline-block;width:${v*22}px;height:8px;background:${col};border-radius:4px;vertical-align:middle;margin-right:5px"></span><strong style="color:${col}">${v}/5</strong>`;};
@@ -4390,10 +4365,7 @@ function fmtDate(s){if(!s)return'';const p=String(s).substring(0,10).split('-');
 </div>
 <div id="sosModal" class="sos-modal-backdrop" onclick="if(event.target===this)closeSOSModal()">
   <div class="sos-modal-box">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-      <div style="display:flex;align-items:center;gap:8px"><span style="font-size:1.3rem">🆘</span><span style="font-weight:800;font-size:1.05rem;color:var(--text)">SOS Medicines</span></div>
-      <button onclick="closeSOSModal()" style="background:var(--surface2);border:none;border-radius:50%;width:32px;height:32px;font-size:1.1rem;cursor:pointer">✕</button>
-    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px"><span style="font-weight:800;font-size:1.05rem">🆘 SOS Medicines</span><button onclick="closeSOSModal()" style="background:var(--surface2);border:none;border-radius:50%;width:32px;height:32px;cursor:pointer">✕</button></div>
     <div id="sosModalList"></div>
   </div>
 </div>
