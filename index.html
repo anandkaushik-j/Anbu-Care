@@ -1136,8 +1136,8 @@ input:checked+.tslider::before{transform:translateX(20px)}
           <div class="form-group"><label class="form-label">To</label><input type="date" lang="en-GB" class="form-input" id="rangeTo"></div>
         </div>
         <div class="form-row">
-          <div class="form-group"><label class="form-label">Patient Name</label><input type="text" class="form-input" id="pdfPatient" value="Patient"></div>
-          <div class="form-group"><label class="form-label">Prepared by</label><input type="text" class="form-input" id="pdfPrepared" value="Caregiver"></div>
+          <div class="form-group"><label class="form-label">Patient Name</label><input type="text" class="form-input" id="pdfPatient" placeholder="Patient name"></div>
+          <div class="form-group"><label class="form-label">Prepared by</label><input type="text" class="form-input" id="pdfPrepared" value="AnbuCare"></div>
         </div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-primary btn-block" onclick="previewReport()" style="flex:2">👁️ Preview</button>
@@ -1403,6 +1403,10 @@ const MERGE_KEYS = ['tasks','medicines','dietPlan','tests','chemoSessions',
         loaded.notes=[...localOnly,...loaded.notes];
       }
       MERGE_KEYS.forEach(k=>{ if(loaded[k] !== undefined) S[k] = loaded[k]; });
+      // treatmentProfile comes back as array from sheetToArray — unwrap to object
+      if(Array.isArray(S.treatmentProfile)){
+        S.treatmentProfile = S.treatmentProfile[0] || {};
+      }
       normalizeAll();
       // Deduplicate: keep last entry per (name+start) combination
       ['medicines','dietPlan','tests','chemoSessions'].forEach(k=>{
@@ -2389,7 +2393,7 @@ function toggleTreatEdit(){
   }
 }
 function renderTreatProfileBanner(){
-  const p=S.treatmentProfile;
+  const p=Array.isArray(S.treatmentProfile)?S.treatmentProfile[0]||{}:S.treatmentProfile||{};
   const disp=document.getElementById('cgTreatProfileDisplay');
   if(disp){
     if(!p||!p.name){
@@ -3918,6 +3922,12 @@ function mockSync(btn){ syncToCalendar(btn); }
 // REPORTS
 // ═══════════════════════════════════════════
 function renderReports(){
+  // Pre-fill patient name & prepared-by from treatment profile
+  const _tp=Array.isArray(S.treatmentProfile)?S.treatmentProfile[0]||{}:S.treatmentProfile||{};
+  const _pn=document.getElementById('pdfPatient');
+  const _pb=document.getElementById('pdfPrepared');
+  if(_pn&&!_pn.value) _pn.value=_tp.patientName||_tp.name||'';
+  if(_pb&&(!_pb.value||_pb.value==='Caregiver')) _pb.value='AnbuCare';
   const el=document.getElementById('reportsList');if(!el)return;
   el.innerHTML=S.reports.length?S.reports.map(r=>`<div class="report-item"><div class="ri-icon">📄</div><div class="ri-meta"><div class="ri-name">${esc(r.name)}</div><div class="ri-date">${fmtDate(r.date)}${r.notes?' · '+esc(r.notes):''}</div></div><a class="ri-link" href="#" onclick="toast('🔗 Opens Drive');return false">Open ↗</a></div>`).join(''):'<div class="empty"><span class="emoji">📁</span>No reports yet</div>';
 }
@@ -3936,7 +3946,13 @@ function getDateRange(){
   return{from:document.getElementById('rangeFrom').value||t,to:document.getElementById('rangeTo').value||t};
 }
 function previewReport(){
-  const{from,to}=getDateRange(),patient=document.getElementById('pdfPatient').value||'Patient',prepBy=document.getElementById('pdfPrepared').value||'Caregiver';
+  // Auto-fill patient name from treatment profile if not manually set
+  const pdfPt=document.getElementById('pdfPatient');
+  const tp=Array.isArray(S.treatmentProfile)?S.treatmentProfile[0]||{}:S.treatmentProfile||{};
+  if(!pdfPt.value||(pdfPt.value==='Patient')){
+    pdfPt.value=tp.patientName||tp.name||'';
+  }
+  const{from,to}=getDateRange(),patient=pdfPt.value||tp.patientName||'Patient',prepBy=document.getElementById('pdfPrepared').value||'AnbuCare';
   const inR=d=>d>=from&&d<=to;
   const fS=S.symptoms.filter(s=>inR(s.date)),fV=S.vitals.filter(v=>inR(v.date)),fSl=S.sleepLogs.filter(s=>inR(s.date)),fC=S.chemoSessions.filter(s=>inR(s.date)),fN=S.notes.filter(n=>inR(n.date));
   const bar=v=>{const col=v<=2?'#43a87a':v===3?'#f0b429':'#e07b54';return `<span style="display:inline-block;width:${v*22}px;height:8px;background:${col};border-radius:4px;vertical-align:middle;margin-right:5px"></span><strong style="color:${col}">${v}/5</strong>`;};
