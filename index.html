@@ -189,7 +189,7 @@ input,textarea,select{font-family:inherit;font-size:16px;-webkit-appearance:none
 .fc-diet{background:linear-gradient(135deg,#7A9E7E,#99A98F);box-shadow:0 4px 18px rgba(122,158,126,.35)}
 .fc-medicine{background:linear-gradient(135deg,#A0789A,#BE9AB8);box-shadow:0 4px 18px rgba(160,120,154,.38)}
 .fc-vitals{background:linear-gradient(135deg,#C97A5A,#D68E70);box-shadow:0 4px 18px rgba(214,142,112,.4)}
-.fc-tests{background:linear-gradient(135deg,#7070a8,#8a8ac4);box-shadow:0 4px 18px rgba(112,112,168,.35)}
+.fc-tests{background:linear-gradient(135deg,#C49B00,#E1AD01);box-shadow:0 4px 18px rgba(225,173,1,.4)}
 
 /* ALERT */
 .alert-card{background:#FDF5F2;border-left:4px solid #C0714F;border-radius:var(--radius);padding:13px 15px;margin-bottom:14px}
@@ -556,6 +556,15 @@ input:checked+.tslider::before{transform:translateX(20px)}
 /* Mic perm banner */
 #micPermBanner{background:linear-gradient(135deg,#5A8A60,#7A9E7E)!important}
 
+.sos-med-panel{background:linear-gradient(135deg,#b71c1c,#c62828);border-radius:14px;padding:12px 14px;margin-top:8px;display:none}
+.sos-med-panel .sos-header{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:.9rem;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:.06em}
+.sos-row{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.15)}
+.sos-row:last-child{border-bottom:none;padding-bottom:0}
+.sos-name{font-weight:700;font-size:.93rem;color:#fff}
+.sos-detail{font-size:.8rem;color:rgba(255,255,255,.78);margin-top:2px}
+.sos-notes{font-size:.76rem;color:rgba(255,255,255,.62);margin-top:3px}
+.mtag-sos{background:#ffebee!important;color:#c62828!important;border:1px solid #ef9a9a!important}
+.fc-tests{background:linear-gradient(135deg,#7070a8,#8a8ac4)!important;box-shadow:0 4px 18px rgba(112,112,168,.35)!important}
 </style>
 </head>
 <body>
@@ -698,6 +707,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
       <div class="fc-next" id="fcMedNext">Loading…</div>
       <div class="fc-done-row" id="fcMedDone" onclick="event.stopPropagation()"></div>
     </button>
+    <div id="sosMedPanel" class="sos-med-panel"><div class="sos-header"><span>🆘</span><span>SOS Medicines</span></div><div id="sosMedList"></div></div>
     <button class="flash-card fc-vitals" onclick="showTab('health')">
       <div class="fc-icon">❤️‍🩹</div><div class="fc-label">Health</div>
       <div class="fc-next" id="fcVitNext" style="min-height:80px;max-height:130px;overflow-y:auto;align-items:flex-start;justify-content:flex-start;text-align:left">Loading…</div>
@@ -752,8 +762,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
       <span style="color:var(--muted);font-style:italic">No treatment set — tap Edit to define.</span>
     </div>
     <div id="cgTreatEditBox" class="hidden" style="margin-top:12px">
-      <div class="form-group"><label class="form-label">Patient Name</label>
-        <input type="text" class="form-input" id="cgTpPatient" placeholder="Patient's full name"></div>
+      <div class="form-group"><label class="form-label">Patient Name</label><input type="text" class="form-input" id="cgTpPatient" placeholder="Patient's full name"></div>
       <div class="form-group"><label class="form-label">Treatment Name / Protocol</label>
         <input type="text" class="form-input" id="cgTpName" placeholder="e.g. Capecitabine, FOLFOX, Radiation…"></div>
       <div class="form-group"><label class="form-label">Drug / Regimen details</label>
@@ -1165,7 +1174,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
       <div class="form-group"><label class="form-label">Medicine Name</label><input class="form-input" id="mName" list="mSug" placeholder="e.g. Capecitabine"><datalist id="mSug"><option value="Capecitabine"><option value="Ondansetron"><option value="Dexamethasone"><option value="Pantoprazole"><option value="Vitamin D3"><option value="Iron tablet"><option value="Paracetamol"></datalist></div>
       <div class="form-group"><label class="form-label">Dosage</label><div class="dose-row"><input type="number" class="form-input" id="mQty" placeholder="2" min="0.5" step="0.5"><select class="form-select" id="mUnit"><option>tablet(s)</option><option>ml</option><option>capsule(s)</option><option>drops</option></select></div></div>
       <input type="hidden" id="mFreq" value="Once daily">
-      <div class="form-group"><label class="form-label">When to take</label><div class="chip-row" id="mTimeChips"><div class="chip" onclick="this.classList.toggle('sel')">🌅 Morning</div><div class="chip" onclick="this.classList.toggle('sel')">☀️ Afternoon</div><div class="chip" onclick="this.classList.toggle('sel')">🌆 Evening</div><div class="chip" onclick="this.classList.toggle('sel')">🌙 Night</div></div></div>
+      <div class="form-group"><label class="form-label">When to take</label><div class="chip-row" id="mTimeChips"><div class="chip" onclick="this.classList.toggle('sel')">🌅 Morning</div><div class="chip" onclick="this.classList.toggle('sel')">☀️ Afternoon</div><div class="chip" onclick="this.classList.toggle('sel')">🌆 Evening</div><div class="chip" onclick="this.classList.toggle('sel')">🌙 Night</div><div class="chip" onclick="this.classList.toggle('sel')" style="background:#ffebee;color:#c62828;border:1px solid #ef9a9a;font-weight:700">🆘 SOS</div></div></div>
       <div class="form-group"><label class="form-label">Food Instructions</label><select class="form-select" id="mFood"><option>After food</option><option>Before food</option><option>With food</option><option>Empty stomach</option><option>No restriction</option></select></div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Start Date</label>
@@ -1283,7 +1292,6 @@ input:checked+.tslider::before{transform:translateX(20px)}
 window.onerror=function(msg,src,line,col,err){
   var b=document.getElementById('errBanner');
   if(b){b.textContent='⚠️ JS Error: '+msg+' (line '+line+')';b.style.display='block';}
-  console.error('APP ERROR:',msg,'at line',line,err);
   return false;
 };
 // ═══════════════════════════════════════════
@@ -1318,6 +1326,7 @@ const bowelLabels = ['','💧 Watery Diarrhea','🌊 Loose Stool','✅ Normal','
 const bowelColors = ['','#1565c0','#2e7d32','#43a87a','#e65100','#c62828'];
 let selectedBowel = 3;
 const fcState = {diet:null,med:null,vit:null,test:null};
+let fcMedState = {}; // per-medicine+slot done/skip: {"Name|Slot": true/false}
 
 // ═══════════════════════════════════════════
 // INIT
@@ -1328,157 +1337,143 @@ const fcState = {diet:null,med:null,vit:null,test:null};
 // ═══════════════════════════════════════════════════════
 
 async function loadFromSheets(){
-  // ── Step 1: Restore treatmentProfile from localStorage immediately (shows before Sheets loads)
-  try{
-    var _tp=localStorage.getItem('anbucare_treatprofile');
-    if(_tp){var _tpo=JSON.parse(_tp);if(_tpo&&_tpo.name)S.treatmentProfile=_tpo;}
-  }catch(ex){}
-
-  // ── Step 2: Restore personal notes from localStorage
+  // Restore only USER-WRITTEN notes from localStorage (auto-logs re-generate each session)
   try{
     var sn=localStorage.getItem('anbucare_notes');
     if(sn){
       var pn=JSON.parse(sn);
       var AUTO_E=['📊','🚽','🫀','🌙'];
       if(Array.isArray(pn)&&pn.length){
+        // Keep only personal notes from localStorage (auto-logs come from live tracking)
         var personal=pn.filter(function(n){return !AUTO_E.some(function(e){return (n.note||'').startsWith(e);});});
         if(personal.length) S.notes=personal;
       }
     }
   }catch(ex){}
+  const url = localStorage.getItem('anbucare_url');
+  if(!url){ renderAll(); return; }
 
-  const url=localStorage.getItem('anbucare_url');
-  if(!url){renderAll();return;}
-
-  const loadBanner=document.getElementById('sheetsLoadBanner');
-  if(loadBanner) loadBanner.style.display='block';
+  // Show loading banner below affirmation — don't overwrite it
+  const loadBanner = document.getElementById('sheetsLoadBanner');
+  if(loadBanner) loadBanner.style.display = 'block';
 
   try{
-    const r=await Promise.race([
-      fetch(url,{method:'POST',body:JSON.stringify({action:'loadAll'}),redirect:'follow'}),
-      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000))
+    const _sid = localStorage.getItem('anbucare_sid')||'';
+    const r = await Promise.race([
+      fetch(url, {
+        method: 'POST',
+        headers: {'Content-Type': 'text/plain;charset=utf-8'},
+        body: JSON.stringify({action:'loadAll', sheetId:_sid}),
+        redirect: 'follow'
+      }),
+      new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),15000))
     ]);
-    const d=await r.json();
-    if(d.ok||d.success){
-      const loaded=d.data||{};
+    const rawText = await r.text();
+    let d; try{ d=JSON.parse(rawText); }catch(pe){ throw new Error('Invalid response: '+rawText.slice(0,80)); }
+    if(d.ok){
+      const loaded = d.data;
+      // Merge each key into S (only known keys)
+      
+  // ─── Meal slot constants ──────────────────────
 
-      const MERGE_KEYS=['tasks','medicines','dietPlan','tests','chemoSessions',
+
+const MERGE_KEYS = ['tasks','medicines','dietPlan','tests','chemoSessions',
         'symptoms','vitals','sleepLogs','notes','voiceNotes','helplines',
-        'reminders','nextId'];
-
-      // Merge notes: preserve localStorage-only entries not yet in Sheets
-      if(loaded.notes&&Array.isArray(loaded.notes)){
+        'reminders','treatmentProfile','nextId'];
+      // Merge notes: preserve localStorage-only notes not yet in Sheets
+      if(loaded.notes && Array.isArray(loaded.notes)){
         const sheetIds=new Set(loaded.notes.map(n=>n.id));
         const localOnly=(S.notes||[]).filter(n=>n.id&&!sheetIds.has(n.id));
         loaded.notes=[...localOnly,...loaded.notes];
       }
-      MERGE_KEYS.forEach(k=>{if(loaded[k]!==undefined)S[k]=loaded[k];});
-
-      // ── treatmentProfile: merge from Sheets but keep localStorage if Sheets returns null
-      if(loaded.treatmentProfile&&loaded.treatmentProfile.name){
-        S.treatmentProfile=loaded.treatmentProfile;
-        // Keep patientName from localStorage if Sheets doesn't have it yet (schema migration)
-        if(!S.treatmentProfile.patientName){
-          try{
-            var _ltp=localStorage.getItem('anbucare_treatprofile');
-            if(_ltp){var _ltpo=JSON.parse(_ltp);if(_ltpo&&_ltpo.patientName)S.treatmentProfile.patientName=_ltpo.patientName;}
-          }catch(ex){}
-        }
-        // Always sync back to localStorage
-        try{localStorage.setItem('anbucare_treatprofile',JSON.stringify(S.treatmentProfile));}catch(ex){}
-      }
-      // else: keep the localStorage version already loaded in Step 1
-
-      if(typeof normalizeAll==='function') normalizeAll();
-
+      MERGE_KEYS.forEach(k=>{ if(loaded[k] !== undefined) S[k] = loaded[k]; });
+      normalizeAll();
+      // Deduplicate: keep last entry per (name+start) combination
       ['medicines','dietPlan','tests','chemoSessions'].forEach(k=>{
-        if(!Array.isArray(S[k]))return;
+        if(!Array.isArray(S[k])) return;
         const seen=new Map();
         S[k].forEach(item=>{
           const key=(item.name||item.type||item.hospital||'')+'|'+(item.start||item.date||'');
-          seen.set(key,item);
+          seen.set(key, item); // last one wins
         });
         S[k]=Array.from(seen.values());
       });
-
+      // bowelLog is separate
+      // Clear stale blob URLs (they expire on page reload)
       if(Array.isArray(S.voiceNotes)){
-        S.voiceNotes.forEach(n=>{if(n.blobUrl&&n.blobUrl.startsWith('blob:'))n.blobUrl=null;});
+        S.voiceNotes.forEach(n=>{ if(n.blobUrl && n.blobUrl.startsWith('blob:')) n.blobUrl = null; });
       }
-      if(loaded.bowelLog&&Array.isArray(loaded.bowelLog)){
-        bowelLog.length=0;
+      if(loaded.bowelLog && Array.isArray(loaded.bowelLog)){
+        bowelLog.length = 0;
         loaded.bowelLog.forEach(x=>bowelLog.push(x));
       }
       toast('✅ Data loaded from Sheets');
-    }else{
-      toast('⚠️ Sheets load failed: '+(d.error||'Unexpected response from GAS'));
+    } else {
+      toast('❌ Sheets error: ' + (d.error||'Check Sheet ID in Connect settings'));
     }
   }catch(e){
-    toast('⚠️ Cannot connect: '+e.message);
+    toast('⚠️ Cannot connect: ' + e.message);
   }
-  const lb=document.getElementById('sheetsLoadBanner');
-  if(lb) lb.style.display='none';
+  const lb = document.getElementById('sheetsLoadBanner');
+  if(lb) lb.style.display = 'none';
   renderAll();
 }
 
 let _saveTimer=null, _saving=false;
 let _editingChemoId=null;
-async function saveNow(){
+function saveNow(){
   clearTimeout(_saveTimer);
   const url=localStorage.getItem('anbucare_url');
   if(!url) return;
-  let waited=0;
-  while(_saving && waited<3000){await new Promise(r=>setTimeout(r,200));waited+=200;}
-  _saving=true;
-  try{
-    const body=JSON.stringify({
-      action:'saveAll',
-      data:{
-        tasks:S.tasks, medicines:S.medicines, dietPlan:S.dietPlan,
-        tests:S.tests, chemoSessions:S.chemoSessions,
-        symptoms:S.symptoms, vitals:S.vitals, sleepLogs:S.sleepLogs,
-        notes:S.notes, voiceNotes:(S.voiceNotes||[]).filter(n=>!n.isMock),
-        helplines:S.helplines, reminders:S.reminders,
-        treatmentProfile:S.treatmentProfile,
-        nextId:S.nextId, bowelLog:bowelLog,
-        savedAt:new Date().toISOString()
-      }
-    });
-    const r=await fetch(url,{method:'POST',body,redirect:'follow'});
-    const d=await r.json();
-    if(d.ok||d.success) toast('☁️ Saved');
-    else toast('⚠️ '+(d.error||'Save failed'));
-  }catch(e){toast('⚠️ Save failed: '+e.message);}
-  finally{_saving=false;}
+  const body=JSON.stringify({
+    action:'saveAll', section:'all',
+    data:{
+      tasks:S.tasks, medicines:S.medicines, dietPlan:S.dietPlan,
+      tests:S.tests, chemoSessions:S.chemoSessions,
+      symptoms:S.symptoms, vitals:S.vitals, sleepLogs:S.sleepLogs,
+      notes:S.notes, voiceNotes:S.voiceNotes.filter(n=>!n.isMock),
+      helplines:S.helplines, reminders:S.reminders,
+      treatmentProfile:S.treatmentProfile, nextId:S.nextId,
+      bowelLog:bowelLog, savedAt:new Date().toISOString()
+    }
+  });
+  fetch(url,{method:'POST',body,redirect:'follow'})
+    .then(r=>r.json())
+    .then(res=>{ if(res.ok||res.success) toast('☁️ Saved'); })
+    .catch(()=>{});
 }
-
 async function saveToSheets(section){
-  const url=localStorage.getItem('anbucare_url');
+  const url = localStorage.getItem('anbucare_url');
   if(!url) return;
   clearTimeout(_saveTimer);
-  _saveTimer=setTimeout(async()=>{
-    if(_saving){_saveTimer=setTimeout(()=>saveToSheets(section),1500);return;}
+  _saveTimer = setTimeout(async ()=>{
+    if(_saving){ _saveTimer=setTimeout(()=>saveToSheets(section),1500); return; }
     _saving=true;
+    const sid = localStorage.getItem('anbucare_sid')||'';
+    let bodyStr;
     try{
-      const body=JSON.stringify({
-        action:'saveAll',
+      bodyStr = JSON.stringify({
+        action:'saveAll', section:section||'all', sheetId:sid,
         data:{
           tasks:S.tasks, medicines:S.medicines, dietPlan:S.dietPlan,
           tests:S.tests, chemoSessions:S.chemoSessions,
           symptoms:S.symptoms, vitals:S.vitals, sleepLogs:S.sleepLogs,
-          notes:S.notes, voiceNotes:(S.voiceNotes||[]).filter(n=>!n.isMock),
+          notes:S.notes, voiceNotes:S.voiceNotes.filter(n=>!n.isMock),
           helplines:S.helplines, reminders:S.reminders,
-          treatmentProfile:S.treatmentProfile,
-          nextId:S.nextId, bowelLog:bowelLog,
-          savedAt:new Date().toISOString()
+          treatmentProfile:S.treatmentProfile, nextId:S.nextId,
+          bowelLog:bowelLog, sheetId:sid, savedAt:new Date().toISOString()
         }
       });
-      const r=await fetch(url,{method:'POST',body,redirect:'follow'});
-      const d=await r.json();
-      if(d.ok||d.success) toast('☁️ Saved to Sheets');
-      else toast('⚠️ '+(d.error||'Save failed'));
-    }catch(e){toast('⚠️ Save failed: '+e.message);}
-    finally{_saving=false;}
-  },800);
+    }catch(je){ _saving=false; toast('⚠️ Data error: '+je.message); return; }
+    try{
+      const r = await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:bodyStr,redirect:'follow'});
+      const txt = await r.text();
+      let res; try{ res=JSON.parse(txt); }catch(pe){ throw new Error('Bad response: '+txt.slice(0,60)); }
+      if(res.ok||res.success){ toast('☁️ Saved to Sheets'); }
+      else { toast('⚠️ '+(res.error||'Save failed — check Sheet ID')); }
+    }catch(e){ toast('⚠️ Save failed: '+e.message); }
+    finally{ _saving=false; }
+  }, 800);
 }
 
 window.onload = async () => {
@@ -1493,17 +1488,15 @@ window.onload = async () => {
   loadConn();
   try{var ci=localStorage.getItem('anbucare_cal_id');var ce=document.getElementById('calendarIdInput');if(ci&&ce)ce.value=ci;}catch(ex){}
   document.getElementById('calendarIdInput')?.addEventListener('input',function(){localStorage.setItem('anbucare_cal_id',this.value);});
-  // Render immediately — app usable even before Sheets responds
-  renderAll();
-  fetchAffirmation();
+  fetchAffirmation(); // non-blocking
+  await loadFromSheets(); // loads data then calls renderAll()
+  fetchAffirmation(); // re-run after data load to ensure affirmation is visible
   setInterval(renderNext3Strip, 60000);
-  // Load Sheets non-blocking — updates UI silently in background
-  loadFromSheets().then(()=>fetchAffirmation()).catch(()=>{});
 };
 
 // ── Slot normalisation helpers (handles emoji-prefixed chips) ──
-const SLOT_MINS={'Morning':480,'🌅 Morning':480,'Afternoon':780,'☀️ Afternoon':780,'Evening':1080,'🌆 Evening':1080,'Night':1260,'🌙 Night':1260};
-const SLOT_LABEL={'Morning':'8:00 AM','🌅 Morning':'8:00 AM','Afternoon':'1:00 PM','☀️ Afternoon':'1:00 PM','Evening':'6:00 PM','🌆 Evening':'6:00 PM','Night':'9:00 PM','🌙 Night':'9:00 PM'};
+const SLOT_MINS={'Morning':480,'🌅 Morning':480,'Afternoon':780,'☀️ Afternoon':780,'Evening':1080,'🌆 Evening':1080,'Night':1260,'🌙 Night':1260,'SOS':9999,'🆘 SOS':9999};
+const SLOT_LABEL={'Morning':'8:00 AM','🌅 Morning':'8:00 AM','Afternoon':'1:00 PM','☀️ Afternoon':'1:00 PM','Evening':'6:00 PM','🌆 Evening':'6:00 PM','Night':'9:00 PM','🌙 Night':'9:00 PM','SOS':'As needed','🆘 SOS':'As needed'};
 function slotMins(t){return SLOT_MINS[t]!==undefined?SLOT_MINS[t]:(SLOT_MINS[t.replace(/^\S+\s/,'')]||480);}
 function slotLabel(t){return SLOT_LABEL[t]||SLOT_LABEL[t.replace(/^\S+\s/,'')]||t;}
 
@@ -1958,12 +1951,14 @@ function _renderCarouselSlide(key){
   nEl.innerHTML = `<div class="fc-carousel-wrap">
     <div class="fc-carousel-slide">${item.html}</div>
   </div>${dots}`;
-  // Refresh Done/Skip state
   const dEl = document.getElementById(c.dId);
   if(dEl){
-    if(fcState[key]===true) dEl.innerHTML=`<span class="fc-done-tick">✅ Done</span>`;
-    else if(fcState[key]===false) dEl.innerHTML=`<span class="fc-done-tick">⏭ Skipped</span>`;
-    else dEl.innerHTML=`<button class="fc-yes" onclick="event.stopPropagation();markFC('${key}',true)">✓ Done</button><button class="fc-no" onclick="event.stopPropagation();markFC('${key}',false)">✗ Skip</button>`;
+    const itemId=(key==='med'&&item.id)?item.id:null;
+    const state=itemId?fcMedState[itemId]:fcState[key];
+    const markFn=itemId?`markMedSlot('${itemId}',`:`markFC('${key}',`;
+    if(state===true)       dEl.innerHTML=`<span class="fc-done-tick">✅ Done</span>`;
+    else if(state===false) dEl.innerHTML=`<span class="fc-done-tick">⏭ Skipped</span>`;
+    else dEl.innerHTML=`<button class="fc-yes" onclick="event.stopPropagation();${markFn}true)">✓ Done</button><button class="fc-no" onclick="event.stopPropagation();${markFn}false)">✗ Skip</button>`;
   }
 }
 
@@ -1994,27 +1989,39 @@ function renderFlashCards(){
       setFC('fcDietNext','fcDietDone','diet','No diet entries for today');
     }
 
-    // ── MEDICINE FLASHCARD — all slots, auto-scroll ──
-    const allMedSlots=(S.medicines||[]).flatMap(m=>{
+    // ── MEDICINE FLASHCARD — SOS separated, per-medicine Done/Skip ──
+    const sosMeds=(S.medicines||[]).filter(m=>
+      Array.isArray(m.times)&&m.times.some(t=>t.includes('SOS'))
+    );
+    const regularMedSlots=(S.medicines||[]).flatMap(m=>{
       if(!m||!Array.isArray(m.times)) return [];
-      return m.times.map(t=>({
-        name:m.name,qty:m.qty||1,unit:m.unit||'tablet(s)',food:m.food||'',
+      return m.times.filter(t=>!t.includes('SOS')).map(t=>({
+        id:`${m.name}|${t}`,
+        name:m.name,qty:m.qty||1,unitStr:m.unit||'tablet(s)',food:m.food||'',
         mins:slotMins(t),tl:slotLabel(t)
       }));
     }).sort((a,b)=>a.mins-b.mins);
 
-    if(allMedSlots.length){
-      const medItems=allMedSlots.map(x=>({html:`<div style="line-height:1.6;text-align:center">
-        <div style="font-weight:800;font-size:1.2rem">${esc(x.name)}</div>
-        <div style="opacity:.95;font-size:1.05rem">${x.qty} ${esc(x.unit)}</div>
-        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:3px;justify-content:center">
-          <span style="background:rgba(255,255,255,.22);border-radius:6px;padding:2px 7px;font-size:.95rem">🕐 ${x.tl}</span>
-          ${x.food?`<span style="background:rgba(255,255,255,.22);border-radius:6px;padding:2px 7px;font-size:.95rem">🍽 ${esc(x.food)}</span>`:''}
-        </div></div>`,mins:x.mins}));
+    if(regularMedSlots.length){
+      const medItems=regularMedSlots.map(x=>{
+        const isDone=fcMedState[x.id]===true,isSkip=fcMedState[x.id]===false;
+        const badge=isDone
+          ?`<div style="margin-top:5px"><span style="background:rgba(255,255,255,.25);border-radius:6px;padding:2px 8px;font-size:.8rem">✅ Done</span></div>`
+          :isSkip?`<div style="margin-top:5px"><span style="background:rgba(255,255,255,.25);border-radius:6px;padding:2px 8px;font-size:.8rem">⏭ Skipped</span></div>`:'';
+        return{id:x.id,qty:x.qty,unitStr:x.unitStr,food:x.food,mins:x.mins,
+          html:`<div style="line-height:1.6;text-align:center">
+            <div style="font-weight:800;font-size:1.2rem;opacity:${isDone||isSkip?'.5':'1'}">${esc(x.name)}</div>
+            <div style="opacity:${isDone||isSkip?'.45':'.95'};font-size:1.05rem">${x.qty} ${esc(x.unitStr)}</div>
+            <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:3px;justify-content:center">
+              <span style="background:rgba(255,255,255,.22);border-radius:6px;padding:2px 7px;font-size:.95rem">🕐 ${x.tl}</span>
+              ${x.food?`<span style="background:rgba(255,255,255,.22);border-radius:6px;padding:2px 7px;font-size:.95rem">🍽 ${esc(x.food)}</span>`:''}
+            </div>${badge}</div>`};
+      });
       setFCCarousel('fcMedNext','fcMedDone','med',medItems);
     } else {
-      setFC('fcMedNext','fcMedDone','med','No medicines added yet');
+      setFC('fcMedNext','fcMedDone','med',sosMeds.length?'No scheduled meds — see SOS below ↓':'No medicines added yet');
     }
+    renderSosMeds(sosMeds);
 
     // ── VITALS FLASHCARD ──
     const todayVitals=(S.vitals||[]).filter(v=>v.date===localToday);
@@ -2119,6 +2126,70 @@ function getNextFCInfo(key){
 }
 function markFC(key,val){
   showFCNextPopup(key,val,getNextFCInfo(key));
+}
+
+// ── Per-medicine Done/Skip ──────────────────────────────────
+function markMedSlot(id,val){
+  fcMedState[id]=val;
+  const c=_fcCarousels['med'];
+  if(!c){renderFlashCards();return;}
+  const nextItem=c.items.find(item=>item.id&&fcMedState[item.id]===undefined);
+  const parts=id.split('|'),doneName=parts[0],doneSlot=parts.slice(1).join('|');
+  let nextInfo=null;
+  if(nextItem){
+    const np=nextItem.id.split('|'),ns=np.slice(1).join('|');
+    nextInfo={icon:'💊',title:np[0],
+      detail:`${nextItem.qty||1} ${nextItem.unitStr||'tablet(s)'} · ${slotLabel(ns)}`,
+      extra:nextItem.food?`🍽 ${nextItem.food}`:''};
+  }
+  showFCNextPopupMed(doneName,doneSlot,val,nextInfo,nextItem?nextItem.id:null);
+}
+
+function showFCNextPopupMed(doneName,doneSlot,val,nextInfo,nextId){
+  document.getElementById('fcPopupEmoji').textContent=val?'✅':'⏭';
+  const st=document.getElementById('fcPopupStatus');
+  const slotDisp=slotLabel(doneSlot)||doneSlot;
+  st.textContent=val?`${doneName} (${slotDisp}) marked Done!`:`${doneName} (${slotDisp}) skipped`;
+  st.style.color=val?'var(--success)':'var(--warn)';
+  const nc=document.getElementById('fcPopupNextCard');
+  if(nextInfo){
+    nc.style.background='var(--surface2)';
+    document.getElementById('fcPopupNextIcon').textContent=nextInfo.icon;
+    document.getElementById('fcPopupNextTitle').textContent=nextInfo.title;
+    document.getElementById('fcPopupNextDetail').textContent=nextInfo.detail;
+    document.getElementById('fcPopupNextExtra').textContent=nextInfo.extra;
+  }else{
+    nc.style.background='var(--success-l)';
+    document.getElementById('fcPopupNextIcon').textContent='🎉';
+    document.getElementById('fcPopupNextTitle').textContent='All doses given today 🎉';
+    document.getElementById('fcPopupNextDetail').textContent='';
+    document.getElementById('fcPopupNextExtra').textContent='';
+  }
+  fcPopupCallback=function(){
+    const c2=_fcCarousels['med'];
+    if(c2&&nextId){const ni=c2.items.findIndex(x=>x.id===nextId);if(ni!==-1)c2.idx=ni;}
+    renderFlashCards();
+  };
+  document.getElementById('fcNextPopup').style.display='flex';
+}
+
+// ── SOS medicines panel renderer ────────────────────────────
+function renderSosMeds(sosMeds){
+  const panel=document.getElementById('sosMedPanel');
+  if(!panel)return;
+  if(!sosMeds||!sosMeds.length){panel.style.display='none';return;}
+  panel.style.display='block';
+  const list=document.getElementById('sosMedList');
+  if(!list)return;
+  list.innerHTML=sosMeds.map(m=>`
+    <div class="sos-row">
+      <span style="font-size:1.25rem;flex-shrink:0">💊</span>
+      <div>
+        <div class="sos-name">${esc(m.name)}</div>
+        <div class="sos-detail">${m.qty||1} ${esc(m.unit||'tablet(s)')} · As needed${m.food?' · '+esc(m.food):''}</div>
+        ${m.notes?`<div class="sos-notes">📌 ${esc(m.notes)}</div>`:''}
+      </div>
+    </div>`).join('');
 }
 function showFCNextPopup(key,val,info){
   const labels={diet:'Meal',med:'Medicine',vit:'Vitals',test:'Test'};
@@ -2235,7 +2306,7 @@ function renderHelplines(){
 function renderMeds(){
   const el=document.getElementById('medList');
   if(!S.medicines.length){el.innerHTML='<div class="empty"><span class="emoji">💊</span>No medicines yet</div>';return;}
-  el.innerHTML=S.medicines.map(m=>`<div class="med-card"><div class="card-row-actions"><div class="card-content"><div class="med-name">${esc(m.name)}</div><div class="med-dose">${m.qty} ${m.unit} · ${esc(m.food)}</div><div class="med-tags">${m.times.map(t=>`<span class="mtag mtag-time">${t}</span>`).join('')}<span class="mtag mtag-food">🍽️ ${esc(m.food)}</span><span class="mtag mtag-dates">📅 ${fmtDate(m.start)||'—'} → ${fmtDate(m.end)||'—'}</span>${m.days?`<span class="mtag" style="background:#e8f4f0;color:var(--primary)">⏱ ${m.days} day${m.days>1?'s':''}</span>`:''}</div>${m.notes?`<div style="font-size:.75rem;color:var(--muted);margin-top:6px">📌 ${esc(m.notes)}</div>`:''}</div><button class="edit-btn" onclick="editMed(${m.id})">✏️ Edit</button><button class="del-btn" onclick="deleteMed(${m.id})">🗑</button></div></div>`).join('');
+  el.innerHTML=S.medicines.map(m=>{const hasSOS=Array.isArray(m.times)&&m.times.some(t=>t.includes('SOS'));return`<div class="med-card"><div class="card-row-actions"><div class="card-content"><div class="med-name">${esc(m.name)}${hasSOS?' <span style="font-size:.72rem;background:#ffebee;color:#c62828;border:1px solid #ef9a9a;border-radius:5px;padding:1px 6px;font-weight:700">🆘 SOS</span>':''}</div><div class="med-dose">${m.qty} ${m.unit} · ${esc(m.food)}</div><div class="med-tags">${m.times.map(t=>`<span class="mtag ${t.includes('SOS')?'mtag-sos':'mtag-time'}">${t}</span>`).join('')}<span class="mtag mtag-food">🍽️ ${esc(m.food)}</span><span class="mtag mtag-dates">📅 ${fmtDate(m.start)||'—'} → ${fmtDate(m.end)||'—'}</span>${m.days?`<span class="mtag" style="background:#e8f4f0;color:var(--primary)">⏱ ${m.days} day${m.days>1?'s':''}</span>`:''}</div>${m.notes?`<div style="font-size:.75rem;color:var(--muted);margin-top:6px">📌 ${esc(m.notes)}</div>`:''}</div><button class="edit-btn" onclick="editMed(${m.id})">✏️ Edit</button><button class="del-btn" onclick="deleteMed(${m.id})">🗑</button></div></div>`}).join('');
 }
 
 // ═══ TREATMENT PROFILE ═══
@@ -2244,25 +2315,21 @@ function saveTreatmentProfile(){
   if(!nm){toast('⚠️ Enter treatment name');return;}
   S.treatmentProfile={
     patientName:(document.getElementById('cgTpPatient')||{}).value||'',
-    name:nm,
-    protocol:document.getElementById('cgTpProtocol').value.trim(),
+    name:nm,protocol:document.getElementById('cgTpProtocol').value.trim(),
     oncologist:document.getElementById('cgTpOncologist').value.trim(),
-    startDate:document.getElementById('cgTpStartDate').value,
-    setOn:today
+    startDate:document.getElementById('cgTpStartDate').value,setOn:today
   };
   try{localStorage.setItem('anbucare_treatprofile',JSON.stringify(S.treatmentProfile));}catch(ex){}
   renderTreatProfileBanner();
   document.getElementById('cgTreatEditBox').classList.add('hidden');
-  toast('✅ Treatment saved!');
-  saveNow();
+  toast('✅ Treatment saved!');saveNow();
 }
 function toggleTreatEdit(){
   const box=document.getElementById('cgTreatEditBox');
   box.classList.toggle('hidden');
   if(!box.classList.contains('hidden')){
     const p=S.treatmentProfile||{};
-    const pf=document.getElementById('cgTpPatient');
-    if(pf) pf.value=p.patientName||'';
+    const pf=document.getElementById('cgTpPatient');if(pf)pf.value=p.patientName||'';
     document.getElementById('cgTpName').value=p.name||'';
     document.getElementById('cgTpProtocol').value=p.protocol||'';
     document.getElementById('cgTpOncologist').value=p.oncologist||'';
@@ -2546,7 +2613,7 @@ function renderChemo(){
         </div>
         <div style="display:flex;flex-direction:column;gap:6px">
           <button class="edit-btn" onclick="editChemo('${s.id}')">✏️ Edit</button>
-          <button class="del-btn" onclick="deleteChemoSession('${s.id}',${i})" title="Delete">🗑 Delete</button>
+          <button class="del-btn" onclick="deleteChemoSession('${s.id}',${i})">🗑</button>
         </div>
       </div>
     </div>`;
@@ -2581,44 +2648,34 @@ function renderChemoBySym(){
 }
 function editChemo(id){
   const s=S.chemoSessions.find(x=>String(x.id)===String(id));
-  if(!s) return;
+  if(!s)return;
   document.getElementById('cDate').value=s.date||today;
   document.getElementById('cCycle').value=s.cycle||1;
   document.getElementById('cSession').value=s.session||1;
   document.getElementById('cHospital').value=s.hospital||'';
   document.getElementById('cNotes').value=s.notes||'';
   _editingChemoId=s.id;
-  const btn=document.getElementById('btnSubmitChemo');
-  if(btn) btn.textContent='✏️ Update Session';
-  document.querySelectorAll('#tab-chemo .sub-tab').forEach((b,i)=>{b.classList.toggle('active',i===0);});
+  const btn=document.getElementById('btnSubmitChemo');if(btn)btn.textContent='✏️ Update Session';
+  document.querySelectorAll('#tab-chemo .sub-tab').forEach((b,i)=>b.classList.toggle('active',i===0));
   document.querySelectorAll('#tab-chemo [id^="chemo-"]').forEach(d=>d.classList.add('hidden'));
-  const ld=document.getElementById('chemo-log');if(ld)ld.classList.remove('hidden');
-  document.getElementById('chemo-log')?.scrollIntoView({behavior:'smooth',block:'start'});
+  document.getElementById('chemo-log')?.classList.remove('hidden');
   toast('✏️ Edit mode — update and save');
 }
 function submitChemo(){
-  const hosp=document.getElementById('cHospital').value.trim();
-  if(!hosp){toast('⚠️ Hospital required');return;}
-  const entry={
-    id:_editingChemoId||S.nextId++,
+  const hosp=document.getElementById('cHospital').value.trim();if(!hosp){toast('⚠️ Hospital required');return;}
+  const entry={id:_editingChemoId||S.nextId++,
     date:document.getElementById('cDate').value||today,
     cycle:+document.getElementById('cCycle').value||1,
     session:+document.getElementById('cSession').value||1,
     treatType:(S.treatmentProfile&&S.treatmentProfile.name)||'',
-    hospital:hosp,
-    notes:document.getElementById('cNotes').value
-  };
+    hospital:hosp,notes:document.getElementById('cNotes').value};
   if(_editingChemoId){
     const idx=S.chemoSessions.findIndex(x=>String(x.id)===String(_editingChemoId));
-    if(idx>=0) S.chemoSessions[idx]=entry; else S.chemoSessions.push(entry);
+    if(idx>=0)S.chemoSessions[idx]=entry;else S.chemoSessions.push(entry);
     _editingChemoId=null;
-    const btn=document.getElementById('btnSubmitChemo');
-    if(btn) btn.textContent='💉 Save Session';
+    const btn=document.getElementById('btnSubmitChemo');if(btn)btn.textContent='💉 Save Session';
     toast('✅ Session updated!');
-  } else {
-    S.chemoSessions.push(entry);
-    toast('💉 Treatment session logged!');
-  }
+  }else{S.chemoSessions.push(entry);toast('💉 Treatment session logged!');}
   renderChemo();renderTreatProfileBanner();
   ['cHospital','cNotes'].forEach(id=>document.getElementById(id).value='');
   saveNow();
@@ -2626,9 +2683,9 @@ function submitChemo(){
 function deleteChemo(id){
   if(!confirm('Remove this treatment session?')) return;
   S.chemoSessions = S.chemoSessions.filter(x=>x.id!==id);
-  renderChemo();
+  renderChemo();renderChemoBySym();
   toast('🗑 Session removed');
-  saveNow();
+  saveToSheets('chemo');
 }
 
 
