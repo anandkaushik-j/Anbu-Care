@@ -556,6 +556,15 @@ input:checked+.tslider::before{transform:translateX(20px)}
 /* Mic perm banner */
 #micPermBanner{background:linear-gradient(135deg,#5A8A60,#7A9E7E)!important}
 
+.sos-fc-badge{position:absolute;top:8px;left:8px;font-size:1rem;background:rgba(183,28,28,.82);color:#fff;border-radius:8px;padding:3px 7px;cursor:pointer;z-index:10;line-height:1;border:none;font-weight:800;letter-spacing:.02em;transition:background .15s}
+.sos-fc-badge:hover{background:rgba(183,28,28,1)}
+.chip.sos-chip{background:#ffebee;color:#c62828;border-color:#ef9a9a;font-weight:700}
+.chip.sos-chip.sel{background:#c62828!important;color:#fff!important;border-color:#c62828!important}
+.sos-modal-item{padding:12px 14px;border-radius:12px;background:var(--surface2);margin-bottom:10px}
+.sos-modal-item:last-child{margin-bottom:0}
+.sos-modal-name{font-weight:700;font-size:1rem;color:var(--text)}
+.sos-modal-detail{font-size:.83rem;color:var(--muted);margin-top:3px}
+.sos-modal-note{font-size:.83rem;color:var(--text);margin-top:8px;background:var(--warn-l);border-radius:8px;padding:7px 10px;border-left:3px solid var(--warn)}
 .sos-med-panel{background:linear-gradient(135deg,#b71c1c,#c62828);border-radius:14px;padding:12px 14px;margin-top:8px;display:none}
 .sos-med-panel .sos-header{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:.9rem;font-weight:800;color:#fff;text-transform:uppercase;letter-spacing:.06em}
 .sos-row{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.15)}
@@ -703,11 +712,11 @@ input:checked+.tslider::before{transform:translateX(20px)}
       <div class="fc-done-row" id="fcDietDone" onclick="event.stopPropagation()"></div>
     </button>
     <button class="flash-card fc-medicine" onclick="showTab('careplan');showSub('careplan','meds',null)">
+      <span class="sos-fc-badge" onclick="event.stopPropagation();openSOSModal()" title="SOS Medicines">🆘 SOS</span>
       <div class="fc-icon">💊</div><div class="fc-label">Medicines</div>
       <div class="fc-next" id="fcMedNext">Loading…</div>
       <div class="fc-done-row" id="fcMedDone" onclick="event.stopPropagation()"></div>
     </button>
-    <div id="sosMedPanel" class="sos-med-panel"><div class="sos-header"><span>🆘</span><span>SOS Medicines</span></div><div id="sosMedList"></div></div>
     <button class="flash-card fc-vitals" onclick="showTab('health')">
       <div class="fc-icon">❤️‍🩹</div><div class="fc-label">Health</div>
       <div class="fc-next" id="fcVitNext" style="min-height:80px;max-height:130px;overflow-y:auto;align-items:flex-start;justify-content:flex-start;text-align:left">Loading…</div>
@@ -1174,7 +1183,14 @@ input:checked+.tslider::before{transform:translateX(20px)}
       <div class="form-group"><label class="form-label">Medicine Name</label><input class="form-input" id="mName" list="mSug" placeholder="e.g. Capecitabine"><datalist id="mSug"><option value="Capecitabine"><option value="Ondansetron"><option value="Dexamethasone"><option value="Pantoprazole"><option value="Vitamin D3"><option value="Iron tablet"><option value="Paracetamol"></datalist></div>
       <div class="form-group"><label class="form-label">Dosage</label><div class="dose-row"><input type="number" class="form-input" id="mQty" placeholder="2" min="0.5" step="0.5"><select class="form-select" id="mUnit"><option>tablet(s)</option><option>ml</option><option>capsule(s)</option><option>drops</option></select></div></div>
       <input type="hidden" id="mFreq" value="Once daily">
-      <div class="form-group"><label class="form-label">When to take</label><div class="chip-row" id="mTimeChips"><div class="chip" onclick="this.classList.toggle('sel')">🌅 Morning</div><div class="chip" onclick="this.classList.toggle('sel')">☀️ Afternoon</div><div class="chip" onclick="this.classList.toggle('sel')">🌆 Evening</div><div class="chip" onclick="this.classList.toggle('sel')">🌙 Night</div><div class="chip" onclick="this.classList.toggle('sel')" style="background:#ffebee;color:#c62828;border:1px solid #ef9a9a;font-weight:700">🆘 SOS</div></div></div>
+      <div class="form-group"><label class="form-label">When to take</label><div class="chip-row" id="mTimeChips"><div class="chip" onclick="this.classList.toggle('sel')">🌅 Morning</div><div class="chip" onclick="this.classList.toggle('sel')">☀️ Afternoon</div><div class="chip" onclick="this.classList.toggle('sel')">🌆 Evening</div><div class="chip" onclick="this.classList.toggle('sel')">🌙 Night</div><div class="chip sos-chip" onclick="toggleSOSChip(this)">🆘 SOS</div></div></div>
+      <div id="sosNoteRow" style="display:none;margin-top:4px">
+        <div class="form-group" style="background:#fff5f5;border-radius:10px;padding:10px 12px;border:1px solid #ef9a9a">
+          <label class="form-label" style="color:#c62828">📌 When to use / Symptom</label>
+          <input type="text" class="form-input" id="mSosNote" placeholder="e.g. For nausea, Take for fever above 38°C" style="border-color:#ef9a9a">
+          <div style="font-size:.75rem;color:#c62828;margin-top:4px">This will be shown in the SOS quick-view on the dashboard</div>
+        </div>
+      </div>
       <div class="form-group"><label class="form-label">Food Instructions</label><select class="form-select" id="mFood"><option>After food</option><option>Before food</option><option>With food</option><option>Empty stomach</option><option>No restriction</option></select></div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Start Date</label>
@@ -1232,7 +1248,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
       <button class="btn btn-success btn-block" onclick="submitDiet()">🥗 Save Diet Plan</button>
     </div>
     <div id="af-test" class="hidden">
-      <div class="form-group"><label class="form-label">Test Type</label><select class="form-select" id="tType"><option>Blood CBC</option><option>Blood Chemistry</option><option>Stool Routine</option><option>Urine Routine</option><option>CT Scan</option><option>MRI</option><option>X-Ray</option><option>PET Scan</option><option>ECG</option><option>Echocardiogram</option><option>Biopsy</option><option>Other</option></select></div>
+      <div class="form-group"><label class="form-label">Test Type</label><input type="text" class="form-input" id="tType" placeholder="e.g. Blood CBC, MRI, CT Scan…" list="tTypeDatalist" autocomplete="off"><datalist id="tTypeDatalist"></datalist></div>
       <div class="form-row"><div class="form-group"><label class="form-label">Scheduled Date</label><input type="date" lang="en-GB" class="form-input" id="tDate"></div><div class="form-group"><label class="form-label">Fasting?</label><select class="form-select" id="tFasting"><option>No</option><option>Yes – 8 hours</option><option>Yes – 12 hours</option><option>Yes – overnight</option></select></div></div>
       <div class="form-group"><label class="form-label">Lab / Hospital</label><input type="text" class="form-input" id="tLab" placeholder="e.g. Apollo Diagnostics"></div>
       <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="tNotes" rows="2" placeholder="Bring previous reports…"></textarea></div>
@@ -2021,7 +2037,7 @@ function renderFlashCards(){
     } else {
       setFC('fcMedNext','fcMedDone','med',sosMeds.length?'No scheduled meds — see SOS below ↓':'No medicines added yet');
     }
-    renderSosMeds(sosMeds);
+    /* SOS medicines shown via openSOSModal() — no panel */
 
     // ── VITALS FLASHCARD ──
     const todayVitals=(S.vitals||[]).filter(v=>v.date===localToday);
@@ -2129,6 +2145,42 @@ function markFC(key,val){
 }
 
 // ── Per-medicine Done/Skip ──────────────────────────────────
+// ── SOS chip toggle — shows note prompt ─────────────────────
+function toggleSOSChip(el){
+  el.classList.toggle('sel');
+  const row=document.getElementById('sosNoteRow');
+  if(row) row.style.display=el.classList.contains('sel')?'block':'none';
+  if(el.classList.contains('sel')){
+    setTimeout(()=>{const n=document.getElementById('mSosNote');if(n)n.focus();},100);
+  }
+}
+
+// ── SOS modal opener ─────────────────────────────────────────
+function openSOSModal(){
+  const sosMeds=(S.medicines||[]).filter(m=>Array.isArray(m.times)&&m.times.some(t=>t.includes('SOS')));
+  const list=document.getElementById('sosModalList');
+  if(!list)return;
+  if(!sosMeds.length){
+    list.innerHTML='<div style="text-align:center;padding:24px 16px;color:var(--muted)">💊 No SOS medicines added yet.<br><span style="font-size:.85rem">Add a medicine and select 🆘 SOS as the time.</span></div>';
+  }else{
+    list.innerHTML=sosMeds.map(m=>`
+      <div class="sos-modal-item">
+        <div class="sos-modal-name">💊 ${esc(m.name)}</div>
+        <div class="sos-modal-detail">${m.qty||1} ${esc(m.unit||'tablet(s)')} · As needed${m.food?' · '+esc(m.food):''}</div>
+        ${m.notes?`<div class="sos-modal-note">📌 ${esc(m.notes)}</div>`:'<div style="font-size:.78rem;color:var(--muted);margin-top:6px;font-style:italic">No symptom note added</div>'}
+      </div>`).join('');
+  }
+  document.getElementById('sosModal').style.display='flex';
+}
+
+// ── Test type datalist refresher ─────────────────────────────
+function refreshTestTypeDatalist(){
+  const dl=document.getElementById('tTypeDatalist');
+  if(!dl)return;
+  const types=[...new Set((S.tests||[]).map(t=>t.type).filter(Boolean))];
+  dl.innerHTML=types.map(t=>`<option value="${esc(t)}">`).join('');
+}
+
 function markMedSlot(id,val){
   fcMedState[id]=val;
   const c=_fcCarousels['med'];
@@ -2454,9 +2506,16 @@ function submitMed(){
   const name=document.getElementById('mName').value.trim();if(!name){toast('⚠️ Name required');return;}
   const times=chips('mTimeChips');
   const ms=document.getElementById('mStart').value,md=parseInt(document.getElementById('mDays').value)||0;
-  S.medicines.push({id:S.nextId++,name,qty:+document.getElementById('mQty').value||1,unit:document.getElementById('mUnit').value,freq:document.getElementById('mFreq').value,times:times.length?times:['Morning'],food:document.getElementById('mFood').value,start:ms,days:md,end:document.getElementById('mEnd').value||(ms&&md?addDays(ms,md-1):''),notes:document.getElementById('mNotes').value});
+  const hasSOS_submit=times.some(t=>t.includes('SOS'));
+  const sosNoteVal=(document.getElementById('mSosNote')||{}).value||'';
+  const mainNoteVal=document.getElementById('mNotes').value;
+  const finalNotes=hasSOS_submit?(sosNoteVal||mainNoteVal):mainNoteVal;
+  S.medicines.push({id:S.nextId++,name,qty:+document.getElementById('mQty').value||1,unit:document.getElementById('mUnit').value,freq:document.getElementById('mFreq').value,times:times.length?times:['Morning'],food:document.getElementById('mFood').value,start:ms,days:md,end:document.getElementById('mEnd').value||(ms&&md?addDays(ms,md-1):''),notes:finalNotes});
   normalizeMed(S.medicines[S.medicines.length-1]);renderMeds();renderFlashCards();renderNext3Strip();closeModal('addModal');resetChips('mTimeChips');setTimeout(renderReminders,50);['mName','mNotes','mDays'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});const md2=document.getElementById('mEndDisplay');if(md2)md2.textContent='— set start & days';
-  toast('💊 Medicine added!');saveToSheets('medicines');
+  toast('💊 Medicine added!');saveNow();
+  const _sn=document.getElementById('mSosNote');if(_sn)_sn.value='';
+  const _sr=document.getElementById('sosNoteRow');if(_sr)_sr.style.display='none';
+  const _sc=document.querySelector('#mTimeChips .sos-chip');if(_sc)_sc.classList.remove('sel');
 }
 
 // ═══════════════════════════════════════════
@@ -2529,6 +2588,13 @@ function editMed(id){
     document.querySelectorAll('#mTimeChips .chip').forEach(function(c){
       c.classList.toggle('sel',(m.times||[]).includes(c.textContent.trim()));
     });
+    // Restore SOS note row if SOS is in times
+    const hasSOS_edit=(m.times||[]).some(function(t){return t.includes('SOS');});
+    const sosRow=document.getElementById('sosNoteRow');
+    const sosInput=document.getElementById('mSosNote');
+    if(sosRow) sosRow.style.display=hasSOS_edit?'block':'none';
+    if(sosInput) sosInput.value=hasSOS_edit?(m.notes||''):'';
+    if(hasSOS_edit){const mn=document.getElementById('mNotes');if(mn)mn.value='';}
     saveToSheets('medicines');
     S.medicines = S.medicines.filter(function(x){return x.id!==id;});
     renderMeds(); renderFlashCards(); renderNext3Strip();
@@ -2578,6 +2644,7 @@ function submitDiet(){
 // TESTS
 // ═══════════════════════════════════════════
 function renderTests(){
+  refreshTestTypeDatalist();
   const el=document.getElementById('testList');
   if(!S.tests.length){el.innerHTML='<div class="empty"><span class="emoji">🧪</span>No tests scheduled</div>';return;}
   el.innerHTML=[...S.tests].sort((a,b)=>a.date.localeCompare(b.date)).map(t=>{
@@ -4284,7 +4351,8 @@ function clearConn(){localStorage.removeItem('anbucare_url');localStorage.remove
 // ═══════════════════════════════════════════
 // ADD MODAL
 // ═══════════════════════════════════════════
-function openAdd(type){openModal('addModal');switchAdd(type,document.querySelector(`#addModalTabs .modal-tab:${type==='medicine'?'first-child':type==='diet'?'nth-child(2)':'last-child'}`));if(type==='diet')setTimeout(initMealSlots,50);}
+function openAdd(type){
+  if(type==='test') setTimeout(refreshTestTypeDatalist, 50);openModal('addModal');switchAdd(type,document.querySelector(`#addModalTabs .modal-tab:${type==='medicine'?'first-child':type==='diet'?'nth-child(2)':'last-child'}`));if(type==='diet')setTimeout(initMealSlots,50);}
 function switchAdd(tab,btn){['medicine','diet','test'].forEach(t=>document.getElementById('af-'+t).classList.add('hidden'));document.getElementById('af-'+tab).classList.remove('hidden');document.querySelectorAll('#addModalTabs .modal-tab').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');}
 
 // ═══════════════════════════════════════════
@@ -4350,6 +4418,16 @@ function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').repla
       <!-- note text -->
       <div id="vpmNote" style="margin-top:12px;font-size:.8rem;color:var(--text);background:var(--surface);border-radius:8px;padding:10px;min-height:36px;border:1px solid var(--border)"></div>
     </div>
+  </div>
+</div>
+<!-- ═══ SOS MEDICINES MODAL ═══ -->
+<div id="sosModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.52);z-index:350;align-items:flex-end;justify-content:center" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:var(--surface);border-radius:24px 24px 0 0;padding:20px 16px 34px;width:100%;max-width:480px;animation:slideUp .25s ease;max-height:80vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:8px"><span style="font-size:1.4rem">🆘</span><span style="font-weight:800;font-size:1.1rem;color:var(--text)">SOS Medicines</span></div>
+      <button onclick="document.getElementById('sosModal').style.display='none'" style="background:var(--surface2);border:none;border-radius:50%;width:32px;height:32px;font-size:1.1rem;cursor:pointer;color:var(--text)">✕</button>
+    </div>
+    <div id="sosModalList"><div style="text-align:center;padding:20px;color:var(--muted)">No SOS medicines added</div></div>
   </div>
 </div>
 </body>
