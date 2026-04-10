@@ -2315,7 +2315,7 @@ function renderTasks(){
   }).join('');
 }
 
-function togTask(row){const t=S.tasks.find(x=>x.row===row);if(!t)return;t.done=!t.done;renderTasks();renderOverdue();saveToSheets('tasks');toast(t.done?'✅ Done!':'↩️ Undone');}
+function togTask(row){const t=S.tasks.find(x=>x.row===row);if(!t)return;t.done=!t.done;renderTasks();renderOverdue();saveNow();toast(t.done?'✅ Done!':'↩️ Undone');}
 function isOD(t){if(t.done||String(t.time).toLowerCase().includes('every'))return false;const m=String(t.time).match(/(\d+):(\d+)\s*(AM|PM)/i);if(!m)return false;let h=+m[1],mn=+m[2];if(m[3].toUpperCase()==='PM'&&h!==12)h+=12;if(m[3].toUpperCase()==='AM'&&h===12)h=0;const tt=new Date();tt.setHours(h,mn+30,0,0);return new Date()>tt;}
 function tkey(s){const m=String(s).match(/(\d+):(\d+)\s*(AM|PM)/i);if(!m)return 9999;let h=+m[1],mn=+m[2];if(m[3].toUpperCase()==='PM'&&h!==12)h+=12;if(m[3].toUpperCase()==='AM'&&h===12)h=0;return h*60+mn;}
 function renderOverdue(){
@@ -2336,7 +2336,7 @@ function addHelpline(){
   var icon=document.getElementById('hlIcon').value;
   S.helplines.push({name:name,number:num,icon:icon,priority:false});
   renderHelplines();
-  saveToSheets('helplines');
+  saveNow();
   document.getElementById('hlName').value='';
   document.getElementById('hlNumber').value='';
   toast('📞 Helpline added!');
@@ -2345,7 +2345,7 @@ function addHelpline(){
 function deleteHelpline(i){
   S.helplines.splice(i,1);
   renderHelplines();
-  saveToSheets('helplines');
+  saveNow();
   toast('🗑 Helpline removed');
 }
 
@@ -2470,7 +2470,7 @@ function updateTest(){
   renderTests();renderFlashCards();
   closeModal('addModal');
   toast('✅ Test updated!');
-  saveToSheets('tests');
+  saveNow();
 }
 
 function deleteTest(id){
@@ -2480,7 +2480,7 @@ function deleteTest(id){
 }
 function markTestDone(id){
   const t=S.tests.find(t=>t.id===id);
-  if(t){t.status='done';renderTests();toast('✅ Test marked done!');saveToSheets('tests');}
+  if(t){t.status='done';renderTests();toast('✅ Test marked done!');saveNow();}
 }
 
 // ═══ DATE DURATION HELPERS ═══
@@ -2577,7 +2577,7 @@ function editDiet(id){
     document.querySelectorAll('#dTagChips .chip').forEach(function(c){
       c.classList.toggle('sel',(d.tags||[]).includes(c.textContent.trim()));
     });
-    saveToSheets('diet');
+    saveNow();
     S.dietPlan = S.dietPlan.filter(function(x){return x.id!==id;});
     renderDiet(); renderFlashCards(); renderNext3Strip();
     openAdd('diet');
@@ -2607,7 +2607,7 @@ function editMed(id){
     var _hS=(m.times||[]).some(function(t){return t.includes('SOS');});
     var _sr=document.getElementById('sosNoteRow');if(_sr)_sr.style.display=_hS?'block':'none';
     var _si=document.getElementById('mSosNote');if(_si)_si.value=_hS?(m.notes||''):'';
-    saveToSheets('medicines');
+    saveNow();
     S.medicines = S.medicines.filter(function(x){return x.id!==id;});
     renderMeds(); renderFlashCards(); renderNext3Strip();
     openAdd('medicine');
@@ -2649,7 +2649,7 @@ function submitDiet(){
   const de=addDays(ds,dn-1);
   S.dietPlan.push({id:S.nextId++,mealType:dm,time:dt,foods,prep:dp,tags:dtg,date:ds,days:dn,endDate:de});
   S.dietPlan.forEach(normalizeDiet);renderDiet();renderFlashCards();renderNext3Strip();closeModal('addModal');setTimeout(initMealSlots,50);resetChips('dTagChips');setTimeout(renderReminders,50);['dFoods','dPrep','dDays'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
-  toast(dn>1?'🥗 Diet plan added for '+dn+' days!':'🥗 Diet item added!');saveToSheets('diet');
+  toast(dn>1?'🥗 Diet plan added for '+dn+' days!':'🥗 Diet item added!');saveNow();
 }
 
 // ═══════════════════════════════════════════
@@ -2670,7 +2670,7 @@ function submitTest(){
   const lab=document.getElementById('tLab').value.trim();if(!lab){toast('⚠️ Lab required');return;}
   S.tests.push({id:S.nextId++,type:document.getElementById('tType').value,date:document.getElementById('tDate').value,lab,fasting:document.getElementById('tFasting').value,notes:document.getElementById('tNotes').value,status:'upcoming'});
   renderTests();closeModal('addModal');document.getElementById('tLab').value='';document.getElementById('tNotes').value='';
-  toast('🧪 Test scheduled!');saveToSheets('tests');
+  toast('🧪 Test scheduled!');saveNow();
 }
 
 // ═══════════════════════════════════════════
@@ -2745,7 +2745,7 @@ function deleteChemo(id){
   S.chemoSessions = S.chemoSessions.filter(x=>x.id!==id);
   renderChemo();renderChemoBySym();
   toast('🗑 Session removed');
-  saveToSheets('chemo');
+  saveNow();
 }
 
 
@@ -2775,7 +2775,7 @@ function initSymSession(){
 function saveSym(){
   const btn=document.getElementById('btnSaveAllLog');
   if(btn){btn.disabled=true;btn.textContent='⏳ Saving…';}
-  setTimeout(()=>{_saveSymInternal();if(btn){btn.disabled=false;btn.textContent='💾 Save Daily Log';}toast('📊 Symptoms logged!');saveToSheets('symptoms');},400);
+  setTimeout(()=>{_saveSymInternal();if(btn){btn.disabled=false;btn.textContent='💾 Save Daily Log';}toast('📊 Symptoms logged!');saveNow();},400);
 }
 function _saveBowelInternal(){
   const count=parseInt(document.getElementById('bowelCount').value)||0;
@@ -2786,7 +2786,7 @@ function _saveBowelInternal(){
   renderNotes();renderAllNotes();
   document.getElementById('bowelCount').value='';
 }
-function saveBowel(){_saveBowelInternal();toast('🚽 Bowel log saved!');saveToSheets('health');}
+function saveBowel(){_saveBowelInternal();toast('🚽 Bowel log saved!');saveNow();}
 function saveAllLog(){
   const btn=document.getElementById('btnSaveAllLog');
   btn.disabled=true;btn.textContent='⏳ Saving…';
@@ -2794,7 +2794,7 @@ function saveAllLog(){
     try{_saveSymInternal();}catch(e){toast('⚠️ Symptom save error: '+e.message);}
     try{_saveBowelInternal();}catch(e){toast('⚠️ Bowel save error: '+e.message);}
     btn.disabled=false;btn.textContent='💾 Save Daily Log';
-    toast('✅ Daily log saved!');saveToSheets('health');
+    toast('✅ Daily log saved!');saveNow();
   },500);
 }
 function bulkDeleteSymBySession(){
@@ -2902,7 +2902,7 @@ function renderBowelHistory(){
 function deleteVital(idx){
   if(!confirm('Remove this vitals entry?')) return;
   S.vitals.splice(idx,1);
-  renderVitHist();saveToSheets('vitals');toast('🗑 Vitals entry removed');
+  renderVitHist();saveNow();toast('🗑 Vitals entry removed');
 }
 function saveVitals(){
   const btn=document.querySelector('button[onclick="saveVitals()"]');
@@ -2913,7 +2913,7 @@ function saveVitals(){
   S.notes.unshift({date:today,email:'patient@anbucare',note:`🫀 Vitals (After ${meal}) — BP:${sys}/${dia} | Pulse:${pulse}${entry.temp?` | Temp:${entry.temp}°F`:''}${entry.spo2?` | SpO₂:${entry.spo2}%`:''}`});
   renderVitHist();renderNotes();renderAllNotes();
   ['vitSys','vitDia','vitPulse','vitTemp','vitSpo2','vitWeight'].forEach(id=>document.getElementById(id).value='');
-  saveToSheets('vitals');
+  saveNow();
   toast(`🫀 Vitals logged after ${meal}!`);
   if(btn){btn.textContent='✅ Vitals Saved!';btn.style.background='var(--success)';setTimeout(()=>{btn.textContent='💾 Save Vitals';btn.style.background='';},2500);}
 }
@@ -2925,7 +2925,7 @@ function submitVitals(){
   S.notes.unshift({date:today,email:'patient@anbucare',note:`🫀 Vitals (After ${meal}) — BP:${sys}/${dia} | Pulse:${pulse}`});
   renderVitHist();renderNotes();renderAllNotes();closeModal('vitalsModal');
   ['vmSys','vmDia','vmPulse','vmTemp','vmSpo2','vmWeight'].forEach(id=>document.getElementById(id).value='');
-  saveToSheets('vitals');
+  saveNow();
   toast(`🫀 Vitals saved!`);
 }
 function renderVitHist(){
@@ -3030,14 +3030,14 @@ function saveNote(){
     if(btn){btn.disabled=false; btn.textContent='💾 Save Note';}
     document.getElementById('noteText').value='';
     toast('📝 Note saved!');
-    saveToSheets('notes');
+    saveNow();
   },300);
 }
 
 function deleteNote(id){
   S.notes=S.notes.filter(function(n){return n.id!==id;});
   try{localStorage.setItem('anbucare_notes',JSON.stringify(S.notes));}catch(ex){}
-  renderNotes();renderAllNotes();updateTextNoteBanner();saveToSheets('notes');toast('🗑 Note deleted');
+  renderNotes();renderAllNotes();updateTextNoteBanner();saveNow();toast('🗑 Note deleted');
 }
 function deleteVoiceNote(id){
   if(!confirm('Delete this voice note? This cannot be undone.')) return;
@@ -3046,14 +3046,14 @@ function deleteVoiceNote(id){
   var vn=S.voiceNotes[idx];
   if(vn.blobUrl && vn.blobUrl.startsWith('blob:')) try{URL.revokeObjectURL(vn.blobUrl);}catch(e){}
   S.voiceNotes.splice(idx,1);
-  renderVoice();saveToSheets('voice');toast('🗑 Voice note deleted');
+  renderVoice();saveNow();toast('🗑 Voice note deleted');
 }
 function deleteNoteByContent(noteText){
   if(!confirm('Delete this note?')) return;
   var idx=S.notes.findIndex(function(n){return (n.note||'')=== noteText;});
   if(idx!==-1) S.notes.splice(idx,1);
   try{localStorage.setItem('anbucare_notes',JSON.stringify(S.notes));}catch(ex){}
-  renderNotes();renderAllNotes();saveToSheets('notes');toast('🗑 Note deleted');
+  renderNotes();renderAllNotes();saveNow();toast('🗑 Note deleted');
 }
 function noteHTML(n){
   var note_=n.note||'';var sl=note_.startsWith('🌙'),sy=note_.startsWith('📊'),vt=note_.startsWith('🫀'),bw=note_.startsWith('🚽');
@@ -3397,7 +3397,7 @@ function uploadVoice(){
           document.getElementById('recReadyPanel').style.display = 'none';
           document.getElementById('recStatus').textContent = 'Tap to record';
           document.getElementById('recNoteText').value = '';
-          toast('✅ Voice note saved to Google Drive!');saveToSheets('voice');
+          toast('✅ Voice note saved to Google Drive!');saveNow();
         } else {
           throw new Error(res.error || 'Upload failed');
         }
@@ -3727,7 +3727,7 @@ function addReminder(){
   var icons={Medicine:'💊',Hydration:'💧',Vitals:'🫀',Exercise:'🏃',Diet:'🥗',Rest:'😴',Other:'🔔'};
   S.reminders.push({type:type,time:time,name:label,enabled:true,icon:icons[type]||'🔔'});
   renderReminders();
-  saveToSheets('reminders');
+  saveNow();
   document.getElementById('remTime').value='';
   document.getElementById('remLabel').value='';
   toast('🔔 Reminder added!');
@@ -3736,14 +3736,14 @@ function addReminder(){
 function deleteReminder(i){
   S.reminders.splice(i,1);
   renderReminders();
-  saveToSheets('reminders');
+  saveNow();
   toast('🗑 Reminder removed');
 }
 
 function toggleReminder(i){
   if(S.reminders[i]) S.reminders[i].enabled=!S.reminders[i].enabled;
   renderReminders();
-  saveToSheets('reminders');
+  saveNow();
 }
 
 function renderReminders(){
@@ -3773,7 +3773,7 @@ function renderReminders(){
   el.innerHTML=autoHtml;
 }
 
-function togRem(i,v){REM_CATS[i].enabled=v;S.reminders.filter(r=>r.type===REM_CATS[i].type).forEach(r=>r.enabled=v);saveToSheets('reminders');toast(v?`🔔 ${REM_CATS[i].label} ON`:`🔕 ${REM_CATS[i].label} OFF`);}
+function togRem(i,v){REM_CATS[i].enabled=v;S.reminders.filter(r=>r.type===REM_CATS[i].type).forEach(r=>r.enabled=v);saveNow();toast(v?`🔔 ${REM_CATS[i].label} ON`:`🔕 ${REM_CATS[i].label} OFF`);}
 
 // ═══════════════════════════════════════════════════
 // CALENDAR SYNC
