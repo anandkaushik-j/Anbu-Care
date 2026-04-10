@@ -1428,25 +1428,44 @@ const MERGE_KEYS = ['tasks','medicines','dietPlan','tests','chemoSessions',
 
 let _saveTimer=null,_saving=false,_editingChemoId=null,fcItemState={},_fcLastDate=today;
 function saveNow(){
+  // Cancel any pending debounced save
   clearTimeout(_saveTimer);
   const url=localStorage.getItem('anbucare_url');
   if(!url) return;
-  const body=JSON.stringify({
-    action:'saveAll', section:'all',
-    data:{
-      tasks:S.tasks, medicines:S.medicines, dietPlan:S.dietPlan,
-      tests:S.tests, chemoSessions:S.chemoSessions,
-      symptoms:S.symptoms, vitals:S.vitals, sleepLogs:S.sleepLogs,
-      notes:S.notes, voiceNotes:S.voiceNotes.filter(n=>!n.isMock),
-      helplines:S.helplines, reminders:S.reminders,
-      treatmentProfile:(S.treatmentProfile&&S.treatmentProfile.name)?S.treatmentProfile:undefined, nextId:S.nextId,
-      bowelLog:bowelLog, savedAt:new Date().toISOString()
-    }
-  });
-  fetch(url,{method:'POST',body,redirect:'follow'})
-    .then(r=>r.json())
-    .then(res=>{ if(res.ok||res.success) toast('☁️ Saved'); })
-    .catch(()=>{});
+  // Guard against concurrent saves — queue a retry if one is in flight
+  if(_saving){ _saveTimer=setTimeout(saveNow,1200); return; }
+  _saving=true;
+  const sid=localStorage.getItem('anbucare_sid')||'';
+  let bodyStr;
+  try{
+    bodyStr=JSON.stringify({
+      action:'saveAll', section:'all', sheetId:sid,
+      data:{
+        tasks:S.tasks, medicines:S.medicines, dietPlan:S.dietPlan,
+        tests:S.tests, chemoSessions:S.chemoSessions,
+        symptoms:S.symptoms, vitals:S.vitals, sleepLogs:S.sleepLogs,
+        notes:S.notes, voiceNotes:(S.voiceNotes||[]).filter(function(n){return !n.isMock;}),
+        helplines:S.helplines, reminders:S.reminders,
+        treatmentProfile:(S.treatmentProfile&&S.treatmentProfile.name)?S.treatmentProfile:null,
+        nextId:S.nextId, bowelLog:bowelLog, sheetId:sid,
+        savedAt:new Date().toISOString()
+      }
+    });
+  }catch(je){_saving=false;toast('⚠️ Data error: '+je.message);return;}
+  fetch(url,{
+    method:'POST',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body:bodyStr,
+    redirect:'follow'
+  })
+  .then(function(r){return r.text();})
+  .then(function(txt){
+    var res; try{res=JSON.parse(txt);}catch(e){throw new Error('Bad response');}
+    if(res.ok||res.success){toast('☁️ Saved');}
+    else{toast('⚠️ Save error: '+(res.error||'Check Sheet ID'));}
+  })
+  .catch(function(e){toast('⚠️ Save failed: '+e.message);})
+  .finally(function(){_saving=false;});
 }
 async function saveToSheets(section){
   const url = localStorage.getItem('anbucare_url');
