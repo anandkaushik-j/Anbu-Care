@@ -1,4 +1,4 @@
-<!-- AnbuCare v25 | Built: 2026-04-07 | setAff: text-only -->
+<!-- AnbuCare v34 | Built: 2026-04-10 | Fix: diet dedup (all items now load), GAS openById -->
 <!DOCTYPE html>
 <html lang="en-IN">
 <head>
@@ -1383,7 +1383,7 @@ const MERGE_KEYS = ['tasks','medicines','dietPlan','tests','chemoSessions',
       });
       normalizeAll();
       // Deduplicate: keep last entry per (name+start) combination
-      ['medicines','dietPlan','tests','chemoSessions'].forEach(k=>{
+      ['medicines','tests','chemoSessions'].forEach(k=>{
         if(!Array.isArray(S[k])) return;
         const seen=new Map();
         S[k].forEach(item=>{
@@ -1593,17 +1593,8 @@ function normalizeAll(){
     S.dietPlan.forEach(normalizeDiet);
     const seen=new Map();
     S.dietPlan.forEach(d=>{
-      const key=(d.foods||'')+'|'+(d.mealType||'');
-      if(!seen.has(key)){
-        seen.set(key,{...d, days:d.days||1, endDate:d.endDate||d.date});
-      } else {
-        const ex=seen.get(key);
-        const exStart=ex.date||''; const dDate=d.date||'';
-        const start=exStart<dDate?exStart:dDate;
-        const end=exStart>dDate?exStart:dDate;
-        const dayCount=Math.round((new Date(end)-new Date(start))/(86400000))+1;
-        ex.date=start; ex.endDate=end; ex.days=dayCount;
-      }
+      const key=d.id ? String(d.id) : (d.foods||'')+'|'+(d.mealType||'')+'|'+(d.date||'');
+      seen.set(key, d); // last write wins — each Sheets row is discrete
     });
     S.dietPlan=Array.from(seen.values());
   }
@@ -2482,7 +2473,7 @@ function saveTreatmentProfile(){
   S.treatmentProfile={patientName:pf?pf.value.trim():'',name:nm,protocol:document.getElementById('cgTpProtocol').value.trim(),oncologist:document.getElementById('cgTpOncologist').value.trim(),startDate:document.getElementById('cgTpStartDate').value,setOn:today};
   try{localStorage.setItem('anbucare_treatprofile',JSON.stringify(S.treatmentProfile));}catch(_e){}
   renderTreatProfileBanner();document.getElementById('cgTreatEditBox').classList.add('hidden');
-  toast('✅ Treatment saved!');saveTreatmentProfileToSheets();saveNow();
+  toast('✅ Treatment saved!');saveNow();
   try{renderFlashCards();}catch(_re){} try{renderNext3Strip();}catch(_re){} try{renderOverdue();}catch(_re){}
 }
 function toggleTreatEdit(){
