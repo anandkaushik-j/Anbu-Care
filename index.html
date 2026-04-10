@@ -2439,6 +2439,7 @@ function saveTreatmentProfile(){
   try{localStorage.setItem('anbucare_treatprofile',JSON.stringify(S.treatmentProfile));}catch(_e){}
   renderTreatProfileBanner();document.getElementById('cgTreatEditBox').classList.add('hidden');
   toast('✅ Treatment saved!');saveTreatmentProfileToSheets();saveNow();
+  try{renderFlashCards();}catch(_re){} try{renderNext3Strip();}catch(_re){} try{renderOverdue();}catch(_re){}
 }
 function toggleTreatEdit(){
   var bx=document.getElementById('cgTreatEditBox');bx.classList.toggle('hidden');
@@ -2544,7 +2545,38 @@ function calcDietEnd(){
   else{disp.textContent='— set start & days';}
 }
 
+function updateMed(){
+  var id=window._editMedId;
+  if(!id){submitMed();return;}
+  var idx=S.medicines.findIndex(function(x){return x.id===id;});
+  if(idx<0){submitMed();return;}
+  var times=Array.from(document.querySelectorAll('#mTimeChips .chip.sel')).map(function(c){return c.textContent.trim();});
+  if(!times.length)times=['Morning'];
+  var sos=times.includes('SOS');
+  S.medicines[idx]={
+    id:id,
+    name:(document.getElementById('mName').value||'').trim(),
+    qty:document.getElementById('mQty').value||1,
+    unit:document.getElementById('mUnit').value||'tablet(s)',
+    freq:document.getElementById('mFreq').value||'Once daily',
+    times:times,
+    food:document.getElementById('mFood').value||'',
+    start:document.getElementById('mStart').value||today,
+    end:document.getElementById('mEnd').value||'',
+    days:document.getElementById('mDays').value||'',
+    notes:sos?(document.getElementById('mSosNote')?document.getElementById('mSosNote').value||'':''):(document.getElementById('mNotes').value||''),
+    email:S.medicines[idx].email||'patient@anbucare'
+  };
+  window._editMedId=null;
+  var _btn=document.querySelector('#af-med .btn-primary');
+  if(_btn){_btn.textContent='💊 Add Medicine';_btn.onclick=submitMed;}
+  renderMeds();renderFlashCards();renderNext3Strip();
+  closeModal('addModal');
+  toast('✅ Medicine updated!');saveNow();
+}
+
 function submitMed(){
+  if(window._editMedId){ updateMed(); return; }
   const name=document.getElementById('mName').value.trim();if(!name){toast('⚠️ Name required');return;}
   const times=chips('mTimeChips');
   const ms=document.getElementById('mStart').value,md=parseInt(document.getElementById('mDays').value)||0;
@@ -2603,9 +2635,9 @@ function editDiet(id){
     document.querySelectorAll('#dTagChips .chip').forEach(function(c){
       c.classList.toggle('sel',(d.tags||[]).includes(c.textContent.trim()));
     });
-    S.dietPlan = S.dietPlan.filter(function(x){return x.id!==id;});
-    saveNow();
-    renderDiet(); renderFlashCards(); renderNext3Strip();
+    window._editDietId = id;
+    var _btn=document.querySelector('#af-diet .btn-primary');
+    if(_btn){_btn.textContent='🥗 Update Diet Entry';_btn.onclick=function(){updateDiet();};}
     openAdd('diet');
     toast('✏️ Edit mode — update and save');
   },300);
@@ -2633,9 +2665,9 @@ function editMed(id){
     var _hS=(m.times||[]).some(function(t){return t.includes('SOS');});
     var _sr=document.getElementById('sosNoteRow');if(_sr)_sr.style.display=_hS?'block':'none';
     var _si=document.getElementById('mSosNote');if(_si)_si.value=_hS?(m.notes||''):'';
-    S.medicines = S.medicines.filter(function(x){return x.id!==id;});
-    saveNow();
-    renderMeds(); renderFlashCards(); renderNext3Strip();
+    window._editMedId = id;
+    var _btn=document.querySelector('#af-med .btn-primary');
+    if(_btn){_btn.textContent='💊 Update Medicine';_btn.onclick=function(){updateMed();};}
     openAdd('medicine');
     toast('✏️ Edit mode — update and save');
   },300);
@@ -2668,7 +2700,35 @@ function initMealSlots(){
 }
 
 
+function updateDiet(){
+  var id=window._editDietId;
+  if(!id){submitDiet();return;}
+  var idx=S.dietPlan.findIndex(function(x){return x.id===id;});
+  if(idx<0){submitDiet();return;}
+  var tags=Array.from(document.querySelectorAll('#dietTagChips .chip.sel')).map(function(c){return c.textContent.trim();});
+  S.dietPlan[idx]={
+    id:id,
+    date:(document.getElementById('dDate').value||today),
+    endDate:(document.getElementById('dEndDate')?document.getElementById('dEndDate').value||'':''),
+    mealType:(document.getElementById('dMeal').value||'Breakfast'),
+    foods:(document.getElementById('dFoods').value||'').trim(),
+    time:(document.getElementById('dTime').value||'08:00'),
+    calories:(document.getElementById('dCal').value||''),
+    protein:(document.getElementById('dProt').value||''),
+    notes:(document.getElementById('dNotes').value||''),
+    tags:tags,
+    email:S.dietPlan[idx].email||'patient@anbucare'
+  };
+  window._editDietId=null;
+  var _btn=document.querySelector('#af-diet .btn-primary');
+  if(_btn){_btn.textContent='🥗 Add Diet Entry';_btn.onclick=submitDiet;}
+  renderDiet();renderFlashCards();renderNext3Strip();
+  closeModal('addModal');
+  toast('✅ Diet entry updated!');saveNow();
+}
+
 function submitDiet(){
+  if(window._editDietId){ updateDiet(); return; }
   const foods=document.getElementById('dFoods').value.trim();if(!foods){toast('⚠️ Food items required');return;}
   const ds=document.getElementById('dDate').value||today,dn=Math.max(1,parseInt(document.getElementById('dDays').value)||1);
   const dm=document.getElementById('dMeal').value,dt=document.getElementById('dTime').value,dp=document.getElementById('dPrep').value,dtg=chips('dTagChips');
@@ -2839,7 +2899,22 @@ function _saveBowelInternal(){
   renderNotes();renderAllNotes();
   document.getElementById('bowelCount').value='';
 }
-function saveBowel(){_saveBowelInternal();toast('🚽 Bowel log saved!');saveNow();}
+function saveBowel(){_saveBowelInternal();toast('🚽 Bowel log saved!');saveNow();
+  try{renderFlashCards();}catch(_re){} try{renderNext3Strip();}catch(_re){} try{renderOverdue();}catch(_re){}
+}
+function deleteBowelEntry(date){
+  if(!confirm('Delete bowel log for '+date+'?')) return;
+  var before=bowelLog.length;
+  bowelLog=bowelLog.filter(function(b){return b.date!==date;});
+  // Also remove the auto-note for this date
+  S.notes=S.notes.filter(function(n){return !(n.type==='auto' && n.date===date && n.note && n.note.includes('Bowel'));});
+  if(bowelLog.length<before){
+    renderBowelHistory();updBowelSlider(3);renderNotes();renderAllNotes();
+    try{renderFlashCards();}catch(_e){} try{renderNext3Strip();}catch(_e){}
+    saveNow();toast('🗑️ Bowel log deleted');
+  }
+}
+
 function saveAllLog(){
   const btn=document.getElementById('btnSaveAllLog');
   btn.disabled=true;btn.textContent='⏳ Saving…';
@@ -2947,7 +3022,7 @@ function renderBowelHistory(){
   const el=document.getElementById('bowelHistory');if(!el)return;
   if(!bowelLog.length){el.innerHTML='';return;}
   el.innerHTML=`<div style="font-size:1.05rem;font-weight:700;color:var(--muted);margin-bottom:6px">Recent logs</div>`+
-  bowelLog.slice(0,5).map(b=>`<div style="display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:1.3rem">${b.icon}</span><div style="flex:1"><div style="font-weight:700;font-size:.86rem">${b.label}</div><div style="font-size:.74rem;color:var(--muted)">${fmtDate(b.date)} · ${b.count} time${b.count!==1?'s':''}</div></div><span style="font-size:.72rem;font-weight:800;padding:3px 9px;border-radius:10px;background:${b.type===3?'var(--success-l)':b.type<=2?'#e3f2fd':'var(--warn-l)'};color:${bowelColors[b.type]}">${b.type<=2?'Diarrhea':b.type===3?'Normal':b.type===4?'Constipation':'No BM'}</span></div>`).join('');
+  bowelLog.slice(0,5).map(b=>`<div style="display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:1.3rem">${b.icon}</span><div style="flex:1"><div style="font-weight:700;font-size:.86rem">${b.label}</div><div style="font-size:.74rem;color:var(--muted)">${fmtDate(b.date)} · ${b.count} time${b.count!==1?'s':''}</div></div><span style="font-size:.72rem;font-weight:800;padding:3px 9px;border-radius:10px;background:${b.type===3?'var(--success-l)':b.type<=2?'#e3f2fd':'var(--warn-l)'};color:${bowelColors[b.type]}">${b.type<=2?'Diarrhea':b.type===3?'Normal':b.type===4?'Constipation':'No BM'}</span></div><button onclick="deleteBowelEntry('${b.date}')" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:1rem;padding:2px 6px;" title="Delete">🗑️</button></div>`).join('');
 }
 
 // ═══════════════════════════════════════════
@@ -3455,6 +3530,7 @@ function uploadVoice(){
           document.getElementById('recStatus').textContent = 'Tap to record';
           document.getElementById('recNoteText').value = '';
           toast('✅ Voice note saved to Google Drive!');saveNow();
+          try{renderFlashCards();}catch(_re){} try{renderNext3Strip();}catch(_re){} try{renderVoice();}catch(_re){}
         } else {
           throw new Error(res.error || 'Upload failed');
         }
@@ -4417,6 +4493,24 @@ function switchAdd(tab,btn){['medicine','diet','test'].forEach(t=>document.getEl
 // ═══════════════════════════════════════════
 function openModal(id){document.getElementById(id).classList.add('open');}
 function closeModal(id){
+  // Reset any pending edit states so next Add is a fresh create
+  if(id==='addModal'){
+    if(window._editMedId){
+      window._editMedId=null;
+      var _mb=document.querySelector('#af-med .btn-primary');
+      if(_mb){_mb.textContent='💊 Add Medicine';_mb.onclick=submitMed;}
+    }
+    if(window._editDietId){
+      window._editDietId=null;
+      var _db=document.querySelector('#af-diet .btn-primary');
+      if(_db){_db.textContent='🥗 Add Diet Entry';_db.onclick=submitDiet;}
+    }
+    if(window._editTestId){
+      window._editTestId=null;
+      var _tb=document.querySelector('#af-test .btn-primary');
+      if(_tb){_tb.textContent='🧪 Schedule Test';_tb.onclick=submitTest;}
+    }
+  }
   document.getElementById(id)?.classList.remove('open');
   if(id==='addModal'&&window._editTestId!=null){
     window._editTestId=null;
