@@ -1611,6 +1611,27 @@ function normalizeAll(){
   if(Array.isArray(S.sleepLogs))  S.sleepLogs.forEach(normalizeSleep);
   if(Array.isArray(S.vitals))     S.vitals.forEach(v=>{ v.time=fixSheetTime(v.time||''); });
   if(Array.isArray(S.notes))      S.notes.forEach(n=>{ if(!n.note) n.note=''; });
+  // Strip ISO datetime residuals from all date fields across all arrays
+  var DATE_KEYS=['date','start','end','endDate','startDate','setOn'];
+  var ISO_RE=/^\d{4}-\d{2}-\d{2}T/;
+  ['medicines','dietPlan','tests','chemoSessions','symptoms','vitals',
+   'sleepLogs','notes','reminders','helplines','tasks'].forEach(function(k){
+    if(!Array.isArray(S[k])) return;
+    S[k].forEach(function(item){
+      DATE_KEYS.forEach(function(dk){
+        if(item[dk] && typeof item[dk]==='string' && ISO_RE.test(item[dk])){
+          item[dk] = item[dk].substring(0,10);
+        }
+      });
+    });
+  });
+  if(Array.isArray(bowelLog)){
+    bowelLog.forEach(function(item){
+      if(item.date && typeof item.date==='string' && ISO_RE.test(item.date)){
+        item.date = item.date.substring(0,10);
+      }
+    });
+  }
 }
 
 function renderAll(){
@@ -1622,7 +1643,8 @@ function renderAll(){
   try{renderOverdue();}catch(e){console.error('overdue',e);}
   try{renderMeds();}catch(e){console.error('meds',e);}
   try{renderDiet();}catch(e){console.error('diet',e);}
-  try{renderTests();}catch(e){console.error('tests',e);}
+  try{renderTests();
+  try{renderFlashCards();}catch(_re){} try{renderNext3Strip();}catch(_re){} try{renderOverdue();}catch(_re){}}catch(e){console.error('tests',e);}
   try{renderChemo();}catch(e){console.error('chemo',e);}
   try{renderChemoBySym();}catch(e){console.error('chemosym',e);}
   try{renderSymHist();}catch(e){console.error('symhist',e);}
@@ -2011,7 +2033,12 @@ function renderFlashCards(){
     const mealTimeFallback={'Early Morning':7*60,'Breakfast':9*60,'Mid-Morning':10*60+30,'Lunch':13*60,'Afternoon Snack':16*60,'Dinner':20*60,'Night':21*60+30,Snack:16*60,Afternoon:16*60,Evening:20*60};
 
     // ── DIET FLASHCARD — all today's items, auto-scroll ──
-    const todayDiet=S.dietPlan.filter(d=>d.date===localToday);
+    const todayDiet=S.dietPlan.filter(function(d){
+      if(!d.date) return false;
+      var dStart = String(d.date).substring(0,10);
+      var dEnd   = String(d.endDate||d.date).substring(0,10);
+      return dStart <= localToday && localToday <= dEnd;
+    });
     if(todayDiet.length){
       const dietItems=todayDiet.map(d=>{
         let mins=NaN;
@@ -2670,6 +2697,7 @@ function submitTest(){
   S.tests.push({id:S.nextId++,type:document.getElementById('tType').value,date:document.getElementById('tDate').value,lab,fasting:document.getElementById('tFasting').value,notes:document.getElementById('tNotes').value,status:'upcoming'});
   renderTests();closeModal('addModal');document.getElementById('tLab').value='';document.getElementById('tNotes').value='';
   toast('🧪 Test scheduled!');saveNow();
+  try{renderFlashCards();}catch(_re){} try{renderNext3Strip();}catch(_re){} try{renderOverdue();}catch(_re){}
 }
 
 // ═══════════════════════════════════════════
@@ -2761,6 +2789,7 @@ function submitChemo(){
   if(_editingChemoId){var ix=S.chemoSessions.findIndex(function(x){return String(x.id)===String(_editingChemoId);});if(ix>=0)S.chemoSessions[ix]=en;else S.chemoSessions.push(en);_editingChemoId=null;var btn=document.getElementById('btnSubmitChemo');if(btn)btn.textContent='💉 Save Session';toast('✅ Session updated!');}
   else{S.chemoSessions.push(en);toast('💉 Session logged!');}
   renderChemo();renderTreatProfileBanner();
+  try{renderFlashCards();}catch(_re){} try{renderNext3Strip();}catch(_re){} try{renderOverdue();}catch(_re){}
   ['cHospital','cNotes'].forEach(function(id){document.getElementById(id).value='';});saveNow();
 }
 function deleteChemo(id){
@@ -2798,7 +2827,8 @@ function initSymSession(){
 function saveSym(){
   const btn=document.getElementById('btnSaveAllLog');
   if(btn){btn.disabled=true;btn.textContent='⏳ Saving…';}
-  setTimeout(()=>{_saveSymInternal();if(btn){btn.disabled=false;btn.textContent='💾 Save Daily Log';}toast('📊 Symptoms logged!');saveNow();},400);
+  setTimeout(()=>{_saveSymInternal();if(btn){btn.disabled=false;btn.textContent='💾 Save Daily Log';}toast('📊 Symptoms logged!');saveNow();
+  try{renderFlashCards();}catch(_re){} try{renderNext3Strip();}catch(_re){} try{renderOverdue();}catch(_re){}},400);
 }
 function _saveBowelInternal(){
   const count=parseInt(document.getElementById('bowelCount').value)||0;
@@ -2818,6 +2848,7 @@ function saveAllLog(){
     try{_saveBowelInternal();}catch(e){toast('⚠️ Bowel save error: '+e.message);}
     btn.disabled=false;btn.textContent='💾 Save Daily Log';
     toast('✅ Daily log saved!');saveNow();
+  try{renderFlashCards();}catch(_re){} try{renderNext3Strip();}catch(_re){} try{renderOverdue();}catch(_re){}
   },500);
 }
 function bulkDeleteSymBySession(){
@@ -2947,6 +2978,7 @@ function submitVitals(){
   S.vitals.unshift(entry);
   S.notes.unshift({id:Date.now(),date:today,email:'patient@anbucare',type:'auto',note:`🫀 Vitals (After ${meal}) — BP:${sys}/${dia} | Pulse:${pulse}`});
   renderVitHist();renderNotes();renderAllNotes();closeModal('vitalsModal');
+  try{renderFlashCards();}catch(_re){} try{renderNext3Strip();}catch(_re){} try{renderOverdue();}catch(_re){}
   ['vmSys','vmDia','vmPulse','vmTemp','vmSpo2','vmWeight'].forEach(id=>document.getElementById(id).value='');
   saveNow();
   toast(`🫀 Vitals saved!`);
@@ -2989,6 +3021,7 @@ function saveSleep(){
       S.sleepLogs.unshift({date:today,bedtime:bed,wake,hours,quality,disruptions,notes});
       S.notes.unshift({id:Date.now(),date:today,email:'patient@anbucare',type:'auto',note:`🌙 Sleep — ${bed} → ${wake} | ${hours}h | Quality: ${quality}/5${disruptions.length?' | '+disruptions.join(', '):''}${notes?' | '+notes:''}`});
       renderNotes();renderAllNotes();renderSleepSum();renderSlHist();
+  try{renderFlashCards();}catch(_re){} try{renderNext3Strip();}catch(_re){} try{renderOverdue();}catch(_re){}
       resetChips('sleepChips');document.getElementById('slNotes').value='';
       toast('🌙 Sleep logged!');saveNow();
     }catch(e){toast('⚠️ Sleep save error: '+e.message);}
@@ -3050,6 +3083,7 @@ function saveNote(){
     S.notes.unshift({id:Date.now(),date:nDate,email:'user@anbucare',note:txt});
     try{localStorage.removeItem('anbucare_notes');}catch(ex){} // Sheets is source of truth
     renderNotes(); renderAllNotes(); updateTextNoteBanner();
+  try{renderFlashCards();}catch(_re){} try{renderNext3Strip();}catch(_re){} try{renderOverdue();}catch(_re){}
     if(btn){btn.disabled=false; btn.textContent='💾 Save Note';}
     document.getElementById('noteText').value='';
     toast('📝 Note saved!');
@@ -3751,6 +3785,7 @@ function addReminder(){
   S.reminders.push({type:type,time:time,name:label,enabled:true,icon:icons[type]||'🔔'});
   renderReminders();
   saveNow();
+  try{renderFlashCards();}catch(_re){} try{renderNext3Strip();}catch(_re){} try{renderOverdue();}catch(_re){}
   document.getElementById('remTime').value='';
   document.getElementById('remLabel').value='';
   toast('🔔 Reminder added!');
