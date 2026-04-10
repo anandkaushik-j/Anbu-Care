@@ -157,7 +157,7 @@ input,textarea,select{font-family:inherit;font-size:16px;-webkit-appearance:none
   opacity:.6;
 }
 
-/* NEXT 3H STRIP */
+/* NEXT 4H STRIP */
 .strip-wrap{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow-lg);margin-bottom:12px;overflow:hidden;border:1.5px solid #b2dfdb}
 .strip-header{background:linear-gradient(110deg,#C4896A,#D68E70,#E0A882);color:#fff;padding:11px 16px;font-size:.92rem;font-weight:800;display:flex;align-items:center;gap:7px}
 .strip-body{padding:2px 0}
@@ -690,7 +690,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
   </div>
 
   <div class="strip-wrap">
-    <div class="strip-header">⏰ Next 3 Hours — Medicine &amp; Diet</div>
+    <div class="strip-header">⏰ Next 4 Hours — Medicine &amp; Diet</div>
     <div class="strip-body" id="next3Strip"></div>
   </div>
 
@@ -1862,63 +1862,93 @@ function closeFab(){S.fabOpen=false;document.getElementById('fabMenu').classList
 document.addEventListener('click',e=>{if(S.fabOpen&&!document.getElementById('fabWrap').contains(e.target))closeFab();});
 
 // ═══════════════════════════════════════════
-// NEXT 3H STRIP
+// NEXT 4H STRIP
 // ═══════════════════════════════════════════
 function renderNext3Strip(){
   const strip=document.getElementById('next3Strip'); if(!strip)return;
   const now=new Date();
   const nowMins=now.getHours()*60+now.getMinutes();
-  const cutoff=nowMins+180;
-  const gracePast=45; // show items due up to 45 mins ago as "⚠️ Due"
+  const cutoff   = nowMins + 240;           // ← 4 hours window
+  const gracePast= 45;                      // show items due ≤ 45 min ago as ⚠️ Due
   const localToday=(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})();
   const fmt=(h,m)=>{const ap=h>=12?'PM':'AM';const hh=h%12||12;return `${hh}:${String(m).padStart(2,'0')} ${ap}`;};
   const dc={med:'sr-dot-med',diet:'sr-dot-diet',vit:'sr-dot-vit'};
 
-  const mealFallback={
-    'Early Morning':5*60+30, Breakfast:8*60, 'Mid-Morning':10*60,
-    Snack:11*60, Lunch:13*60, Afternoon:15*60,
-    Evening:18*60, Dinner:19*60, Night:21*60
-  };
-  // tMap covers both plain and emoji-prefixed slot names (stored either way)
+  // ── Comprehensive time → minutes map (covers all chip variants) ──
   const tMap={
-    'Morning':8*60,       '🌅 Morning':8*60,
-    'Afternoon':13*60,    '☀️ Afternoon':13*60,
-    'Evening':18*60,      '🌆 Evening':18*60,
-    'Night':21*60,        '🌙 Night':21*60
+    'Early Morning':5*60+30, '🌄 Early Morning':5*60+30,
+    'Morning':8*60,          '🌅 Morning':8*60,
+    'Breakfast':8*60,        '🍳 Breakfast':8*60,
+    'Mid-Morning':10*60,     '🌞 Mid-Morning':10*60,
+    'Snack':11*60,           '🍌 Snack':11*60,
+    'Lunch':13*60,           '🍱 Lunch':13*60,
+    'Afternoon':15*60,       '☀️ Afternoon':15*60,
+    'Evening':18*60,         '🌆 Evening':18*60,
+    'Dinner':19*60,          '🍽️ Dinner':19*60,
+    'Night':21*60,           '🌙 Night':21*60,
+    'Bedtime':22*60,         '😴 Bedtime':22*60,
+    'SOS':null               // on-demand — never time-slotted
   };
-  // Normalise slot key: strip leading emoji+space if present
-  const normSlot=t=>tMap[t]!==undefined?tMap[t]:(tMap[t.replace(/^\S+\s/,'')]||8*60);
+  const normSlot=t=>{
+    if(t==='SOS'||t==='🚨 SOS') return null;   // skip SOS — no fixed time
+    if(tMap[t]!==undefined) return tMap[t];
+    const stripped=t.replace(/^\S+\s/,'');       // strip leading emoji
+    return tMap[stripped]!==undefined ? tMap[stripped] : 8*60;
+  };
   const tLabel={
-    'Morning':'8:00 AM',       '🌅 Morning':'8:00 AM',
-    'Afternoon':'1:00 PM',     '☀️ Afternoon':'1:00 PM',
-    'Evening':'6:00 PM',       '🌆 Evening':'6:00 PM',
-    'Night':'9:00 PM',         '🌙 Night':'9:00 PM'
+    'Early Morning':'5:30 AM','Morning':'8:00 AM','Breakfast':'8:00 AM',
+    'Mid-Morning':'10:00 AM','Snack':'11:00 AM',
+    'Lunch':'1:00 PM','Afternoon':'3:00 PM',
+    'Evening':'6:00 PM','Dinner':'7:00 PM',
+    'Night':'9:00 PM','Bedtime':'10:00 PM'
   };
-  const normLabel=t=>tLabel[t]||tLabel[t.replace(/^\S+\s/,'')]||t;
+  const normLabel=t=>{
+    if(tLabel[t]) return tLabel[t];
+    const s=t.replace(/^\S+\s/,'');
+    return tLabel[s]||t;
+  };
+
+  // ── Meal fallback for diet entries with no explicit time ──
+  const mealFallback={
+    'Early Morning':5*60+30,'Breakfast':8*60,'Mid-Morning':10*60,
+    'Snack':11*60,'Lunch':13*60,'Afternoon':15*60,
+    'Evening':18*60,'Dinner':19*60,'Night':21*60
+  };
 
   let items=[];
 
-  // ── Diet entries (today only) ──
-  (S.dietPlan||[]).filter(d=>d.date===localToday).forEach(d=>{
-    let mins=NaN;
-    if(d.time&&d.time!=='00:00'){const[h,m]=d.time.split(':').map(Number);mins=h*60+m;}
+  // ── Diet entries — multi-day range aware + ISO date safe ──
+  (S.dietPlan||[]).filter(function(d){
+    if(!d.date) return false;
+    var dStart=String(d.date).substring(0,10);
+    var dEnd  =String(d.endDate||d.date).substring(0,10);
+    return dStart<=localToday && localToday<=dEnd;
+  }).forEach(d=>{
+    var mins=NaN;
+    if(d.time && d.time!=='00:00' && d.time.includes(':')){
+      const[h,m]=d.time.split(':').map(Number); mins=h*60+m;
+    }
     if(!mins||isNaN(mins)||mins<60) mins=mealFallback[d.mealType]||8*60;
-    const overdue=mins<nowMins&&mins>=nowMins-gracePast;
-    if((mins>nowMins&&mins<=cutoff)||overdue){
+    const overdue=mins<nowMins && mins>=nowMins-gracePast;
+    if((mins>nowMins && mins<=cutoff)||overdue){
       const h=Math.floor(mins/60),m=mins%60;
       items.push({type:'diet',mins,time:fmt(h,m),overdue,
-        name:(overdue?'⚠️ ':'')+( d.mealType||'Meal'),
-        detail:(d.foods||'').substring(0,40)});
+        name:(overdue?'⚠️ ':'')+(d.mealType||'Meal'),
+        detail:(d.foods||'').substring(0,50)});
     }
   });
 
-  // ── Medicines (daily recurring, no date filter) ──
+  // ── Medicines — active date range check + SOS skip ──
   (S.medicines||[]).forEach(med=>{
     if(!Array.isArray(med.times)) return;
+    // Skip medicines that haven't started yet or have ended
+    if(med.start && String(med.start).substring(0,10) > localToday) return;
+    if(med.end   && String(med.end).substring(0,10)   < localToday) return;
     med.times.forEach(t=>{
       const mins=normSlot(t);
-      const overdue=mins<nowMins&&mins>=nowMins-gracePast;
-      if((mins>nowMins&&mins<=cutoff)||overdue){
+      if(mins===null) return;   // skip SOS
+      const overdue=mins<nowMins && mins>=nowMins-gracePast;
+      if((mins>nowMins && mins<=cutoff)||overdue){
         const h=Math.floor(mins/60),m=mins%60;
         items.push({type:'med',mins,time:fmt(h,m),overdue,
           name:(overdue?'⚠️ ':'')+med.name,
@@ -1928,26 +1958,41 @@ function renderNext3Strip(){
     });
   });
 
-  items.sort((a,b)=>a.mins-b.mins);
+  items.sort((a,b)=>{
+    // Overdue items always float to top
+    if(a.overdue && !b.overdue) return -1;
+    if(!a.overdue && b.overdue) return 1;
+    return a.mins-b.mins;
+  });
 
   if(!items.length){
-    // Show next upcoming item — look across full day, not just after cutoff
-    const allDiet=(S.dietPlan||[]).filter(d=>d.date===localToday).map(d=>{
-      let mins=mealFallback[d.mealType]||8*60;
+    // Show next upcoming item — look across full remaining day
+    const allDiet=(S.dietPlan||[]).filter(function(d){
+      if(!d.date) return false;
+      var s=String(d.date).substring(0,10), e=String(d.endDate||d.date).substring(0,10);
+      return s<=localToday && localToday<=e;
+    }).map(d=>{
+      var mins=mealFallback[d.mealType]||8*60;
       if(d.time&&d.time!=='00:00'){const[h,m]=d.time.split(':').map(Number);mins=h*60+m;}
-      return{type:'diet',mins,name:d.mealType,detail:d.foods||''};
+      return{type:'diet',mins,name:d.mealType||'Meal',detail:d.foods||''};
     }).filter(d=>d.mins>nowMins).sort((a,b)=>a.mins-b.mins)[0];
-    const allMed=(S.medicines||[]).flatMap(med=>(med.times||[]).map(t=>({
-      type:'med',mins:normSlot(t),name:med.name,detail:med.unit||'tablet(s)'
-    }))).filter(x=>x.mins>nowMins).sort((a,b)=>a.mins-b.mins)[0];
+
+    const allMed=(S.medicines||[]).filter(med=>{
+      if(med.start && String(med.start).substring(0,10)>localToday) return false;
+      if(med.end   && String(med.end).substring(0,10)<localToday)   return false;
+      return true;
+    }).flatMap(med=>(med.times||[])
+      .filter(t=>normSlot(t)!==null)
+      .map(t=>({type:'med',mins:normSlot(t),name:med.name,detail:med.unit||'tablet(s)'}))
+    ).filter(x=>x.mins>nowMins).sort((a,b)=>a.mins-b.mins)[0];
+
     const next=[allDiet,allMed].filter(Boolean).sort((a,b)=>a.mins-b.mins)[0];
-    // If no data at all yet, show loading hint
     const hasData=(S.medicines&&S.medicines.length)||(S.dietPlan&&S.dietPlan.length);
     strip.innerHTML=next
-      ? `<div class="strip-row" style="opacity:.7;justify-content:center">✅ Clear · Next: <b style="margin-left:4px">${esc(next.name)}</b>&nbsp;@&nbsp;${fmt(Math.floor(next.mins/60),next.mins%60)}</div>`
-      : hasData
-        ? `<div class="strip-row" style="opacity:.6;justify-content:center">✅ All done for today</div>`
-        : `<div class="strip-row" style="opacity:.6;justify-content:center">💊 Add medicines &amp; diet in Care Plan tab</div>`;
+      ?`<div class="strip-row" style="opacity:.7;justify-content:center">✅ Clear · Next: <b style="margin-left:4px">${esc(next.name)}</b>&nbsp;@&nbsp;${fmt(Math.floor(next.mins/60),next.mins%60)}</div>`
+      :hasData
+        ?`<div class="strip-row" style="opacity:.6;justify-content:center">✅ All done for today</div>`
+        :`<div class="strip-row" style="opacity:.6;justify-content:center">💊 Add medicines &amp; diet in Care Plan tab</div>`;
     return;
   }
 
@@ -1961,7 +2006,6 @@ function renderNext3Strip(){
       </div>
     </div>`).join('');
 }
-
 
 
 // ── Flashcard Carousel Engine ──────────────────
