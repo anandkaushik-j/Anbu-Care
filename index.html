@@ -2471,27 +2471,6 @@ function editTest(id){
   },50);
 }
 
-function updateTest(){
-  var id=window._editTestId;
-  if(id===undefined||id===null)return;
-  var t=S.tests.find(x=>x.id===id);
-  if(!t){toast('⚠️ Test not found');return;}
-  var lab=document.getElementById('tLab').value.trim();
-  if(!lab){toast('⚠️ Lab required');return;}
-  t.type   =document.getElementById('tType').value;
-  t.date   =document.getElementById('tDate').value;
-  t.fasting=document.getElementById('tFasting').value;
-  t.lab    =lab;
-  t.notes  =document.getElementById('tNotes').value;
-  window._editTestId=null;
-  // Reset button back to Add
-  var btn=document.querySelector('#af-test .btn-primary');
-  if(btn){ btn.textContent='🧪 Schedule Test'; btn.onclick=function(){submitTest();}; }
-  renderTests();renderFlashCards();
-  closeModal('addModal');
-  toast('✅ Test updated!');
-  saveNow();
-}
 
 function deleteTest(id){
   if(!confirm('Delete this test?'))return;
@@ -3011,7 +2990,7 @@ function saveSleep(){
       S.notes.unshift({id:Date.now(),date:today,email:'patient@anbucare',type:'auto',note:`🌙 Sleep — ${bed} → ${wake} | ${hours}h | Quality: ${quality}/5${disruptions.length?' | '+disruptions.join(', '):''}${notes?' | '+notes:''}`});
       renderNotes();renderAllNotes();renderSleepSum();renderSlHist();
       resetChips('sleepChips');document.getElementById('slNotes').value='';
-      toast('🌙 Sleep logged!');saveToSheets('sleep');
+      toast('🌙 Sleep logged!');saveNow();
     }catch(e){toast('⚠️ Sleep save error: '+e.message);}
     btn.disabled=false;btn.textContent='🌙 Save Sleep Log';
   },600);
