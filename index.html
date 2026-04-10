@@ -1339,19 +1339,8 @@ const fcState = {diet:null,med:null,vit:null,test:null};
 // ═══════════════════════════════════════════════════════
 
 async function loadFromSheets(){
-  // Restore only USER-WRITTEN notes from localStorage (auto-logs re-generate each session)
-  try{
-    var sn=localStorage.getItem('anbucare_notes');
-    if(sn){
-      var pn=JSON.parse(sn);
-      var AUTO_E=['📊','🚽','🫀','🌙'];
-      if(Array.isArray(pn)&&pn.length){
-        // Keep only personal notes from localStorage (auto-logs come from live tracking)
-        var personal=pn.filter(function(n){return !AUTO_E.some(function(e){return (n.note||'').startsWith(e);});});
-        if(personal.length) S.notes=personal;
-      }
-    }
-  }catch(ex){}
+  // Notes are managed exclusively via Google Sheets (single source of truth)
+  // localStorage notes cache is only used as a fallback when no Sheet URL is configured
   const url = localStorage.getItem('anbucare_url');
   if(!url){ loadFcState(); renderAll(); return; }
 
@@ -1430,8 +1419,20 @@ let _saveTimer=null,_saving=false,_editingChemoId=null,fcItemState={},_fcLastDat
 function saveNow(){
   // Cancel any pending debounced save
   clearTimeout(_saveTimer);
+  // Always write to localStorage as offline fallback (family data safety)
+  try{
+    localStorage.setItem('anbucare_offline_backup', JSON.stringify({
+      tasks:S.tasks, medicines:S.medicines, dietPlan:S.dietPlan,
+      tests:S.tests, chemoSessions:S.chemoSessions,
+      symptoms:S.symptoms, vitals:S.vitals, sleepLogs:S.sleepLogs,
+      notes:(S.notes||[]).filter(function(n){return n.type!=='auto';}),
+      helplines:S.helplines, reminders:S.reminders,
+      treatmentProfile:S.treatmentProfile, nextId:S.nextId,
+      bowelLog:bowelLog, savedAt:new Date().toISOString()
+    }));
+  }catch(_le){}
   const url=localStorage.getItem('anbucare_url');
-  if(!url) return;
+  if(!url){ toast('⚠️ No Sheet URL — data saved locally only'); return; }
   // Guard against concurrent saves — queue a retry if one is in flight
   if(_saving){ _saveTimer=setTimeout(saveNow,1200); return; }
   _saving=true;
@@ -1444,7 +1445,7 @@ function saveNow(){
         tasks:S.tasks, medicines:S.medicines, dietPlan:S.dietPlan,
         tests:S.tests, chemoSessions:S.chemoSessions,
         symptoms:S.symptoms, vitals:S.vitals, sleepLogs:S.sleepLogs,
-        notes:S.notes, voiceNotes:(S.voiceNotes||[]).filter(function(n){return !n.isMock;}),
+        notes:(S.notes||[]).filter(function(n){return n.type!=='auto';}), voiceNotes:(S.voiceNotes||[]).filter(function(n){return !n.isMock;}),
         helplines:S.helplines, reminders:S.reminders,
         treatmentProfile:(S.treatmentProfile&&S.treatmentProfile.name)?S.treatmentProfile:null,
         nextId:S.nextId, bowelLog:bowelLog, sheetId:sid,
@@ -2596,8 +2597,8 @@ function editDiet(id){
     document.querySelectorAll('#dTagChips .chip').forEach(function(c){
       c.classList.toggle('sel',(d.tags||[]).includes(c.textContent.trim()));
     });
-    saveNow();
     S.dietPlan = S.dietPlan.filter(function(x){return x.id!==id;});
+    saveNow();
     renderDiet(); renderFlashCards(); renderNext3Strip();
     openAdd('diet');
     toast('✏️ Edit mode — update and save');
@@ -2626,8 +2627,8 @@ function editMed(id){
     var _hS=(m.times||[]).some(function(t){return t.includes('SOS');});
     var _sr=document.getElementById('sosNoteRow');if(_sr)_sr.style.display=_hS?'block':'none';
     var _si=document.getElementById('mSosNote');if(_si)_si.value=_hS?(m.notes||''):'';
-    saveNow();
     S.medicines = S.medicines.filter(function(x){return x.id!==id;});
+    saveNow();
     renderMeds(); renderFlashCards(); renderNext3Strip();
     openAdd('medicine');
     toast('✏️ Edit mode — update and save');
@@ -2751,6 +2752,30 @@ function editChemo(id){
   var sd=document.getElementById('chemo-sessions');if(sd)sd.classList.add('hidden');
   toast('✏️ Edit mode');
 }
+
+function updateTest(){
+  var id = window._editTestId;
+  if(!id){ submitTest(); return; }
+  var idx = S.tests.findIndex(function(x){ return x.id===id; });
+  if(idx<0){ submitTest(); return; }
+  S.tests[idx] = {
+    id:id,
+    type:(document.getElementById('tType')||{}).value||'Blood CBC',
+    date:(document.getElementById('tDate')||{}).value||today,
+    fasting:(document.getElementById('tFasting')||{}).value||'No',
+    lab:(document.getElementById('tLab')||{}).value||'',
+    notes:(document.getElementById('tNotes')||{}).value||'',
+    status:'Scheduled'
+  };
+  window._editTestId = null;
+  var btn = document.querySelector('#af-test .btn-primary');
+  if(btn){ btn.textContent='🧪 Schedule Test'; btn.onclick=submitTest; }
+  renderTests(); renderFlashCards(); renderNext3Strip();
+  closeModal('addModal');
+  toast('✅ Test updated!');
+  saveNow();
+}
+
 function submitChemo(){
   var hosp=document.getElementById('cHospital').value.trim();if(!hosp){toast('⚠️ Hospital required');return;}
   var en={id:_editingChemoId||S.nextId++,date:document.getElementById('cDate').value||today,cycle:+document.getElementById('cCycle').value||1,session:+document.getElementById('cSession').value||1,treatType:(S.treatmentProfile&&S.treatmentProfile.name)||'',hospital:hosp,notes:document.getElementById('cNotes').value};
@@ -2776,7 +2801,7 @@ function _saveSymInternal(){
   const entry={id:S.nextId++,date:today,session:symSession,nausea:+document.getElementById('sN').value,fatigue:+document.getElementById('sF').value,pain:+document.getElementById('sP').value,mood:+document.getElementById('sM').value,appetite:+document.getElementById('sA').value,extras:chips('extraChips'),notes:document.getElementById('symNotes').value,chemoId:S.chemoSessions.length?S.chemoSessions[S.chemoSessions.length-1].id:null};
   S.symptoms.unshift(entry);
   const ex=entry.extras.length?' | Also: '+entry.extras.join(', '):'';
-  S.notes.unshift({date:today,email:'patient@anbucare',note:`📊 Symptoms — Nausea:${entry.nausea} | Fatigue:${entry.fatigue} | Pain:${entry.pain} | Mood:${entry.mood} | Appetite:${entry.appetite}${ex}`});
+  S.notes.unshift({id:Date.now(),date:today,email:'patient@anbucare',type:'auto',note:`📊 Symptoms — Nausea:${entry.nausea} | Fatigue:${entry.fatigue} | Pain:${entry.pain} | Mood:${entry.mood} | Appetite:${entry.appetite}${ex}`});
   renderSymHist();renderNotes();renderAllNotes();renderChemo();renderChemoBySym();
   resetChips('extraChips');document.getElementById('symNotes').value='';
 }
@@ -2801,7 +2826,7 @@ function _saveBowelInternal(){
   const entry={date:today,type:selectedBowel,count,label:bowelLabels[selectedBowel].replace(/^[^\s]+\s/,''),icon:bowelLabels[selectedBowel].split(' ')[0]};
   const bi=bowelLog.findIndex(b=>b.date===today);if(bi>=0)bowelLog.splice(bi,1);
   bowelLog.unshift(entry);renderBowelHistory();
-  S.notes.unshift({date:today,email:'patient@anbucare',note:`🚽 Bowel — ${bowelLabels[selectedBowel]} · ${count} time${count!==1?'s':''} today`});
+  S.notes.unshift({id:Date.now(),date:today,email:'patient@anbucare',type:'auto',note:`🚽 Bowel — ${bowelLabels[selectedBowel]} · ${count} time${count!==1?'s':''} today`});
   renderNotes();renderAllNotes();
   document.getElementById('bowelCount').value='';
 }
@@ -2941,7 +2966,7 @@ function submitVitals(){
   if(!sys||!dia||!pulse){toast('⚠️ BP and Pulse required');return;}
   const entry={date:today,time:new Date().toTimeString().substring(0,5),meal,sys:+sys,dia:+dia,pulse:+pulse,temp:+document.getElementById('vmTemp').value||null,spo2:+document.getElementById('vmSpo2').value||null,weight:+document.getElementById('vmWeight').value||null};
   S.vitals.unshift(entry);
-  S.notes.unshift({date:today,email:'patient@anbucare',note:`🫀 Vitals (After ${meal}) — BP:${sys}/${dia} | Pulse:${pulse}`});
+  S.notes.unshift({id:Date.now(),date:today,email:'patient@anbucare',type:'auto',note:`🫀 Vitals (After ${meal}) — BP:${sys}/${dia} | Pulse:${pulse}`});
   renderVitHist();renderNotes();renderAllNotes();closeModal('vitalsModal');
   ['vmSys','vmDia','vmPulse','vmTemp','vmSpo2','vmWeight'].forEach(id=>document.getElementById(id).value='');
   saveNow();
@@ -2983,7 +3008,7 @@ function saveSleep(){
       const hours=calcH(bed,wake),quality=+document.getElementById('sSQ').value;
       const disruptions=chips('sleepChips'),notes=document.getElementById('slNotes').value;
       S.sleepLogs.unshift({date:today,bedtime:bed,wake,hours,quality,disruptions,notes});
-      S.notes.unshift({date:today,email:'patient@anbucare',note:`🌙 Sleep — ${bed} → ${wake} | ${hours}h | Quality: ${quality}/5${disruptions.length?' | '+disruptions.join(', '):''}${notes?' | '+notes:''}`});
+      S.notes.unshift({id:Date.now(),date:today,email:'patient@anbucare',type:'auto',note:`🌙 Sleep — ${bed} → ${wake} | ${hours}h | Quality: ${quality}/5${disruptions.length?' | '+disruptions.join(', '):''}${notes?' | '+notes:''}`});
       renderNotes();renderAllNotes();renderSleepSum();renderSlHist();
       resetChips('sleepChips');document.getElementById('slNotes').value='';
       toast('🌙 Sleep logged!');saveToSheets('sleep');
@@ -3044,7 +3069,7 @@ function saveNote(){
     var nd=new Date();
     var nDate=nd.getFullYear()+'-'+String(nd.getMonth()+1).padStart(2,'0')+'-'+String(nd.getDate()).padStart(2,'0');
     S.notes.unshift({id:Date.now(),date:nDate,email:'user@anbucare',note:txt});
-    try{localStorage.setItem('anbucare_notes',JSON.stringify(S.notes));}catch(ex){}
+    try{localStorage.removeItem('anbucare_notes');}catch(ex){} // Sheets is source of truth
     renderNotes(); renderAllNotes(); updateTextNoteBanner();
     if(btn){btn.disabled=false; btn.textContent='💾 Save Note';}
     document.getElementById('noteText').value='';
