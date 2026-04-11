@@ -1,4 +1,4 @@
-<!-- AnbuCare v35 | Built: 2026-04-10 | Diet dedup fix + GAS openById + Daily Summary Cards -->
+<!-- AnbuCare v36 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
 <!DOCTYPE html>
 <html lang="en-IN">
 <head>
@@ -159,15 +159,21 @@ input,textarea,select{font-family:inherit;font-size:16px;-webkit-appearance:none
 
 /* NEXT 4H STRIP */
 .strip-wrap{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow-lg);margin-bottom:12px;overflow:hidden;border:1.5px solid #b2dfdb}
-.strip-header{background:linear-gradient(110deg,#C4896A,#D68E70,#E0A882);color:#fff;padding:11px 16px;font-size:.92rem;font-weight:800;display:flex;align-items:center;gap:7px}
-.strip-body{padding:2px 0}
-.strip-row{display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid #e0f2f1;min-height:52px}
-.strip-row:last-child{border-bottom:none}
-.sr-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
-.sr-dot-med{background:#1565c0}.sr-dot-diet{background:#2e7d32}.sr-dot-vit{background:#e65100}
-.sr-time{font-size:.85rem;font-weight:800;color:#00796b;min-width:56px;flex-shrink:0}
-.sr-name{font-size:.92rem;font-weight:700;color:var(--text)}
-.sr-detail{font-size:.78rem;color:var(--muted);margin-top:2px}
+.strip-header{background:linear-gradient(110deg,#C4896A,#D68E70,#E0A882);color:#fff;padding:10px 16px;font-size:.92rem;font-weight:800;display:flex;align-items:center;justify-content:space-between}
+.snav{display:flex;gap:4px}.snav button{background:rgba(255,255,255,.28);border:none;color:#fff;border-radius:50%;width:27px;height:27px;font-size:1.1rem;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center}
+.strip-ticker-wrap{position:relative;overflow:hidden;height:66px;background:#f9fffe}
+.strip-ticker{position:relative;width:100%;height:66px}
+.stc{position:absolute;top:0;left:0;width:100%;height:66px;padding:10px 16px;box-sizing:border-box;transition:transform .48s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;justify-content:center;background:#f9fffe}
+.stc-row1{display:flex;align-items:center;gap:10px}
+.sr-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.sr-dot-med{background:#1565c0}.sr-dot-diet{background:#2e7d32}
+.sr-time{font-size:.88rem;font-weight:800;color:#00796b;min-width:62px;flex-shrink:0}
+.sr-name{font-size:.93rem;font-weight:700;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sr-detail{font-size:.75rem;color:var(--muted);margin-top:3px;padding-left:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.strip-dots{display:flex;gap:5px;justify-content:center;padding:5px 0 6px}
+.sdot{width:7px;height:7px;border-radius:50%;background:#ddd;display:inline-block;transition:background .3s}
+.sdot.on{background:#C4896A}
+.stc-ov{background:#fff8e1!important}.stc-ov .sr-name{color:#b45309;font-weight:700}
 
 /* FLASHCARD GRID */
 .flash-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
@@ -714,8 +720,15 @@ input:checked+.tslider::before{transform:translateX(20px)}
   </div>
 
   <div class="strip-wrap">
-    <div class="strip-header">⏰ Next 4 Hours — Medicine &amp; Diet</div>
-    <div class="strip-body" id="next3Strip"></div>
+    <div class="strip-header">
+      <span>&#9200; Next 4 Hours &mdash; Medicine &amp; Diet</span>
+      <div class="snav">
+        <button onclick="sNav(-1)" title="Previous">&#8249;</button>
+        <button onclick="sNav(1)"  title="Next">&#8250;</button>
+      </div>
+    </div>
+    <div class="strip-ticker-wrap"><div class="strip-ticker" id="next3Strip"></div></div>
+    <div class="strip-dots" id="stripDots"></div>
   </div>
 
   <div class="flash-grid">
@@ -1196,7 +1209,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
       <button class="modal-tab" onclick="switchAdd('test',this)">🧪 Test</button>
     </div>
     <div id="af-medicine">
-      <div class="form-group"><label class="form-label">Medicine Name</label><input class="form-input" id="mName" list="mSug" placeholder="e.g. Capecitabine"><datalist id="mSug"><option value="Capecitabine"><option value="Ondansetron"><option value="Dexamethasone"><option value="Pantoprazole"><option value="Vitamin D3"><option value="Iron tablet"><option value="Paracetamol"></datalist></div>
+      <div class="form-group"><label class="form-label">Medicine Name</label><input class="form-input" id="mName" list="mSug" onfocus="try{refreshMedSug();}catch(_e){}" placeholder="e.g. Capecitabine"><datalist id="mSug"></datalist></div>
       <div class="form-group"><label class="form-label">Dosage</label><div class="dose-row"><input type="number" class="form-input" id="mQty" placeholder="2" min="0.5" step="0.5"><select class="form-select" id="mUnit"><option>tablet(s)</option><option>ml</option><option>capsule(s)</option><option>drops</option></select></div></div>
       <input type="hidden" id="mFreq" value="Once daily">
       <div class="form-group"><label class="form-label">When to take</label><div class="chip-row" id="mTimeChips"><div class="chip" onclick="this.classList.toggle('sel')">🌅 Morning</div><div class="chip" onclick="this.classList.toggle('sel')">☀️ Afternoon</div><div class="chip" onclick="this.classList.toggle('sel')">🌆 Evening</div><div class="chip" onclick="this.classList.toggle('sel')">🌙 Night</div><div class="chip sos-chip" onclick="toggleSOSChip(this)">🆘 SOS</div></div></div>
@@ -1880,148 +1893,75 @@ document.addEventListener('click',e=>{if(S.fabOpen&&!document.getElementById('fa
 // NEXT 4H STRIP
 // ═══════════════════════════════════════════
 function renderNext3Strip(){
-  const strip=document.getElementById('next3Strip'); if(!strip)return;
-  const now=new Date();
-  const nowMins=now.getHours()*60+now.getMinutes();
-  const cutoff   = nowMins + 240;           // ← 4 hours window
-  const gracePast= 45;                      // show items due ≤ 45 min ago as ⚠️ Due
-  const localToday=(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})();
-  const fmt=(h,m)=>{const ap=h>=12?'PM':'AM';const hh=h%12||12;return `${hh}:${String(m).padStart(2,'0')} ${ap}`;};
-  const dc={med:'sr-dot-med',diet:'sr-dot-diet',vit:'sr-dot-vit'};
-
-  // ── Comprehensive time → minutes map (covers all chip variants) ──
-  const tMap={
-    'Early Morning':5*60+30, '🌄 Early Morning':5*60+30,
-    'Morning':8*60,          '🌅 Morning':8*60,
-    'Breakfast':8*60,        '🍳 Breakfast':8*60,
-    'Mid-Morning':10*60,     '🌞 Mid-Morning':10*60,
-    'Snack':11*60,           '🍌 Snack':11*60,
-    'Lunch':13*60,           '🍱 Lunch':13*60,
-    'Afternoon':15*60,       '☀️ Afternoon':15*60,
-    'Evening':18*60,         '🌆 Evening':18*60,
-    'Dinner':19*60,          '🍽️ Dinner':19*60,
-    'Night':21*60,           '🌙 Night':21*60,
-    'Bedtime':22*60,         '😴 Bedtime':22*60,
-    'SOS':null               // on-demand — never time-slotted
-  };
-  const normSlot=t=>{
-    if(t==='SOS'||t==='🚨 SOS') return null;   // skip SOS — no fixed time
-    if(tMap[t]!==undefined) return tMap[t];
-    const stripped=t.replace(/^\S+\s/,'');       // strip leading emoji
-    return tMap[stripped]!==undefined ? tMap[stripped] : 8*60;
-  };
-  const tLabel={
-    'Early Morning':'5:30 AM','Morning':'8:00 AM','Breakfast':'8:00 AM',
-    'Mid-Morning':'10:00 AM','Snack':'11:00 AM',
-    'Lunch':'1:00 PM','Afternoon':'3:00 PM',
-    'Evening':'6:00 PM','Dinner':'7:00 PM',
-    'Night':'9:00 PM','Bedtime':'10:00 PM'
-  };
-  const normLabel=t=>{
-    if(tLabel[t]) return tLabel[t];
-    const s=t.replace(/^\S+\s/,'');
-    return tLabel[s]||t;
-  };
-
-  // ── Meal fallback for diet entries with no explicit time ──
-  const mealFallback={
-    'Early Morning':5*60+30,'Breakfast':8*60,'Mid-Morning':10*60,
-    'Snack':11*60,'Lunch':13*60,'Afternoon':15*60,
-    'Evening':18*60,'Dinner':19*60,'Night':21*60
-  };
-
+  const el=document.getElementById('next3Strip'),dd=document.getElementById('stripDots');
+  if(!el) return;
+  const now=new Date(),nm=now.getHours()*60+now.getMinutes(),cut=nm+240,gr=45;
+  const td=(()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})();
+  const fmt=(h,m)=>{const ap=h>=12?'PM':'AM',hh=h%12||12;return hh+':'+String(m).padStart(2,'0')+' '+ap;};
+  const SM={Morning:480,Breakfast:480,'Mid-Morning':600,Lunch:780,Afternoon:780,Evening:1080,Dinner:1140,Night:1260,Bedtime:1320,'Early Morning':330,Snack:660,Tea:960};
+  const gm=t=>{if(!t||t==='SOS')return null;let v=SM[t];if(v!==undefined)return v;const s=String(t).split(' ').slice(1).join(' ');return SM[s]!==undefined?SM[s]:480;};
+  const DOT={med:'sr-dot-med',diet:'sr-dot-diet'};
   let items=[];
-
-  // ── Diet entries — multi-day range aware + ISO date safe ──
-  (S.dietPlan||[]).filter(function(d){
-    if(!d.date) return false;
-    var dStart=String(d.date).substring(0,10);
-    var dEnd  =String(d.endDate||d.date).substring(0,10);
-    return dStart<=localToday && localToday<=dEnd;
-  }).forEach(d=>{
-    var mins=NaN;
-    if(d.time && d.time!=='00:00' && d.time.includes(':')){
-      const[h,m]=d.time.split(':').map(Number); mins=h*60+m;
-    }
-    if(!mins||isNaN(mins)||mins<60) mins=mealFallback[d.mealType]||8*60;
-    const overdue=mins<nowMins && mins>=nowMins-gracePast;
-    if((mins>nowMins && mins<=cutoff)||overdue){
-      const h=Math.floor(mins/60),m=mins%60;
-      items.push({type:'diet',mins,time:fmt(h,m),overdue,
-        name:(overdue?'⚠️ ':'')+(d.mealType||'Meal'),
-        detail:(d.foods||'').substring(0,50)});
-    }
+  (S.dietPlan||[]).forEach(d=>{
+    if(!d||!d.date)return;
+    const ds=String(d.date).substring(0,10),de=String(d.endDate||d.date).substring(0,10);
+    if(ds>td||de<td)return;
+    let m=NaN;
+    if(d.time&&d.time!=='00:00'&&d.time.includes(':')){const[h,v]=d.time.split(':').map(Number);m=h*60+v;}
+    if(isNaN(m))m=SM[d.mealType]??780;
+    const ov=m<nm&&m>(nm-gr);if(m<=nm&&!ov)return;if(m>cut)return;
+    items.push({tp:'diet',m,time:fmt(Math.floor(m/60),m%60),ov,name:d.mealType||'Meal',detail:(d.foods||'').substring(0,52)});
   });
-
-  // ── Medicines — active date range check + SOS skip ──
   (S.medicines||[]).forEach(med=>{
-    if(!Array.isArray(med.times)) return;
-    // Skip medicines that haven't started yet or have ended
-    if(med.start && String(med.start).substring(0,10) > localToday) return;
-    if(med.end   && String(med.end).substring(0,10)   < localToday) return;
+    if(!Array.isArray(med.times))return;
+    if(med.start&&String(med.start).substring(0,10)>td)return;
+    if(med.end&&String(med.end).substring(0,10)<td)return;
     med.times.forEach(t=>{
-      const mins=normSlot(t);
-      if(mins===null) return;   // skip SOS
-      const overdue=mins<nowMins && mins>=nowMins-gracePast;
-      if((mins>nowMins && mins<=cutoff)||overdue){
-        const h=Math.floor(mins/60),m=mins%60;
-        items.push({type:'med',mins,time:fmt(h,m),overdue,
-          name:(overdue?'⚠️ ':'')+med.name,
-          detail:`${med.qty||1} ${med.unit||'tablet(s)'} · ${normLabel(t)}${med.food?' · '+med.food:''}`
-        });
-      }
+      const m=gm(t);if(m===null)return;
+      const ov=m<nm&&m>(nm-gr);if(m<=nm&&!ov)return;if(m>cut)return;
+      items.push({tp:'med',m,time:fmt(Math.floor(m/60),m%60),ov,name:med.name,
+        detail:(med.qty||1)+' '+(med.unit||'tablet')+(med.food?' · '+med.food:'')});
     });
   });
-
-  items.sort((a,b)=>{
-    // Overdue items always float to top
-    if(a.overdue && !b.overdue) return -1;
-    if(!a.overdue && b.overdue) return 1;
-    return a.mins-b.mins;
-  });
-
+  items.sort((a,b)=>a.ov&&!b.ov?-1:!a.ov&&b.ov?1:a.m-b.m);
   if(!items.length){
-    // Show next upcoming item — look across full remaining day
-    const allDiet=(S.dietPlan||[]).filter(function(d){
-      if(!d.date) return false;
-      var s=String(d.date).substring(0,10), e=String(d.endDate||d.date).substring(0,10);
-      return s<=localToday && localToday<=e;
-    }).map(d=>{
-      var mins=mealFallback[d.mealType]||8*60;
-      if(d.time&&d.time!=='00:00'){const[h,m]=d.time.split(':').map(Number);mins=h*60+m;}
-      return{type:'diet',mins,name:d.mealType||'Meal',detail:d.foods||''};
-    }).filter(d=>d.mins>nowMins).sort((a,b)=>a.mins-b.mins)[0];
-
-    const allMed=(S.medicines||[]).filter(med=>{
-      if(med.start && String(med.start).substring(0,10)>localToday) return false;
-      if(med.end   && String(med.end).substring(0,10)<localToday)   return false;
-      return true;
-    }).flatMap(med=>(med.times||[])
-      .filter(t=>normSlot(t)!==null)
-      .map(t=>({type:'med',mins:normSlot(t),name:med.name,detail:med.unit||'tablet(s)'}))
-    ).filter(x=>x.mins>nowMins).sort((a,b)=>a.mins-b.mins)[0];
-
-    const next=[allDiet,allMed].filter(Boolean).sort((a,b)=>a.mins-b.mins)[0];
-    const hasData=(S.medicines&&S.medicines.length)||(S.dietPlan&&S.dietPlan.length);
-    strip.innerHTML=next
-      ?`<div class="strip-row" style="opacity:.7;justify-content:center">✅ Clear · Next: <b style="margin-left:4px">${esc(next.name)}</b>&nbsp;@&nbsp;${fmt(Math.floor(next.mins/60),next.mins%60)}</div>`
-      :hasData
-        ?`<div class="strip-row" style="opacity:.6;justify-content:center">✅ All done for today</div>`
-        :`<div class="strip-row" style="opacity:.6;justify-content:center">💊 Add medicines &amp; diet in Care Plan tab</div>`;
-    return;
+    const hd=(S.medicines&&S.medicines.length)||(S.dietPlan&&S.dietPlan.length);
+    const fb=[
+      ...(S.dietPlan||[]).filter(d=>{const s=String(d.date||'').substring(0,10),e=String(d.endDate||d.date||'').substring(0,10);return s<=td&&td<=e;})
+        .map(d=>{const m2=SM[d.mealType]??780;return{tp:'diet',m:m2,time:fmt(Math.floor(m2/60),m2%60),name:d.mealType||'Meal',detail:d.foods||''};}).filter(x=>x.m>nm),
+      ...(S.medicines||[]).filter(m=>(!m.start||String(m.start).substring(0,10)<=td)&&(!m.end||String(m.end).substring(0,10)>=td))
+        .flatMap(m=>(m.times||[]).filter(t=>gm(t)!==null).map(t=>{const m2=gm(t);return{tp:'med',m:m2,time:fmt(Math.floor(m2/60),m2%60),name:m.name,detail:(m.qty||1)+' '+(m.unit||'tablet')};}))
+        .filter(x=>x.m>nm)
+    ].sort((a,b)=>a.m-b.m);
+    const nx=fb[0];
+    el.innerHTML=`<div class="stc" style="text-align:center">`
+      +(nx?`<div style="font-size:.72rem;color:var(--muted);margin-bottom:2px">Next scheduled</div>`
+          +`<div class="stc-row1" style="justify-content:center"><span class="sr-dot ${DOT[nx.tp]||'sr-dot-med'}"></span>`
+          +`<span class="sr-time">${nx.time}</span><span class="sr-name">${esc(nx.name)}</span></div>`
+          +`<div class="sr-detail">${esc(nx.detail)}</div>`
+        :(hd?`<span style="color:var(--muted)">✅ All done for today</span>`
+            :`<span style="color:var(--muted);font-size:.85rem">Add items in Care Plan</span>`))
+      +`</div>`;
+    if(dd)dd.innerHTML=''; _sStop(); return;
   }
-
-  strip.innerHTML=items.map(it=>`
-    <div class="strip-row${it.overdue?' strip-overdue':''}">
-      <span class="sr-dot ${dc[it.type]||'sr-dot-diet'}"></span>
-      <span class="sr-time">${it.time}</span>
-      <div style="flex:1;min-width:0">
-        <div class="sr-name">${esc(it.name)}</div>
-        <div class="sr-detail">${esc(it.detail)}</div>
-      </div>
-    </div>`).join('');
+  _sItems=items;_sIdx=0;_sDraw(0);_sStart();
 }
-
+var _sItems=[],_sIdx=0,_sTmr=null;
+function _sDraw(i){
+  const el=document.getElementById('next3Strip'),dd=document.getElementById('stripDots');
+  if(!el||!_sItems.length)return;
+  _sIdx=((i%_sItems.length)+_sItems.length)%_sItems.length;
+  const DOT={med:'sr-dot-med',diet:'sr-dot-diet'};
+  el.innerHTML=_sItems.map((it,j)=>`<div class="stc${it.ov?' stc-ov':''}" style="transform:translateX(${(j-_sIdx)*100}%)">`
+    +`<div class="stc-row1"><span class="sr-dot ${DOT[it.tp]||'sr-dot-med'}"></span>`
+    +`<span class="sr-time">${it.time}</span>`
+    +`<span class="sr-name">${it.ov?'⚠️ ':''} ${esc(it.name)}</span></div>`
+    +`<div class="sr-detail">${esc(it.detail)}</div></div>`).join('');
+  if(dd)dd.innerHTML=_sItems.map((_,j)=>`<span class="sdot${j===_sIdx?' on':''}"></span>`).join('');
+}
+function sNav(d){_sStop();_sDraw(_sIdx+d);if(_sItems.length>1)_sStart();}
+function _sStart(){_sStop();if(_sItems.length>1)_sTmr=setInterval(()=>_sDraw(_sIdx+1),3500);}
+function _sStop(){clearInterval(_sTmr);_sTmr=null;}
 
 // ── Flashcard Carousel Engine ──────────────────
 const _fcCarousels = {};   // key → {items, idx, timer}
@@ -2529,6 +2469,16 @@ function _dscCard(slot,itemsHtml){
     +'<span class="dsc-sub">'+slot.sub+'</span></div>'
     +'<ul class="dsc-items">'+itemsHtml+'</ul></div>';
 }
+function refreshMedSug(){
+  var dl=document.getElementById('mSug');if(!dl)return;
+  var seen={},names=[];
+  (S.medicines||[]).forEach(function(m){
+    var n=String(m.name||'').trim();
+    if(n&&!seen[n.toLowerCase()]){seen[n.toLowerCase()]=1;names.push(n);}
+  });
+  names.sort(function(a,b){return a.toLowerCase().localeCompare(b.toLowerCase());});
+  dl.innerHTML=names.map(function(n){return '<option value="'+esc(n)+'">';}).join('');
+}
 function renderMedsDaySummary(){
   var el=document.getElementById('medDaySummary');
   if(!el) return;
@@ -2590,6 +2540,7 @@ function renderDietDaySummary(){
 // ═══════════════════════════════════════════════════════════════════
 function renderMeds(){
   try{renderMedsDaySummary();}catch(_e){}
+  try{refreshMedSug();}catch(_e){}
   const el=document.getElementById('medList');
   if(!S.medicines.length){el.innerHTML='<div class="empty"><span class="emoji">💊</span>No medicines yet</div>';return;}
   el.innerHTML=S.medicines.map(function(m){var hS=Array.isArray(m.times)&&m.times.some(function(t){return t.includes('SOS');});return `<div class="med-card"><div class="card-row-actions"><div class="card-content"><div class="med-name">${esc(m.name)}${hS?' <span style="font-size:.72rem;background:#fffbeb;color:#b45309;border:1px solid #fcd34d;border-radius:5px;padding:1px 6px;font-weight:700">SOS</span>':''}</div><div class="med-dose">${m.qty} ${m.unit} · ${esc(m.food)}</div><div class="med-tags">${m.times.map(function(t){return '<span class="mtag '+(t.includes('SOS')?'mtag-sos':'mtag-time')+'">'+t+'</span>';}).join('')}<span class="mtag mtag-food">🍽️ ${esc(m.food)}</span><span class="mtag mtag-dates">📅 ${fmtDate(m.start)||'—'} → ${fmtDate(m.end)||'—'}</span>${m.days?`<span class="mtag" style="background:#e8f4f0;color:var(--primary)">⏱ ${m.days} day${m.days>1?'s':''}</span>`:''}</div>${m.notes?`<div style="font-size:.75rem;color:var(--muted);margin-top:6px">📌 ${esc(m.notes)}</div>`:''}</div><button class="edit-btn" onclick="editMed(${m.id})">✏️ Edit</button><button class="del-btn" onclick="deleteMed(${m.id})">🗑</button></div></div>`}).join('');
@@ -2602,7 +2553,7 @@ function saveTreatmentProfile(){
   S.treatmentProfile={patientName:pf?pf.value.trim():'',name:nm,protocol:document.getElementById('cgTpProtocol').value.trim(),oncologist:document.getElementById('cgTpOncologist').value.trim(),startDate:document.getElementById('cgTpStartDate').value,setOn:today};
   try{localStorage.setItem('anbucare_treatprofile',JSON.stringify(S.treatmentProfile));}catch(_e){}
   renderTreatProfileBanner();document.getElementById('cgTreatEditBox').classList.add('hidden');
-  toast('✅ Treatment saved!');saveNow();
+  toast('✅ Treatment saved!');saveNow();setTimeout(function(){try{saveTreatmentProfileToSheets();}catch(_e){}},1200);
   try{renderFlashCards();}catch(_re){} try{renderNext3Strip();}catch(_re){} try{renderOverdue();}catch(_re){}
 }
 function toggleTreatEdit(){
@@ -4292,7 +4243,10 @@ function previewReport(){
           ${['nausea','fatigue','pain','mood','appetite'].map(k=>{
             const icons={nausea:'🤢',fatigue:'😴',pain:'🩹',mood:'😊',appetite:'🍽️'};
             const avg=avgSym(k);const col=symColor(+avg);
-            return `<div><div style="font-size:1.1rem;font-weight:800;color:${col}">${avg}</div><div style="font-size:.62rem;color:var(--muted)">${icons[k]}</div><div style="font-size:.6rem;color:var(--muted);margin-top:1px">avg/5</div></div>`;
+            const _SD=['','None','Mild','Modr','Severe','V.Sev'];
+            const _MD=['','V.Low','Low','Fair','Good','V.Good'];
+            const _an=Math.round(+avg)||0,_lbl=(k==='mood'?_MD:_SD)[_an]||'';
+            return `<div><div style="font-size:1.1rem;font-weight:800;color:${col}">${avg}</div><div style="font-size:.62rem;color:var(--muted)">${icons[k]}</div><div style="font-size:.6rem;font-weight:700;color:${col};margin-top:1px">${_lbl}</div></div>`;
           }).join('')}
         </div>
         <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px">
@@ -4304,6 +4258,7 @@ function previewReport(){
             return alerts.length?alerts.join(''):'<span style="font-size:.72rem;color:#43a87a;font-weight:600">✅ All symptom averages within normal range</span>';
           })()}
         </div>
+        <div style="margin-top:8px;padding:5px 9px;background:#f5f5f5;border-radius:6px;font-size:.63rem;color:#777;line-height:1.85"><b>Symptom scale:</b>&nbsp;1&nbsp;=&nbsp;None &middot; 2&nbsp;=&nbsp;Mild &middot; 3&nbsp;=&nbsp;Moderate &middot; 4&nbsp;=&nbsp;Severe &middot; 5&nbsp;=&nbsp;Very Severe<br><b>Mood scale:</b>&nbsp;1&nbsp;=&nbsp;Very Low &middot; 2&nbsp;=&nbsp;Low &middot; 3&nbsp;=&nbsp;Fair &middot; 4&nbsp;=&nbsp;Good &middot; 5&nbsp;=&nbsp;Very Good</div>
       </div>`:''}
 
       <!-- Vitals averages -->
@@ -4327,7 +4282,8 @@ function previewReport(){
   if(fS.length){
     const lbs={nausea:'🤢 Nausea',fatigue:'😴 Fatigue',pain:'🩹 Pain',mood:'😊 Mood',appetite:'🍽️ Appetite'};
     html+=`<div style="font-size:.9rem;font-weight:700;color:var(--primary);margin:12px 0 8px">🩺 Symptom Log (${fS.length} entries)</div>`;
-    fS.forEach(e=>{const cs=e.chemoId?S.chemoSessions.find(s=>s.id===e.chemoId):null;html+=`<div style="background:var(--surface);border-radius:10px;padding:10px 13px;margin-bottom:8px;border:1px solid var(--border)"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><b style="font-size:.85rem">${fmtDate(e.date)}</b>${cs?`<span style="font-size:.7rem;font-weight:700;background:var(--chemo-l);color:var(--chemo);padding:2px 8px;border-radius:8px">C${cs.cycle}S${cs.session}</span>`:''}</div>${['nausea','fatigue','pain','mood','appetite'].map(k=>`<div style="margin-bottom:4px"><span style="font-size:.75rem;color:var(--muted);display:inline-block;width:90px">${lbs[k]}</span>${bar(e[k])}</div>`).join('')}${e.extras?.length?`<div style="font-size:.74rem;color:var(--warn);margin-top:4px">⚡ ${e.extras.join(' · ')}</div>`:''}${e.notes?`<div style="font-size:.74rem;color:var(--muted);margin-top:3px">💬 ${esc(e.notes)}</div>`:''}</div>`;});
+    html+=`<div style="font-size:.62rem;color:#888;background:#f5f5f5;border-radius:6px;padding:4px 9px;margin-bottom:8px;line-height:1.8"><b>Scale:</b>&nbsp;1=None &middot; 2=Mild &middot; 3=Moderate &middot; 4=Severe &middot; 5=Very Severe&nbsp;&nbsp;|&nbsp;&nbsp;<b>Mood:</b>&nbsp;1=Very Low &rarr; 5=Very Good</div>`;
+    fS.forEach(e=>{const cs=e.chemoId?S.chemoSessions.find(s=>s.id===e.chemoId):null;html+=`<div style="background:var(--surface);border-radius:10px;padding:10px 13px;margin-bottom:8px;border:1px solid var(--border)"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><b style="font-size:.85rem">${fmtDate(e.date)}</b>${cs?`<span style="font-size:.7rem;font-weight:700;background:var(--chemo-l);color:var(--chemo);padding:2px 8px;border-radius:8px">C${cs.cycle}S${cs.session}</span>`:''}</div>${['nausea','fatigue','pain','mood','appetite'].map(k=>{const _S=['','None','Mild','Moderate','Severe','V.Severe'],_M=['','V.Low','Low','Fair','Good','V.Good'],_l=(k==='mood'?_M:_S)[+e[k]||0]||'';return `<div style="margin-bottom:4px"><span style="font-size:.75rem;color:var(--muted);display:inline-block;width:90px">${lbs[k]}</span>${bar(e[k])}<span style="font-size:.68rem;color:#888;margin-left:5px;font-style:italic">${_l}</span></div>`;}).join('')}${e.extras?.length?`<div style="font-size:.74rem;color:var(--warn);margin-top:4px">⚡ ${e.extras.join(' · ')}</div>`:''}${e.notes?`<div style="font-size:.74rem;color:var(--muted);margin-top:3px">💬 ${esc(e.notes)}</div>`:''}</div>`;});
     if(fC.length){html+=`<div style="font-size:.9rem;font-weight:700;color:var(--primary);margin:12px 0 8px">📊 Symptoms by Chemo Session</div>`;S.chemoSessions.forEach(s=>{const syms=fS.filter(x=>x.chemoId===s.id);if(!syms.length)return;const avg=k=>(syms.reduce((a,x)=>a+x[k],0)/syms.length).toFixed(1);html+=`<div style="background:var(--chemo-l);border-radius:10px;padding:10px 13px;margin-bottom:8px;border-left:3px solid var(--chemo)"><b>Cycle ${s.cycle} · Session ${s.session}</b> — ${syms.length} log${syms.length>1?'s':''}<br>${['nausea','fatigue','pain','mood','appetite'].map(k=>`<div style="margin-top:4px"><span style="font-size:.74rem;color:var(--muted);display:inline-block;width:90px">${{nausea:'🤢 Nausea',fatigue:'😴 Fatigue',pain:'🩹 Pain',mood:'😊 Mood',appetite:'🍽️ Appetite'}[k]}</span>${bar(+avg(k))}</div>`).join('')}</div>`;});}
   }
   if(fV.length){html+=`<div style="font-size:.9rem;font-weight:700;color:var(--primary);margin:12px 0 8px">🫀 Vitals (${fV.length} entries)</div><div style="background:var(--surface);border-radius:10px;overflow:hidden;border:1px solid var(--border)"><table style="width:100%;border-collapse:collapse;font-size:.76rem"><thead><tr style="background:var(--surface2)"><th style="padding:7px;text-align:left;border-bottom:1px solid var(--border)">Date</th><th style="padding:7px;border-bottom:1px solid var(--border)">Meal</th><th style="padding:7px;border-bottom:1px solid var(--border)">BP</th><th style="padding:7px;border-bottom:1px solid var(--border)">Pulse</th><th style="padding:7px;border-bottom:1px solid var(--border)">Temp</th><th style="padding:7px;border-bottom:1px solid var(--border)">SpO₂</th></tr></thead><tbody>${fV.map((v,i)=>`<tr style="background:${i%2?'var(--surface2)':'#fff'}"><td style="padding:6px">${fmtDate(v.date)} ${v.time}</td><td style="padding:6px">${esc(v.meal)}</td><td style="padding:6px;font-weight:700;color:${v.sys>140?'#e07b54':'#43a87a'}">${v.sys}/${v.dia}</td><td style="padding:6px">${v.pulse}</td><td style="padding:6px">${v.temp||'—'}</td><td style="padding:6px">${v.spo2||'—'}</td></tr>`).join('')}</tbody></table></div>`;}
