@@ -1,4 +1,4 @@
-<!-- AnbuCare v37 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
+<!-- AnbuCare v38 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
 <!DOCTYPE html>
 <html lang="en-IN">
 <head>
@@ -1446,7 +1446,11 @@ const MERGE_KEYS = ['tasks','medicines','dietPlan','tests','chemoSessions',
     toast('⚠️ Cannot connect: ' + e.message);
   }
   var _lb=document.getElementById('sheetsLoadBanner');if(_lb)_lb.style.display='none';
-  if(!S.treatmentProfile||!S.treatmentProfile.name){loadTreatmentProfileFromSheets();}
+  if(!S.treatmentProfile||!S.treatmentProfile.name){
+    loadTreatmentProfileFromSheets(); // async: will call renderTreatProfileBanner on success
+  } else {
+    try{renderTreatProfileBanner();}catch(_e){} // TP already loaded — render immediately
+  }
   loadFcState();
   renderAll();
 }
@@ -1689,6 +1693,7 @@ function renderAll(){
   try{renderReminders();}catch(e){console.error('reminders',e);}
   try{renderBowelHistory();updBowelSlider(3);}catch(e){console.error('bowel',e);}
   try{updateVoiceBanner();}catch(e){console.error('voicebanner',e);}
+  try{renderTreatProfileBanner();}catch(e){console.error('tpbanner',e);}
 }
 
 // ═══════════════════════════════════════════
