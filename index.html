@@ -1,4 +1,4 @@
-<!-- AnbuCare v38 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
+<!-- AnbuCare v41 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
 <!DOCTYPE html>
 <html lang="en-IN">
 <head>
@@ -4349,299 +4349,520 @@ function generatePDF(){
   const fS=S.symptoms.filter(s=>inR(s.date)),
         fV=S.vitals.filter(v=>inR(v.date)),
         fSl=S.sleepLogs.filter(s=>inR(s.date)),
-        fC=S.chemoSessions.filter(s=>inR(s.date)),
-        fN=S.notes.filter(n=>inR(n.date)),
+        fC=S.chemoSessions.filter(c=>inR(c.date)),
+        fN=(S.notes||[]).filter(n=>inR(n.date)&&n.type!=='auto'),
         fM=S.medicines||[],
-        fD=S.dietPlan||[],
         fT=S.tests||[];
-  const bar=v=>{const col=v<=2?'#43a87a':v===3?'#f0b429':'#e07b54';return`<span style="display:inline-block;width:${v*20}px;height:7px;background:${col};border-radius:3px;vertical-align:middle;margin-right:4px"></span><b style="color:${col}">${v}/5</b>`;};
-  const avgSym=k=>fS.length?(fS.reduce((a,e)=>a+Number(e[k]||0),0)/fS.length).toFixed(1):null;
-  const scCol=v=>v===null?'#888':+v<=2?'#43a87a':+v<=3?'#f0b429':'#e07b54';
-  const treatName=S.treatmentProfile?.name||'—',oncologist=S.treatmentProfile?.oncologist||'—',protocol=S.treatmentProfile?.protocol||'';
-  const avgBP_s=fV.length?(fV.reduce((a,v)=>a+(+v.systolic||0),0)/fV.length).toFixed(0):null;
-  const avgBP_d=fV.length?(fV.reduce((a,v)=>a+(+v.diastolic||0),0)/fV.length).toFixed(0):null;
-  const avgSleep=fSl.length?(fSl.reduce((a,s)=>a+(+s.hours||0),0)/fSl.length).toFixed(1):null;
 
-  /* ─── helpers ─── */
-  const SEC=(icon,title,colour='#3a8c7e')=>`
-    <div style="display:flex;align-items:center;gap:8px;margin:0 0 14px;padding-bottom:8px;border-bottom:2.5px solid ${colour}">
-      <span style="font-size:1.3rem">${icon}</span>
-      <span style="font-size:14px;font-weight:800;color:${colour};letter-spacing:.3px;text-transform:uppercase">${title}</span>
-    </div>`;
-  const PAGE_BREAK=`<div style="page-break-before:always;padding-top:0"></div>`;
-  const FOOTER=`<div style="position:running(footer);font-size:10px;color:#aaa;text-align:right;border-top:1px solid #eee;padding-top:4px;margin-top:18px">AnbuCare · ${patient} · ${from} – ${to} · Generated ${today}</div>`;
-  const statBox=(val,lbl,col='#3a8c7e')=>`<div style="background:#fff;border:1.5px solid #e0e0e0;border-radius:10px;padding:12px 8px;text-align:center;min-width:90px"><div style="font-size:1.4rem;font-weight:800;color:${col}">${val}</div><div style="font-size:.65rem;color:#888;font-weight:600;margin-top:2px">${lbl}</div></div>`;
+  const tp=Array.isArray(S.treatmentProfile)?S.treatmentProfile[0]||{}:(S.treatmentProfile||{});
+  const treatName=tp.name||'—', protocol=tp.protocol||'', oncologist=tp.oncologist||'—',
+        patientName=tp.patientName||patient, startDate=tp.startDate||'';
 
-  /* ════════════════════════════════════════
-     PAGE 1 — COVER + SUMMARY
-  ════════════════════════════════════════ */
-  let out=`
-  <!-- PAGE 1: COVER -->
-  <div style="min-height:90vh;display:flex;flex-direction:column;justify-content:space-between">
-    <!-- Header band -->
-    <div style="background:linear-gradient(135deg,#3a8c7e,#6baed6);color:#fff;padding:28px 30px;border-radius:0 0 18px 18px;margin:-20px -20px 0">
-      <div style="font-size:26px;font-weight:900;letter-spacing:.5px;margin-bottom:6px">AnbuCare</div>
-      <div style="font-size:13px;opacity:.9;font-weight:600">Patient Health Report</div>
-    </div>
+  /* ── helpers ── */
+  const SL=['','None','Mild','Moderate','Severe','Very Severe'];
+  const SLC=['','#27ae60','#2980b9','#f39c12','#e74c3c','#8e44ad'];
+  const symLabel=v=>SL[+v]||'—';
+  const symCol=v=>SLC[+v]||'#888';
+  const fmtDate=d=>{if(!d)return'—';const p=String(d).substring(0,10).split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d;};
+  const fmtDT=dt=>{if(!dt)return'—';const[d,t]=(String(dt)+' ').split('T').join(' ').split(' ');return fmtDate(d)+(t&&t.length>4?' '+t.substring(0,5):'');};
+  const avgArr=(arr,key)=>arr.length?(arr.reduce((a,x)=>a+(+x[key]||0),0)/arr.length).toFixed(1):null;
+  const avgSym=k=>avgArr(fS,k);
+  const repId='AC-'+today.replace(/-/g,'').substring(0,8)+'-'+Math.floor(1000+Math.random()*9000);
 
-    <!-- Patient card -->
-    <div style="margin:24px 0;background:#f7fbf9;border:1.5px solid #c8e0d8;border-radius:14px;padding:20px 22px">
-      <table style="width:100%;font-size:12px;border-collapse:collapse">
-        <tr><td style="padding:6px 0;color:#888;width:120px;font-weight:600">Patient</td><td style="padding:6px 0;font-weight:800;font-size:14px">${esc(patient)}</td></tr>
-        <tr><td style="padding:6px 0;color:#888;font-weight:600">Report Period</td><td style="padding:6px 0;font-weight:700">${from} &nbsp;→&nbsp; ${to}</td></tr>
-        <tr><td style="padding:6px 0;color:#888;font-weight:600">Treatment</td><td style="padding:6px 0">${esc(treatName)}${protocol?` <span style="color:#888;font-weight:400">(${esc(protocol)})</span>`:''}</td></tr>
-        <tr><td style="padding:6px 0;color:#888;font-weight:600">Oncologist</td><td style="padding:6px 0">${esc(oncologist)}</td></tr>
-        <tr><td style="padding:6px 0;color:#888;font-weight:600">Prepared by</td><td style="padding:6px 0">${esc(prepBy)}</td></tr>
-        <tr><td style="padding:6px 0;color:#888;font-weight:600">Generated</td><td style="padding:6px 0">${today}</td></tr>
-      </table>
-    </div>
+  /* BP avg: only count rows where BOTH systolic & diastolic > 0 */
+  const fVbp=fV.filter(v=>(+v.systolic||0)>0&&(+v.diastolic||0)>0);
+  const avgBP_s=fVbp.length?(fVbp.reduce((a,v)=>a+(+v.systolic),0)/fVbp.length).toFixed(0):null;
+  const avgBP_d=fVbp.length?(fVbp.reduce((a,v)=>a+(+v.diastolic),0)/fVbp.length).toFixed(0):null;
+  const avgPulse=avgArr(fV.filter(v=>(+v.pulse||0)>0),'pulse');
+  const avgTemp=avgArr(fV.filter(v=>(+v.temp||0)>0),'temp');
+  const avgSpo2=avgArr(fV.filter(v=>(+v.spo2||0)>0),'spo2');
+  const avgSleep=avgArr(fSl,'hours');
 
-    <!-- Stats grid -->
-    <div style="margin-bottom:18px">
-      <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Records in this period</div>
-      <div style="display:flex;flex-wrap:wrap;gap:8px">
-        ${statBox(fS.length,'Symptom Logs','#3a8c7e')}
-        ${statBox(fV.length,'Vitals Checks','#1565c0')}
-        ${statBox(fC.length,'Chemo Sessions','#e8496a')}
-        ${statBox(fSl.length,'Sleep Logs','#7c6fcf')}
-        ${statBox(fN.length,'Notes','#607870')}
+  /* Abnormal flag helpers (clinical reference ranges) */
+  const flagBP=(s,d)=>(+s>140||+s<90||+d>90||+d<60)?'*':'';
+  const flagPulse=v=>(+v>100||+v<60)?'*':'';
+  const flagTemp=v=>(+v>99.5||+v<97)?'*':'';
+  const flagSpo2=v=>(+v<95)?'*':'';
+  const hasBPFlag=fV.some(v=>flagBP(v.systolic,v.diastolic)==='*');
+  const hasPulseFlag=fV.some(v=>flagPulse(v.pulse)==='*');
+  const hasTempFlag=fV.some(v=>flagTemp(v.temp)==='*');
+  const hasSpo2Flag=fV.some(v=>flagSpo2(v.spo2)==='*');
+  const anyVitalFlag=hasBPFlag||hasPulseFlag||hasTempFlag||hasSpo2Flag;
+
+  /* Symptom trend: compare first half vs second half */
+  const symTrend=k=>{
+    if(fS.length<2) return '';
+    const sorted=[...fS].sort((a,b)=>a.date.localeCompare(b.date));
+    const mid=Math.floor(sorted.length/2);
+    const avg1=sorted.slice(0,mid).reduce((a,x)=>a+(+x[k]||0),0)/mid;
+    const avg2=sorted.slice(mid).reduce((a,x)=>a+(+x[k]||0),0)/(sorted.length-mid);
+    const d=avg2-avg1;
+    if(Math.abs(d)<0.3) return '<span style="color:#888">→ Stable</span>';
+    if(d>0) return '<span style="color:#e74c3c">↑ Worsening</span>';
+    return '<span style="color:#27ae60">↓ Improving</span>';
+  };
+
+  /* Sleep quality label */
+  const sleepQL=q=>{const n=+q;return n>=4.5?'Excellent':n>=3.5?'Good':n>=2.5?'Fair':'Poor';};
+  const sleepQC=q=>{const n=+q;return n>=4.5?'#27ae60':n>=3.5?'#2980b9':n>=2.5?'#f39c12':'#e74c3c';};
+
+  /* CSS reset for print */
+  const STYLE=`<style>
+    @page{margin:18mm 16mm 20mm;}
+    body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#2c3e2d;margin:0;padding:0;background:#FAF9F6}
+    table{border-collapse:collapse;width:100%}
+    th{background:#2c4a2e;color:#fff;padding:7px 10px;font-size:10px;text-align:left;font-weight:700;letter-spacing:.3px}
+    td{padding:6px 10px;border-bottom:1px solid #e2ddd8;vertical-align:top;font-size:10.5px}
+    tr:nth-child(even) td{background:#F7F5F1}
+    .flag{color:#C0714F;font-weight:700}
+    .sec-hdr{background:linear-gradient(90deg,#2c4a2e,#3d6b40);color:#fff;padding:8px 14px;font-size:12px;font-weight:800;letter-spacing:.5px;margin:20px 0 12px;border-left:5px solid #E1AD01}
+    .sub-hdr{font-size:10px;font-weight:700;color:#2c4a2e;text-transform:uppercase;letter-spacing:.6px;margin:14px 0 6px;padding-bottom:4px;border-bottom:1.5px solid #7A9E7E}
+    .page-break{page-break-before:always}
+    .ref-note{font-size:9px;color:#6B7C6E;margin-top:6px;font-style:italic}
+    .footer-band{border-top:2px solid #7A9E7E;margin-top:24px;padding-top:6px;font-size:9px;color:#6B7C6E;display:flex;justify-content:space-between;background:#FAF9F6}
+    .ind-ref-box{margin-top:8px;padding:8px 12px;background:#F0EDE8;border-left:3px solid #7A9E7E;font-size:9px;color:#4a5c4b;line-height:1.75}
+    .page-hdr{border-bottom:3px solid #7A9E7E;margin-bottom:14px;padding-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+  </style>`;
+
+  /* ═══════════════════════════════════════════
+     PAGE 1 — COVER PAGE
+  ═══════════════════════════════════════════ */
+  let out=STYLE;
+
+  /* Letterhead */
+  /* Kolam SVG + themed header */
+  const KOLAM=`<svg xmlns="http://www.w3.org/2000/svg" width="110" height="110" viewBox="0 0 130 130" style="opacity:0.9"><defs><style>.kl{stroke:#7A9E7E;stroke-width:1.8;fill:none;stroke-linecap:round;}.kl2{stroke:#E1AD01;stroke-width:1.5;fill:none;stroke-linecap:round;}.kd{fill:#7A9E7E;}.kd2{fill:#C0714F;}</style></defs><circle cx="65" cy="65" r="4.5" class="kd"/><circle cx="65" cy="44" r="3.2" class="kd"/><circle cx="65" cy="86" r="3.2" class="kd"/><circle cx="44" cy="65" r="3.2" class="kd"/><circle cx="86" cy="65" r="3.2" class="kd"/><circle cx="44" cy="44" r="2.8" class="kd2"/><circle cx="86" cy="44" r="2.8" class="kd2"/><circle cx="44" cy="86" r="2.8" class="kd2"/><circle cx="86" cy="86" r="2.8" class="kd2"/><circle cx="65" cy="23" r="2.2" class="kd"/><circle cx="65" cy="107" r="2.2" class="kd"/><circle cx="23" cy="65" r="2.2" class="kd"/><circle cx="107" cy="65" r="2.2" class="kd"/><circle cx="30" cy="30" r="2.2" class="kd2"/><circle cx="100" cy="30" r="2.2" class="kd2"/><circle cx="30" cy="100" r="2.2" class="kd2"/><circle cx="100" cy="100" r="2.2" class="kd2"/><path d="M65,44 C80,52 80,78 65,86 C50,78 50,52 65,44Z" class="kl"/><path d="M44,65 C52,50 78,50 86,65 C78,80 52,80 44,65Z" class="kl"/><path d="M44,44 C55,48 68,55 65,65 C62,55 48,55 44,44Z" class="kl2"/><path d="M86,44 C82,55 72,55 65,65 C68,55 75,48 86,44Z" class="kl2"/><path d="M44,86 C48,75 62,75 65,65 C68,75 55,82 44,86Z" class="kl2"/><path d="M86,86 C75,82 68,75 65,65 C72,75 82,75 86,86Z" class="kl2"/><path d="M65,23 C85,32 98,45 107,65 C98,85 85,98 65,107 C45,98 32,85 23,65 C32,45 45,32 65,23Z" stroke="#A8C5A0" stroke-width="1.2" fill="none" stroke-dasharray="3,3"/><path d="M30,30 C40,35 45,40 44,44" class="kl2"/><path d="M100,30 C90,35 85,40 86,44" class="kl2"/><path d="M30,100 C35,90 40,85 44,86" class="kl2"/><path d="M100,100 C90,90 85,85 86,86" class="kl2"/></svg>`;
+  out+=`<div style="background:linear-gradient(135deg,#2c4a2e 0%,#3d6b40 65%,#4a7a4d 100%);padding:22px 26px 18px;margin:-20px -20px 20px;border-bottom:4px solid #E1AD01;display:flex;justify-content:space-between;align-items:center;-webkit-print-color-adjust:exact;print-color-adjust:exact">
+    <div style="flex:1">
+      <div style="font-size:8.5px;color:#A8C5A0;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:6px;font-weight:600">AnbuCare &nbsp;·&nbsp; Patient Health Monitoring</div>
+      <div style="font-size:22px;font-weight:900;color:#ffffff;letter-spacing:.3px;line-height:1.2">PATIENT HEALTH<br>MONITORING REPORT</div>
+      <div style="margin-top:12px;display:flex;gap:20px;font-size:9px;color:#d4e8d5;flex-wrap:wrap">
+        <span><b style="color:#E1AD01">Report ID:</b> ${repId}</span>
+        <span><b style="color:#E1AD01">Generated:</b> ${today}</span>
       </div>
+      <div style="margin-top:8px;display:inline-block;background:#C0714F;color:#fff;font-size:8.5px;font-weight:700;padding:3px 12px;border-radius:2px;letter-spacing:1px">CONFIDENTIAL — FOR PHYSICIAN USE ONLY</div>
     </div>
-
-    <!-- Symptom averages summary -->
-    ${fS.length?`
-    <div style="background:#fff;border:1.5px solid #e0e0e0;border-radius:12px;padding:14px 16px;margin-bottom:18px">
-      <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">Average Symptom Scores</div>
-      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px">
-        ${['nausea','fatigue','pain','mood','appetite'].map(k=>{
-          const avg=avgSym(k),col=scCol(avg);
-          const icons={nausea:'🤢',fatigue:'😴',pain:'🩹',mood:'😊',appetite:'🍽️'};
-          return `<div style="text-align:center;min-width:56px">
-            <div style="font-size:1.5rem;font-weight:900;color:${col}">${avg}</div>
-            <div style="font-size:.85rem;line-height:1.4">${icons[k]}</div>
-            <div style="font-size:.58rem;color:#888;font-weight:600;text-transform:uppercase">${k}</div>
-          </div>`;
-        }).join('')}
-      </div>
-      ${(()=>{const alerts=[];
-        if(+avgSym('pain')>=4) alerts.push('<span style="background:#fff3e0;color:#e65100;border-radius:5px;padding:2px 8px;font-size:.68rem;font-weight:700">⚠️ High avg pain</span>');
-        if(+avgSym('nausea')>=4) alerts.push('<span style="background:#fff3e0;color:#e65100;border-radius:5px;padding:2px 8px;font-size:.68rem;font-weight:700">⚠️ High avg nausea</span>');
-        if(+avgSym('fatigue')>=4) alerts.push('<span style="background:#fff3e0;color:#e65100;border-radius:5px;padding:2px 8px;font-size:.68rem;font-weight:700">⚠️ High avg fatigue</span>');
-        if(+avgSym('mood')<=2) alerts.push('<span style="background:#fce4ec;color:#c62828;border-radius:5px;padding:2px 8px;font-size:.68rem;font-weight:700">⚠️ Low mood</span>');
-        return alerts.length?`<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:5px">${alerts.join('')}</div>`:'<div style="margin-top:8px;font-size:.7rem;color:#43a87a;font-weight:600">✅ All averages within normal range</div>';
-      })()}
-    </div>`:
-    `<div style="background:#f7fbf9;border-radius:10px;padding:12px;font-size:.8rem;color:#888;text-align:center">No symptom data for this period</div>`}
-
-    ${fV.length?`
-    <div style="background:#fff;border:1.5px solid #e0e0e0;border-radius:12px;padding:12px 16px;margin-bottom:14px">
-      <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Average Vitals</div>
-      <div style="display:flex;flex-wrap:wrap;gap:16px;font-size:.88rem">
-        ${avgBP_s?`<span>🫀 BP: <b>${avgBP_s}/${avgBP_d} mmHg</b></span>`:''}
-        ${avgSleep?`<span>🌙 Sleep: <b>${avgSleep} hrs/night</b></span>`:''}
-        ${fC.length?`<span>💉 Chemo sessions: <b>${fC.length}</b></span>`:''}
-      </div>
-    </div>`:''}
-
-    <div style="text-align:center;color:#c0d0cc;font-size:.7rem;margin-top:auto;padding-top:12px">Page 1 — Summary</div>
+    <div style="flex-shrink:0;margin-left:18px">${KOLAM}</div>
   </div>`;
 
-  /* ════════════════════════════════════════
-     PAGE 2 — SYMPTOMS DETAIL
-  ════════════════════════════════════════ */
+
+  /* Patient & Treatment Overview */
+  out+=`<div style="border:1.5px solid #7A9E7E;border-radius:4px;padding:14px 18px;margin-bottom:16px;background:#FAFAF7">
+    <div class="sub-hdr" style="color:#2c4a2e;border-bottom-color:#7A9E7E">Section A — Patient &amp; Treatment Overview</div>
+    <table>
+      <tr><td style="width:160px;color:#555;font-weight:700;background:none;border:none;padding:5px 10px 5px 0">Patient Name</td><td style="background:none;border:none;font-weight:800;font-size:13px;color:#2c4a2e;padding:5px 0">${esc(patientName)}</td>
+          <td style="width:160px;color:#555;font-weight:700;background:none;border:none;padding:5px 10px 5px 20px">Treatment Protocol</td><td style="background:none;border:none;font-weight:700;padding:5px 0">${esc(treatName)}${protocol?` <span style="color:#555;font-weight:400;font-size:10px">(${esc(protocol)})</span>`:''}</td></tr>
+      <tr><td style="color:#555;font-weight:700;background:none;border:none;padding:5px 10px 5px 0">Report Period</td><td style="background:none;border:none;font-weight:700;padding:5px 0">${fmtDate(from)} &mdash; ${fmtDate(to)}</td>
+          <td style="color:#555;font-weight:700;background:none;border:none;padding:5px 10px 5px 20px">Oncologist / Physician</td><td style="background:none;border:none;padding:5px 0">${esc(oncologist)}</td></tr>
+      <tr><td style="color:#555;font-weight:700;background:none;border:none;padding:5px 10px 5px 0">Treatment Start Date</td><td style="background:none;border:none;padding:5px 0">${fmtDate(startDate)||'—'}</td>
+          <td style="color:#555;font-weight:700;background:none;border:none;padding:5px 10px 5px 20px">Report Prepared By</td><td style="background:none;border:none;padding:5px 0">${esc(prepBy)}</td></tr>
+    </table>
+  </div>`;
+
+  /* Clinical Summary — record counts */
+  out+=`<div class="sub-hdr">Section B — Clinical Summary (${fmtDate(from)} to ${fmtDate(to)})</div>
+  <table style="margin-bottom:16px">
+    <tr>
+      <th>Parameter</th><th>Records Logged</th><th>Period Coverage</th><th>Key Finding</th>
+    </tr>
+    <tr><td>Symptom Assessments</td><td><b>${fS.length}</b></td><td>${from} – ${to}</td>
+        <td>${fS.length?`Highest avg: ${['nausea','fatigue','pain','mood','appetite'].map(k=>({k,v:+avgSym(k)||0})).sort((a,b)=>b.v-a.v)[0].k} (${['nausea','fatigue','pain','mood','appetite'].map(k=>({k,v:+avgSym(k)||0})).sort((a,b)=>b.v-a.v)[0].v})`:'No symptom records'}</td></tr>
+    <tr><td>Vital Signs Checks</td><td><b>${fV.length}</b></td><td>${from} – ${to}</td>
+        <td>${fVbp.length?`Avg BP: ${avgBP_s}/${avgBP_d} mmHg`:'No BP readings'}</td></tr>
+    <tr><td>Chemotherapy Sessions</td><td><b>${fC.length}</b></td><td>${from} – ${to}</td>
+        <td>${fC.length?fC.map(c=>`Cycle ${c.cycle||'—'}, Session ${c.session||'—'}`).join('; '):'No sessions in period'}</td></tr>
+    <tr><td>Sleep Log Entries</td><td><b>${fSl.length}</b></td><td>${from} – ${to}</td>
+        <td>${avgSleep?`Avg duration: ${avgSleep} hrs/night`:'No sleep records'}</td></tr>
+    <tr><td>Clinical Notes (Manual)</td><td><b>${fN.length}</b></td><td>${from} – ${to}</td>
+        <td>${fN.length?fN[0].text?.substring(0,40)+'…':'No manual notes'}</td></tr>
+    <tr><td>Active Medications</td><td><b>${fM.length}</b></td><td>Current</td>
+        <td>${fM.length?fM.slice(0,3).map(m=>m.name).join(', ')+(fM.length>3?` +${fM.length-3} more`:''):'None recorded'}</td></tr>
+  </table>`;
+
+  /* Symptom Score Overview */
   if(fS.length){
-    out+=PAGE_BREAK+`
-    <div>${SEC('🩺','Symptom Log Detail','#3a8c7e')}
-      <p style="font-size:.75rem;color:#888;margin-bottom:14px">${fS.length} entries · ${from} – ${to}</p>
-      ${[...fS].sort((a,b)=>b.date.localeCompare(a.date)).map(e=>{
-        const cs=e.chemoId?S.chemoSessions.find(s=>s.id===e.chemoId):null;
-        return `<div style="border:1px solid #e0e0e0;border-radius:10px;padding:10px 13px;margin-bottom:9px;background:#fafafa;page-break-inside:avoid">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
-            <b style="font-size:.86rem">${fmtDate(e.date)}</b>
-            ${cs?`<span style="font-size:.65rem;font-weight:700;background:#fde8ed;color:#e8496a;padding:2px 7px;border-radius:6px">Cycle ${cs.cycle} · Sess ${cs.session}</span>`:''}
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;text-align:center;margin-bottom:6px">
-            ${['nausea','fatigue','pain','mood','appetite'].map(k=>{
-              const icons={nausea:'🤢',fatigue:'😴',pain:'🩹',mood:'😊',appetite:'🍽️'};
-              const col=scCol(e[k]);
-              return `<div><div style="font-size:.95rem;font-weight:800;color:${col}">${e[k]||'—'}</div><div style="font-size:.58rem;color:#aaa">${icons[k]}</div></div>`;
-            }).join('')}
-          </div>
-          ${e.extras?.length?`<div style="font-size:.7rem;color:#e65100;margin-top:2px">⚡ ${e.extras.join(' · ')}</div>`:''}
-          ${e.notes?`<div style="font-size:.7rem;color:#888;margin-top:3px;font-style:italic">💬 ${esc(e.notes)}</div>`:''}
-        </div>`;
+    out+=`<div class="sub-hdr">Section C — Symptom Score Overview &nbsp;<span style="font-size:9px;font-weight:400;color:#666">(Scale: 1=None &nbsp;2=Mild &nbsp;3=Moderate &nbsp;4=Severe &nbsp;5=Very Severe)</span></div>
+    <table style="margin-bottom:8px">
+      <tr><th>Symptom</th><th>Avg Score</th><th>Severity Classification</th><th>Trend Over Period</th><th>No. of Entries</th></tr>
+      ${[['nausea','Nausea'],['fatigue','Fatigue / Tiredness'],['pain','Pain'],['mood','Mood (Inverse)'],['appetite','Appetite Loss']].map(([k,lbl])=>{
+        const av=avgSym(k);const v=Math.round(+av);
+        return`<tr><td><b>${lbl}</b></td>
+          <td><b style="color:${symCol(v)}">${av}/5.0</b></td>
+          <td style="color:${symCol(v)};font-weight:700">${symLabel(v)}</td>
+          <td>${symTrend(k)}</td>
+          <td>${fS.length}</td></tr>`;
       }).join('')}
-    </div>`;
+    </table>
+    <div class="ref-note">Note: Mood score reflects patient-reported mood (higher = better mood). All other scores reflect symptom burden (higher = more severe).</div>`;
   }
 
-  /* ════════════════════════════════════════
-     PAGE 3 — VITALS
-  ════════════════════════════════════════ */
+  /* Avg Vitals summary */
   if(fV.length){
-    out+=PAGE_BREAK+`
-    <div>${SEC('🫀','Vitals Detail','#1565c0')}
-      <p style="font-size:.75rem;color:#888;margin-bottom:12px">${fV.length} readings · ${from} – ${to}</p>
-      <table style="width:100%;border-collapse:collapse;font-size:.75rem">
-        <thead>
-          <tr style="background:#e3f2fd">
-            <th style="padding:8px;text-align:left;border-bottom:2px solid #90caf9;font-weight:700">Date</th>
-            <th style="padding:8px;border-bottom:2px solid #90caf9;font-weight:700">Meal</th>
-            <th style="padding:8px;border-bottom:2px solid #90caf9;font-weight:700">BP (mmHg)</th>
-            <th style="padding:8px;border-bottom:2px solid #90caf9;font-weight:700">Pulse</th>
-            <th style="padding:8px;border-bottom:2px solid #90caf9;font-weight:700">Temp °F</th>
-            <th style="padding:8px;border-bottom:2px solid #90caf9;font-weight:700">SpO₂ %</th>
-            <th style="padding:8px;border-bottom:2px solid #90caf9;font-weight:700">Weight kg</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${[...fV].sort((a,b)=>b.date.localeCompare(a.date)).map((v,i)=>`
-          <tr style="background:${i%2===0?'#fff':'#f0f7ff'}">
-            <td style="padding:7px;font-weight:600">${fmtDate(v.date)} ${v.time||''}</td>
-            <td style="padding:7px;color:#888">${esc(v.meal||'')}</td>
-            <td style="padding:7px;font-weight:700;color:${(+v.systolic||0)>140?'#e07b54':'#3a8c7e'}">${v.systolic||'—'}/${v.diastolic||'—'}</td>
-            <td style="padding:7px">${v.pulse||'—'}</td>
-            <td style="padding:7px;color:${(+v.temp||0)>99?'#e07b54':'#555'}">${v.temp||'—'}</td>
-            <td style="padding:7px">${v.spo2||'—'}</td>
-            <td style="padding:7px">${v.weight||'—'}</td>
-          </tr>`).join('')}
-        </tbody>
-      </table>
-    </div>`;
+    out+=`<div class="sub-hdr" style="margin-top:14px">Section D — Average Vital Signs Summary</div>
+    <table style="margin-bottom:8px">
+      <tr><th>Vital Parameter</th><th>Average Value</th><th>Normal Reference Range</th><th>Assessment</th></tr>
+      <tr><td>Blood Pressure (Systolic / Diastolic)</td>
+          <td>${fVbp.length?`<b>${avgBP_s} / ${avgBP_d} mmHg</b>`:'Insufficient data'}</td>
+          <td>90–139 / 60–89 mmHg</td>
+          <td>${fVbp.length?(+avgBP_s>139||+avgBP_d>89?'<span class="flag">⚠ Above normal — review</span>':(+avgBP_s<90||+avgBP_d<60?'<span class="flag">⚠ Below normal — review</span>':'Within normal range')):'—'}</td></tr>
+      <tr><td>Pulse Rate</td>
+          <td>${avgPulse?`<b>${avgPulse} bpm</b>`:'—'}</td>
+          <td>60–100 bpm</td>
+          <td>${avgPulse?(+avgPulse>100?'<span class="flag">⚠ Tachycardia range</span>':(+avgPulse<60?'<span class="flag">⚠ Bradycardia range</span>':'Within normal range')):'—'}</td></tr>
+      <tr><td>Body Temperature</td>
+          <td>${avgTemp?`<b>${avgTemp} °F</b>`:'—'}</td>
+          <td>97.0–99.5 °F</td>
+          <td>${avgTemp?(+avgTemp>99.5?'<span class="flag">⚠ Febrile range</span>':(+avgTemp<97?'<span class="flag">⚠ Hypothermia range</span>':'Within normal range')):'—'}</td></tr>
+      <tr><td>Oxygen Saturation (SpO₂)</td>
+          <td>${avgSpo2?`<b>${avgSpo2} %</b>`:'—'}</td>
+          <td>≥ 95%</td>
+          <td>${avgSpo2?(+avgSpo2<95?'<span class="flag">⚠ Hypoxia range — urgent review</span>':'Within normal range'):'—'}</td></tr>
+      <tr><td>Sleep Duration</td>
+          <td>${avgSleep?`<b>${avgSleep} hrs/night</b>`:'—'}</td>
+          <td>7–9 hrs/night</td>
+          <td>${avgSleep?(+avgSleep>=7&&+avgSleep<=9?'Within normal range':(+avgSleep<7?'<span class="flag">⚠ Below recommended</span>':'Above recommended')):'—'}</td></tr>
+    </table>
+    <div style="margin-top:8px;padding:8px 12px;background:#f5f8fb;border-left:3px solid #7A9E7E;font-size:9px;color:#444;line-height:1.75"><b style="color:#2c4a2e">Reference Standards (Indian Clinical Context):</b><br><b>Blood Pressure:</b> Indian Hypertension Guidelines 2022 (IHS &amp; CSI) — Systolic 90–139 mmHg, Diastolic 60–89 mmHg; Hypertension defined as &ge;140/90 mmHg.<br><b>Pulse Rate &amp; SpO₂:</b> Association of Physicians of India (API) &amp; ICMR Standard Adult Norms — Pulse 60–100 bpm; SpO₂ &ge;95%.<br><b>Body Temperature:</b> ICMR Clinical Practice Guidelines — Normal 97.0–99.5°F (36.1–37.5°C); Febrile threshold &ge;99.5°F (37.5°C).<br><b>Sleep Duration:</b> National Mental Health Programme (NMHP) &amp; ICMR Adult Health Guidelines — Recommended 7–9 hrs/night for adults.</div>`;
   }
 
-  /* ════════════════════════════════════════
-     PAGE 4 — TREATMENT / CHEMO
-  ════════════════════════════════════════ */
+  out+=`<div class="footer-band">
+    <span>AnbuCare Patient Health Report &nbsp;|&nbsp; ${esc(patientName)} &nbsp;|&nbsp; ${fmtDate(from)} – ${fmtDate(to)}</span>
+    <span>Report ID: ${repId} &nbsp;|&nbsp; Page 1 &nbsp;|&nbsp; CONFIDENTIAL</span>
+  </div>`;
+
+  /* ═══════════════════════════════════════════
+     PAGE 2 — SYMPTOM ASSESSMENT DETAIL
+  ═══════════════════════════════════════════ */
+  out+=`<div class="page-break"></div>`;
+  out+=`<div style="border-bottom:2px solid #7A9E7E;margin-bottom:14px;padding-bottom:6px;display:flex;justify-content:space-between;background:#FAF9F6">
+    <span style="font-size:13px;font-weight:800;color:#2c4a2e">PATIENT HEALTH MONITORING REPORT — DETAIL SECTIONS</span>
+    <span style="font-size:10px;color:#888">${esc(patientName)} &nbsp;|&nbsp; ${repId}</span>
+  </div>`;
+
+  out+=`<div class="sec-hdr">SECTION 1 — SYMPTOM ASSESSMENT LOG</div>`;
+  out+=`<p style="font-size:10px;color:#555;margin:0 0 10px;line-height:1.6">
+    Symptoms are self-reported by the patient or caregiver using a standardised 5-point scale at the time of observation.
+    Each entry captures five core oncology symptom domains: <b>Nausea, Fatigue, Pain, Mood</b> and <b>Appetite</b>.
+    <br><b>Score Reference:</b> &nbsp;1 = None &nbsp;&nbsp;2 = Mild &nbsp;&nbsp;3 = Moderate &nbsp;&nbsp;4 = Severe &nbsp;&nbsp;5 = Very Severe
+    &nbsp;&nbsp;|&nbsp;&nbsp;For Mood: &nbsp;1 = Very Low &nbsp;&nbsp;3 = Neutral &nbsp;&nbsp;5 = Very Good
+  </p>`;
+
+  if(fS.length){
+    const sorted=[...fS].sort((a,b)=>b.date.localeCompare(a.date));
+    out+=`<table>
+      <tr>
+        <th style="width:90px">Date &amp; Time</th>
+        <th style="width:90px">Chemo Reference</th>
+        <th>Nausea</th><th>Fatigue</th><th>Pain</th><th>Mood</th><th>Appetite</th>
+        <th>Additional Symptoms / Notes</th>
+      </tr>`;
+    sorted.forEach(e=>{
+      const extras=[e.fever&&'Fever',e.constipation&&'Constipation',e.diarrhoea&&'Diarrhoea',
+                    e.vomiting&&'Vomiting',e.chills&&'Chills',e.bleedGums&&'Bleeding Gums',
+                    e.mouthSores&&'Mouth Sores',e.numbing&&'Numbness',e.rash&&'Skin Rash',
+                    e.weakness&&'Weakness',e.shortBreath&&'Shortness of Breath'].filter(Boolean).join(', ');
+      const noteText=e.notes?e.notes.substring(0,60)+(e.notes.length>60?'…':''):'';
+      const addl=[extras,noteText].filter(Boolean).join(' | ') || '—';
+      out+=`<tr>
+        <td>${fmtDT(e.date+(e.time?' '+e.time:''))}</td>
+        <td>${e.cycle?`Cycle ${e.cycle} · Session ${e.session||'—'}`:'—'}</td>
+        ${['nausea','fatigue','pain','mood','appetite'].map(k=>{
+          const v=+e[k]||0;
+          return`<td><b style="color:${symCol(v)}">${v}</b><br><span style="font-size:9px;color:#555">${symLabel(v)}</span></td>`;
+        }).join('')}
+        <td style="font-size:9.5px">${addl}</td>
+      </tr>`;
+    });
+    out+=`</table>`;
+    if(fS.length>=4){
+      out+=`<div class="sub-hdr" style="margin-top:16px">Symptom Trend Analysis</div>
+      <table>
+        <tr><th>Symptom Domain</th><th>First Half Average</th><th>Second Half Average</th><th>Change</th><th>Clinical Direction</th></tr>`;
+      [['nausea','Nausea'],['fatigue','Fatigue'],['pain','Pain'],['mood','Mood'],['appetite','Appetite']].forEach(([k,lbl])=>{
+        const sorted2=[...fS].sort((a,b)=>a.date.localeCompare(b.date));
+        const mid=Math.floor(sorted2.length/2);
+        const a1=(sorted2.slice(0,mid).reduce((a,x)=>a+(+x[k]||0),0)/mid).toFixed(1);
+        const a2=(sorted2.slice(mid).reduce((a,x)=>a+(+x[k]||0),0)/(sorted2.length-mid)).toFixed(1);
+        const d=(+a2-+a1).toFixed(1);
+        const dir=Math.abs(+d)<0.3?'Stable':(+d>0?(k==='mood'?'↓ Declining':'↑ Worsening'):(k==='mood'?'↑ Improving':'↓ Improving'));
+        const dc=Math.abs(+d)<0.3?'#555':(+d>0?(k==='mood'?'#e74c3c':'#e74c3c'):'#27ae60');
+        out+=`<tr><td>${lbl}</td><td>${a1}/5</td><td>${a2}/5</td>
+          <td style="color:${+d>0?'#e74c3c':'#27ae60'};font-weight:700">${+d>0?'+':''}${d}</td>
+          <td style="color:${dc};font-weight:700">${dir}</td></tr>`;
+      });
+      out+=`</table>`;
+    }
+  } else {
+    out+=`<p style="color:#888;font-style:italic;text-align:center;padding:20px 0">No symptom entries recorded in this period.</p>`;
+  }
+
+  out+=`<div class="footer-band">
+    <span>AnbuCare Patient Health Report &nbsp;|&nbsp; ${esc(patientName)} &nbsp;|&nbsp; ${fmtDate(from)} – ${fmtDate(to)}</span>
+    <span>Report ID: ${repId} &nbsp;|&nbsp; Page 2 &nbsp;|&nbsp; CONFIDENTIAL</span>
+  </div>`;
+
+  /* ═══════════════════════════════════════════
+     PAGE 3 — VITAL SIGNS
+  ═══════════════════════════════════════════ */
+  out+=`<div class="page-break"></div>`;
+  out+=`<div style="border-bottom:2px solid #7A9E7E;margin-bottom:14px;padding-bottom:6px;display:flex;justify-content:space-between;background:#FAF9F6">
+    <span style="font-size:13px;font-weight:800;color:#2c4a2e">PATIENT HEALTH MONITORING REPORT — DETAIL SECTIONS</span>
+    <span style="font-size:10px;color:#888">${esc(patientName)} &nbsp;|&nbsp; ${repId}</span>
+  </div>`;
+
+  out+=`<div class="sec-hdr">SECTION 2 — VITAL SIGNS LOG</div>`;
+  out+=`<p style="font-size:10px;color:#555;margin:0 0 10px;line-height:1.6">
+    Vital signs are recorded by the caregiver/patient using a calibrated device.
+    Reference ranges are based on standard adult clinical norms.
+    Values outside the normal range are marked with <b class="flag">*</b> and should be reviewed by the treating physician.
+  </p>`;
+  out+=`<table style="margin-bottom:6px;font-size:9.5px">
+    <tr style="background:#ecf0f1">
+      <th style="background:#e8f0e8;color:#2c4a2e">Reference Ranges</th>
+      <th style="background:#e8f0e8;color:#2c4a2e">BP (Systolic)</th>
+      <th style="background:#e8f0e8;color:#2c4a2e">BP (Diastolic)</th>
+      <th style="background:#e8f0e8;color:#2c4a2e">Pulse</th>
+      <th style="background:#e8f0e8;color:#2c4a2e">Temperature</th>
+      <th style="background:#e8f0e8;color:#2c4a2e">SpO₂</th>
+    </tr>
+    <tr>
+      <td style="font-weight:700;color:#2c4a2e">Normal Adult Range</td>
+      <td>90 – 139 mmHg</td><td>60 – 89 mmHg</td>
+      <td>60 – 100 bpm</td><td>97.0 – 99.5 °F</td><td>≥ 95%</td>
+    </tr>
+  </table>`;
+
+  if(fV.length){
+    out+=`<table>
+      <tr>
+        <th>Date &amp; Time</th><th>Meal Context</th>
+        <th>BP Systolic (mmHg)</th><th>BP Diastolic (mmHg)</th>
+        <th>Pulse (bpm)</th><th>Temperature (°F)</th>
+        <th>SpO₂ (%)</th><th>Weight (kg)</th>
+      </tr>`;
+    [...fV].sort((a,b)=>b.date.localeCompare(a.date)).forEach(v=>{
+      const s=+v.systolic||0,d=+v.diastolic||0,p=+v.pulse||0,t=+v.temp||0,o=+v.spo2||0;
+      const bpFlag=s>0&&d>0?flagBP(s,d):'';
+      out+=`<tr>
+        <td>${fmtDT((v.date||'')+(v.time?' '+v.time:''))}</td>
+        <td>${esc(v.meal||'—')}</td>
+        <td>${s>0?`<b>${s}</b>${bpFlag?`<span class="flag">${bpFlag}</span>`:'`'}`:' — '}</td>
+        <td>${d>0?`<b>${d}</b>${bpFlag?`<span class="flag">${bpFlag}</span>`:''}`:' — '}</td>
+        <td>${p>0?`<b>${p}</b>${flagPulse(p)?`<span class="flag">*</span>`:''}`:' — '}</td>
+        <td>${t>0?`<b>${t}</b>${flagTemp(t)?`<span class="flag">*</span>`:''}`:' — '}</td>
+        <td>${o>0?`<b>${o}</b>${flagSpo2(o)?`<span class="flag">*</span>`:''}`:' — '}</td>
+        <td>${v.weight>0?`<b>${v.weight}</b>`:' — '}</td>
+      </tr>`;
+    });
+    out+=`</table>`;
+    if(anyVitalFlag){
+      out+=`<div class="ref-note" style="color:#c0392b;margin-top:8px">
+        <b>* Flagged Values:</b> One or more readings fall outside normal reference ranges.
+        ${hasBPFlag?'Blood pressure readings require clinical review. ':''
+        }${hasTempFlag?'Temperature elevated — possible febrile episode; correlate with clinical presentation. ':''
+        }${hasSpo2Flag?'SpO₂ below 95% — assess for respiratory compromise. ':''
+        }${hasPulseFlag?'Pulse rate outside 60–100 bpm range. ':''}
+        Please review highlighted entries with the patient's treating physician.
+      </div>`;
+    }
+  } else {
+    out+=`<p style="color:#888;font-style:italic;text-align:center;padding:16px 0">No vital signs recorded in this period.</p>`;
+  }
+
+  /* Treatment Sessions */
+  out+=`<div class="sec-hdr" style="margin-top:20px">SECTION 3 — CHEMOTHERAPY / TREATMENT SESSIONS</div>`;
   if(fC.length){
-    out+=PAGE_BREAK+`
-    <div>${SEC('💉','Treatment Sessions','#e8496a')}
-      <p style="font-size:.75rem;color:#888;margin-bottom:14px">${fC.length} sessions · ${from} – ${to}</p>
-      ${[...fC].sort((a,b)=>b.date.localeCompare(a.date)).map(s=>{
-        const syms=fS.filter(x=>x.chemoId===s.id);
-        const avg=k=>syms.length?(syms.reduce((a,x)=>a+Number(x[k]||0),0)/syms.length).toFixed(1):null;
-        return `<div style="border-left:4px solid #e8496a;border-radius:0 10px 10px 0;background:#fff5f7;padding:13px 15px;margin-bottom:11px;page-break-inside:avoid">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:6px;margin-bottom:8px">
-            <div>
-              <span style="font-weight:800;font-size:.95rem">Cycle ${s.cycle} · Session ${s.session}</span>
-              ${s.treatType?`<span style="font-size:.68rem;font-weight:700;background:#ede9ff;color:#7c6fcf;padding:2px 7px;border-radius:5px;margin-left:6px">${esc(s.treatType)}</span>`:''}
-            </div>
-            <span style="font-weight:700;font-size:.85rem;color:#e8496a">💉 ${fmtDate(s.date)}</span>
-          </div>
-          <div style="font-size:.8rem;color:#555;margin-bottom:6px">🏥 ${esc(s.hospital)}</div>
-          ${s.notes?`<div style="font-size:.76rem;color:#888;font-style:italic;margin-bottom:8px">📝 ${esc(s.notes)}</div>`:''}
-          ${syms.length?`
-          <div style="background:#fff;border-radius:8px;padding:9px 11px;border:1px solid #f5c6cb">
-            <div style="font-size:.68rem;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px">Post-session symptom avg (${syms.length} log${syms.length>1?'s':''})</div>
-            <div style="display:flex;flex-wrap:wrap;gap:10px">
-              ${['nausea','fatigue','pain','mood','appetite'].map(k=>{
-                const v=avg(k);const col=scCol(v);
-                const icons={nausea:'🤢',fatigue:'😴',pain:'🩹',mood:'😊',appetite:'🍽️'};
-                return v?`<span style="font-size:.75rem">${icons[k]} <b style="color:${col}">${v}/5</b></span>`:'';
-              }).join('')}
-            </div>
-          </div>`:'<div style="font-size:.73rem;color:#aaa;font-style:italic">No symptom logs linked to this session</div>'}
-        </div>`;
-      }).join('')}
-    </div>`;
+    fC.sort((a,b)=>b.date.localeCompare(a.date)).forEach(c=>{
+      const postSym=fS.filter(s=>s.chemoId===c.id||s.cycle==c.cycle);
+      const avgP=k=>postSym.length?(postSym.reduce((a,x)=>a+(+x[k]||0),0)/postSym.length).toFixed(1):null;
+      out+=`<table style="margin-bottom:14px">
+        <tr><th colspan="4">Cycle ${c.cycle||'—'} &nbsp;·&nbsp; Session ${c.session||'—'} &nbsp;·&nbsp; ${esc(c.treatType||treatName)}</th></tr>
+        <tr>
+          <td style="width:25%;font-weight:700;color:#2c4a2e">Session Date</td>
+          <td>${fmtDate(c.date)}</td>
+          <td style="width:25%;font-weight:700;color:#2c4a2e">Hospital / Centre</td>
+          <td>${esc(c.hospital||'—')}</td>
+        </tr>
+        ${c.notes?`<tr><td style="font-weight:700;color:#2c4a2e">Session Notes</td><td colspan="3">${esc(c.notes)}</td></tr>`:''}
+      </table>`;
+      if(postSym.length){
+        out+=`<div style="font-size:10px;color:#555;font-weight:700;margin:-10px 0 5px">Post-Session Symptom Assessment (${postSym.length} log${postSym.length>1?'s':''})</div>`;
+        out+=`<table style="margin-bottom:16px">
+          <tr><th>Symptom</th><th>Avg Score</th><th>Severity</th></tr>
+          ${[['nausea','Nausea'],['fatigue','Fatigue'],['pain','Pain'],['mood','Mood'],['appetite','Appetite']].map(([k,l])=>{
+            const av=avgP(k);const v=Math.round(+av);
+            return av?`<tr><td>${l}</td><td style="color:${symCol(v)};font-weight:700">${av}/5</td><td style="color:${symCol(v)}">${symLabel(v)}</td></tr>`:'';
+          }).join('')}
+        </table>`;
+      }
+    });
+  } else {
+    out+=`<p style="color:#888;font-style:italic;text-align:center;padding:14px 0">No chemotherapy sessions recorded in this period.</p>`;
   }
 
-  /* ════════════════════════════════════════
-     PAGE 5 — MEDICINES & CARE PLAN
-  ════════════════════════════════════════ */
-  if(fM.length||fD.length||fT.length){
-    out+=PAGE_BREAK+`
-    <div>
-      ${fM.length?`
-      ${SEC('💊','Current Medicines','#1565c0')}
-      <table style="width:100%;border-collapse:collapse;font-size:.75rem;margin-bottom:20px">
-        <thead><tr style="background:#e3f2fd">
-          <th style="padding:8px;text-align:left;border-bottom:2px solid #90caf9">Medicine</th>
-          <th style="padding:8px;border-bottom:2px solid #90caf9">Dose</th>
-          <th style="padding:8px;border-bottom:2px solid #90caf9">When</th>
-          <th style="padding:8px;border-bottom:2px solid #90caf9">Food</th>
-          <th style="padding:8px;border-bottom:2px solid #90caf9">From</th>
-          <th style="padding:8px;border-bottom:2px solid #90caf9">Until</th>
-        </tr></thead>
-        <tbody>${fM.map((m,i)=>`
-        <tr style="background:${i%2===0?'#fff':'#f0f7ff'}">
-          <td style="padding:7px;font-weight:700">${esc(m.name)}</td>
-          <td style="padding:7px">${esc(m.dose)} ${esc(m.unit||'')}</td>
-          <td style="padding:7px">${esc(m.time||'')}</td>
-          <td style="padding:7px">${esc(m.food||'')}</td>
-          <td style="padding:7px">${fmtDate(m.start)}</td>
-          <td style="padding:7px">${m.end?fmtDate(m.end):'Ongoing'}</td>
-        </tr>`).join('')}</tbody>
-      </table>`:''}
+  out+=`<div class="footer-band">
+    <span>AnbuCare Patient Health Report &nbsp;|&nbsp; ${esc(patientName)} &nbsp;|&nbsp; ${fmtDate(from)} – ${fmtDate(to)}</span>
+    <span>Report ID: ${repId} &nbsp;|&nbsp; Page 3 &nbsp;|&nbsp; CONFIDENTIAL</span>
+  </div>`;
 
-      ${fT.length?`
-      ${SEC('🧪','Upcoming Tests','#7c6fcf')}
-      <table style="width:100%;border-collapse:collapse;font-size:.75rem;margin-bottom:20px">
-        <thead><tr style="background:#ede9ff">
-          <th style="padding:8px;text-align:left;border-bottom:2px solid #b39ddb">Test</th>
-          <th style="padding:8px;border-bottom:2px solid #b39ddb">Due Date</th>
-          <th style="padding:8px;border-bottom:2px solid #b39ddb">Status</th>
-          <th style="padding:8px;border-bottom:2px solid #b39ddb">Notes</th>
-        </tr></thead>
-        <tbody>${fT.map((t,i)=>`
-        <tr style="background:${i%2===0?'#fff':'#f5f0ff'}">
-          <td style="padding:7px;font-weight:700">${esc(t.name)}</td>
-          <td style="padding:7px">${fmtDate(t.date)}</td>
-          <td style="padding:7px"><span style="font-weight:700;color:${t.status==='Done'?'#43a87a':t.status==='Overdue'?'#e07b54':'#7c6fcf'}">${esc(t.status||'Upcoming')}</span></td>
-          <td style="padding:7px;color:#888">${esc(t.notes||'')}</td>
-        </tr>`).join('')}</tbody>
-      </table>`:''}
-    </div>`;
+  /* ═══════════════════════════════════════════
+     PAGE 4 — MEDICATIONS, TESTS, SLEEP, NOTES
+  ═══════════════════════════════════════════ */
+  out+=`<div class="page-break"></div>`;
+  out+=`<div style="border-bottom:2px solid #7A9E7E;margin-bottom:14px;padding-bottom:6px;display:flex;justify-content:space-between;background:#FAF9F6">
+    <span style="font-size:13px;font-weight:800;color:#2c4a2e">PATIENT HEALTH MONITORING REPORT — DETAIL SECTIONS</span>
+    <span style="font-size:10px;color:#888">${esc(patientName)} &nbsp;|&nbsp; ${repId}</span>
+  </div>`;
+
+  /* Medication Schedule */
+  out+=`<div class="sec-hdr">SECTION 4 — CURRENT MEDICATION SCHEDULE</div>`;
+  out+=`<p style="font-size:10px;color:#555;margin:0 0 10px;line-height:1.6">
+    Medications listed below are currently active or were active during the report period.
+    This list is for clinical cross-reference only. Please verify with the patient's prescription records.
+  </p>`;
+  if(fM.length){
+    out+=`<table>
+      <tr>
+        <th>Medication Name</th><th>Dose / Qty</th><th>Dosage Times</th>
+        <th>Food Instruction</th><th>Start Date</th><th>End Date</th><th>Status</th>
+      </tr>`;
+    fM.forEach(m=>{
+      const times=Array.isArray(m.times)?m.times.join(', '):(m.times||'—');
+      const isActive=!m.end||m.end>=today;
+      out+=`<tr>
+        <td><b>${esc(m.name||'—')}</b></td>
+        <td>${m.qty||1} ${esc(m.unit||'tablet(s)')}</td>
+        <td>${esc(times)}</td>
+        <td>${esc(m.food||'—')}</td>
+        <td>${fmtDate(m.start)||'—'}</td>
+        <td>${m.end?fmtDate(m.end):'Ongoing'}</td>
+        <td style="color:${isActive?'#27ae60':'#888'};font-weight:700">${isActive?'Active':'Completed'}</td>
+      </tr>`;
+    });
+    out+=`</table>`;
+    out+=`<div class="ref-note">This list is generated from caregiver-entered data. Confirm with prescribing physician for accuracy.</div>`;
+  } else {
+    out+=`<p style="color:#888;font-style:italic;text-align:center;padding:14px 0">No medications recorded.</p>`;
   }
 
-  /* ════════════════════════════════════════
-     PAGE 6 — SLEEP & NOTES
-  ════════════════════════════════════════ */
-  if(fSl.length||fN.length){
-    out+=PAGE_BREAK+`
-    <div>
-      ${fSl.length?`
-      ${SEC('🌙','Sleep Log','#7c6fcf')}
-      <p style="font-size:.75rem;color:#888;margin-bottom:12px">${fSl.length} nights logged · Avg ${avgSleep} hrs</p>
-      <table style="width:100%;border-collapse:collapse;font-size:.75rem;margin-bottom:22px">
-        <thead><tr style="background:#ede9ff">
-          <th style="padding:8px;text-align:left;border-bottom:2px solid #b39ddb">Date</th>
-          <th style="padding:8px;border-bottom:2px solid #b39ddb">Bedtime</th>
-          <th style="padding:8px;border-bottom:2px solid #b39ddb">Wake</th>
-          <th style="padding:8px;border-bottom:2px solid #b39ddb">Hours</th>
-          <th style="padding:8px;border-bottom:2px solid #b39ddb">Quality</th>
-          <th style="padding:8px;border-bottom:2px solid #b39ddb">Disruptions</th>
-        </tr></thead>
-        <tbody>${[...fSl].sort((a,b)=>b.date.localeCompare(a.date)).map((s,i)=>`
-        <tr style="background:${i%2===0?'#fff':'#f5f0ff'}">
-          <td style="padding:7px;font-weight:600">${fmtDate(s.date)}</td>
-          <td style="padding:7px">${s.bedtime||'—'}</td>
-          <td style="padding:7px">${s.wake||'—'}</td>
-          <td style="padding:7px;font-weight:700;color:${(+s.hours||0)<6?'#e07b54':(+s.hours||0)<7?'#f0b429':'#43a87a'}">${s.hours||'—'} h</td>
-          <td style="padding:7px">${'★'.repeat(+s.quality||0)}${'☆'.repeat(5-(+s.quality||0))}</td>
-          <td style="padding:7px;font-size:.7rem;color:#888">${s.disruptions?.length?s.disruptions.join(', '):'None'}</td>
-        </tr>`).join('')}</tbody>
-      </table>`:''}
-
-      ${fN.length?`
-      ${SEC('📝','Care Notes','#607870')}
-      <p style="font-size:.75rem;color:#888;margin-bottom:12px">${fN.length} notes</p>
-      ${[...fN].sort((a,b)=>b.date.localeCompare(a.date)).map(n=>`
-      <div style="border-left:3px solid #c8e0d8;padding:8px 12px;margin-bottom:8px;background:#fafafa;border-radius:0 8px 8px 0;page-break-inside:avoid">
-        <div style="font-size:.7rem;color:#888;margin-bottom:3px">${fmtDate(n.date)} · ${esc(n.email||'')}</div>
-        <div style="font-size:.82rem;line-height:1.55">${esc(n.note||'')}</div>
-      </div>`).join('')}`:''}
-    </div>`;
+  /* Investigations / Tests */
+  out+=`<div class="sec-hdr" style="margin-top:20px">SECTION 5 — SCHEDULED INVESTIGATIONS &amp; TESTS</div>`;
+  if(fT.length){
+    out+=`<table>
+      <tr><th>Test / Investigation Name</th><th>Due Date</th><th>Status</th><th>Notes / Instructions</th></tr>`;
+    fT.forEach(t=>{
+      const sts=t.status||'upcoming';
+      const stCol=sts==='done'?'#27ae60':sts==='upcoming'?'#2980b9':'#f39c12';
+      out+=`<tr>
+        <td><b>${esc(t.name||t.test||'—')}</b></td>
+        <td>${fmtDate(t.date)}</td>
+        <td style="color:${stCol};font-weight:700;text-transform:capitalize">${esc(sts)}</td>
+        <td>${esc(t.notes||'—')}</td>
+      </tr>`;
+    });
+    out+=`</table>`;
+  } else {
+    out+=`<p style="color:#888;font-style:italic;text-align:center;padding:14px 0">No investigations recorded.</p>`;
   }
 
-  /* ── Inject into printReport and trigger print/save ── */
+  /* Sleep Log */
+  out+=`<div class="sec-hdr" style="margin-top:20px">SECTION 6 — SLEEP LOG</div>`;
+  out+=`<p style="font-size:10px;color:#555;margin:0 0 10px;line-height:1.6">
+    Sleep quality is rated on a 5-point scale: 1 = Very Poor &nbsp; 2 = Poor &nbsp; 3 = Fair &nbsp; 4 = Good &nbsp; 5 = Excellent.
+    Disruptions include pain, nocturia, anxiety, and other factors reported by the patient.
+  </p>`;
+  if(fSl.length){
+    out+=`<table>
+      <tr><th>Date</th><th>Bedtime</th><th>Wake Time</th><th>Duration</th><th>Quality Score</th><th>Quality Rating</th><th>Disruptions</th></tr>`;
+    [...fSl].sort((a,b)=>b.date.localeCompare(a.date)).forEach(s=>{
+      const q=+s.quality||0;
+      out+=`<tr>
+        <td>${fmtDate(s.date)}</td>
+        <td>${s.bed||'—'}</td>
+        <td>${s.wake||'—'}</td>
+        <td><b>${s.hours||'—'} hrs</b></td>
+        <td style="color:${sleepQC(q)};font-weight:700">${q}/5</td>
+        <td style="color:${sleepQC(q)};font-weight:700">${sleepQL(q)}</td>
+        <td>${esc(s.disruptions||'None reported')}</td>
+      </tr>`;
+    });
+    out+=`</table>`;
+    if(avgSleep){
+      out+=`<div style="margin-top:8px;font-size:10.5px">Average sleep duration: <b>${avgSleep} hrs/night</b> over ${fSl.length} night(s) logged.</div>`;
+    }
+  } else {
+    out+=`<p style="color:#888;font-style:italic;text-align:center;padding:14px 0">No sleep log entries in this period.</p>`;
+  }
+
+  out+=`<div class="footer-band">
+    <span>AnbuCare Patient Health Report &nbsp;|&nbsp; ${esc(patientName)} &nbsp;|&nbsp; ${fmtDate(from)} – ${fmtDate(to)}</span>
+    <span>Report ID: ${repId} &nbsp;|&nbsp; Page 4 &nbsp;|&nbsp; CONFIDENTIAL</span>
+  </div>`;
+
+  /* ═══════════════════════════════════════════
+     PAGE 5 — NOTES + PHYSICIAN REVIEW
+  ═══════════════════════════════════════════ */
+  out+=`<div class="page-break"></div>`;
+  out+=`<div style="border-bottom:2px solid #7A9E7E;margin-bottom:14px;padding-bottom:6px;display:flex;justify-content:space-between;background:#FAF9F6">
+    <span style="font-size:13px;font-weight:800;color:#2c4a2e">PATIENT HEALTH MONITORING REPORT — DETAIL SECTIONS</span>
+    <span style="font-size:10px;color:#888">${esc(patientName)} &nbsp;|&nbsp; ${repId}</span>
+  </div>`;
+
+  /* Care Notes — manual only */
+  /* Physician Review Section */
+  out+=`<div class="sec-hdr" style="margin-top:26px">SECTION 7 — PHYSICIAN REVIEW &amp; RECOMMENDATIONS</div>`;
+  out+=`<p style="font-size:10px;color:#555;margin:0 0 14px;line-height:1.6">
+    This section is reserved for the treating physician to record their clinical assessment and recommendations based on the data presented in this report.
+  </p>`;
+  const reviewLine=(label,lines=2)=>`<div style="margin-bottom:16px">
+    <div style="font-size:10px;font-weight:700;color:#2c4a2e;margin-bottom:4px">${label}</div>
+    ${Array(lines).fill('<div style="border-bottom:1px solid #bbb;height:18px;margin-bottom:2px"></div>').join('')}
+  </div>`;
+  out+=reviewLine('Clinical Assessment &amp; Observations:', 3);
+  out+=reviewLine('Treatment Modifications / Recommendations:', 3);
+  out+=reviewLine('Medication Changes (if any):', 2);
+  out+=reviewLine('Next Appointment / Follow-up Plan:', 2);
+
+  /* Signature block */
+  out+=`<div style="display:flex;gap:40px;margin-top:30px">
+    <div style="flex:1;border-top:1.5px solid #333;padding-top:8px;font-size:10px;color:#555">
+      <div style="font-weight:700">Physician / Oncologist Signature</div>
+      <div style="margin-top:6px">Name: _______________________________</div>
+      <div style="margin-top:4px">Reg. No.: ____________________________</div>
+      <div style="margin-top:4px">Date: ________________________________</div>
+    </div>
+    <div style="flex:1;border-top:1.5px solid #333;padding-top:8px;font-size:10px;color:#555">
+      <div style="font-weight:700">Caregiver / Reporter</div>
+      <div style="margin-top:6px">Name: ${esc(prepBy)}</div>
+      <div style="margin-top:4px">Relationship: ________________________</div>
+      <div style="margin-top:4px">Date of Submission: ${today}</div>
+    </div>
+  </div>`;
+
+  /* Disclaimer */
+  out+=`<div style="margin-top:28px;padding:10px 14px;background:#f5f8fb;border-left:4px solid #7A9E7E;font-size:9px;color:#555;line-height:1.6">
+    <b>DISCLAIMER:</b> This report is generated by AnbuCare, a patient-support caregiving application.
+    All data presented herein is self-reported by the patient or caregiver and has not been independently verified.
+    This report is intended solely as a supplementary reference for the treating medical team and does not constitute a clinical diagnosis or medical advice.
+    The treating physician should exercise independent clinical judgement in all treatment decisions.
+    Report ID: ${repId} &nbsp;|&nbsp; Generated: ${today} &nbsp;|&nbsp; Prepared by: ${esc(prepBy)}
+  </div>`;
+
+  out+=`<div class="footer-band">
+    <span>AnbuCare Patient Health Report &nbsp;|&nbsp; ${esc(patientName)} &nbsp;|&nbsp; ${fmtDate(from)} – ${fmtDate(to)}</span>
+    <span>Report ID: ${repId} &nbsp;|&nbsp; Page 5 &nbsp;|&nbsp; CONFIDENTIAL</span>
+  </div>`;
+
   document.getElementById('printReport').innerHTML=out;
+  // Set filename: AnbuCare_Report_<Patient>_DD-MM-YY
+  const _dd=today.substring(8,10),_mm=today.substring(5,7),_yy=today.substring(2,4);
+  const _pname=(patientName||patient).replace(/\s+/g,'-').substring(0,20);
+  const _prevTitle=document.title;
+  document.title='AnbuCare_Report_'+_pname+'_'+_dd+'-'+_mm+'-'+_yy;
   toast('📄 Opening Download PDF dialog…');
-  setTimeout(()=>window.print(),400);
+  setTimeout(()=>{window.print();setTimeout(()=>{document.title=_prevTitle;},2000);},400);
 }
 
-// ═══════════════════════════════════════════
-// CONNECT
-// ═══════════════════════════════════════════
 function loadConn(){
   const url=localStorage.getItem('anbucare_url');
   const dot=document.getElementById('connDot'),mdot=document.getElementById('modalDot'),lbl=document.getElementById('connLabel'),st=document.getElementById('connStatusText');
