@@ -1,4 +1,4 @@
-<!-- AnbuCare v43 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
+<!-- AnbuCare v44 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
 <!DOCTYPE html>
 <html lang="en-IN">
 <head>
@@ -1320,7 +1320,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
   <div class="modal">
     <div class="modal-header"><div class="modal-title">⚙️ Connect AnbuCare to Google</div><button class="modal-close" onclick="closeModal('connectModal')">✕</button></div>
     <div style="background:var(--surface2);border-radius:12px;padding:13px;margin-bottom:14px;font-size:.85rem;line-height:1.7"><strong>One-time setup.</strong> Paste your Apps Script URL below — saved on this device forever.<br><br><strong>Steps:</strong> Google Sheet → Extensions → Apps Script → paste Code.gs + Index.html → Deploy → Web App → Anyone → Copy URL</div>
-    <div class="form-group"><label class="form-label">Apps Script URL</label><input type="url" class="form-input" id="scriptUrl" placeholder="https://script.google.com/macros/s/…/exec"></div>
+    <div class="form-group"><label class="form-label">Apps Script URL</label><input type="url" class="form-input" id="scriptUrl" placeholder="https://script.google.com/macros/s/AKfycbzTI47hg9Ljp5nvayGasEuyR9Sx1q7FZqHYkue5YFXrxaLhednLPcz-mKlbmSQdDvhiWw/exec" value="https://script.google.com/macros/s/AKfycbzTI47hg9Ljp5nvayGasEuyR9Sx1q7FZqHYkue5YFXrxaLhednLPcz-mKlbmSQdDvhiWw/exec"></div>
     <div class="form-group"><label class="form-label">Google Sheet ID (optional)</label><input type="text" class="form-input" id="sheetId" placeholder="From your Sheet URL"></div>
     <div style="display:flex;align-items:center;gap:9px;margin-top:10px;font-size:1.05rem;font-weight:600;color:var(--muted)"><span class="cdot" id="modalDot"></span><span id="connStatusText">Not connected</span></div>
     <button class="btn btn-primary btn-block mt-8" onclick="saveConn()">🔗 Save &amp; Connect</button>
@@ -1332,6 +1332,9 @@ input:checked+.tslider::before{transform:translateX(20px)}
 <div id="printReport"></div>
 
 <script>
+
+// ── Baked-in Google Apps Script URL (v44) ──────────────────────
+const GAS_URL='https://script.google.com/macros/s/AKfycbzTI47hg9Ljp5nvayGasEuyR9Sx1q7FZqHYkue5YFXrxaLhednLPcz-mKlbmSQdDvhiWw/exec';
 window.onerror=function(m,s,l){var b=document.getElementById('errBanner');if(b){b.textContent='JS Error: '+m+' (line '+l+')';b.style.display='block';}return false;};
 // ═══════════════════════════════════════════
 // DATA
@@ -1377,7 +1380,7 @@ const fcState = {diet:null,med:null,vit:null,test:null};
 async function loadFromSheets(){
   // Notes are managed exclusively via Google Sheets (single source of truth)
   // localStorage notes cache is only used as a fallback when no Sheet URL is configured
-  const url = localStorage.getItem('anbucare_url');
+  const url = (localStorage.getItem('anbucare_url')||GAS_URL);
   if(!url){ loadFcState(); renderAll(); return; }
 
   // Show loading banner below affirmation — don't overwrite it
@@ -1471,7 +1474,7 @@ function saveNow(){
       bowelLog:bowelLog, savedAt:new Date().toISOString()
     }));
   }catch(_le){}
-  const url=localStorage.getItem('anbucare_url');
+  const url=(localStorage.getItem('anbucare_url')||GAS_URL);
   if(!url){ toast('⚠️ No Sheet URL — data saved locally only'); return; }
   // Guard against concurrent saves — queue a retry if one is in flight
   if(_saving){ _saveTimer=setTimeout(saveNow,1200); return; }
@@ -1509,7 +1512,7 @@ function saveNow(){
   .finally(function(){_saving=false;});
 }
 async function saveToSheets(section){
-  const url = localStorage.getItem('anbucare_url');
+  const url = (localStorage.getItem('anbucare_url')||GAS_URL);
   if(!url) return;
   clearTimeout(_saveTimer);
   _saveTimer = setTimeout(async ()=>{
@@ -1543,6 +1546,8 @@ async function saveToSheets(section){
 }
 
 window.onload = async () => {
+  // v44: seed baked URL into localStorage so app connects immediately
+  if(!localStorage.getItem('anbucare_url')) localStorage.setItem('anbucare_url', GAS_URL);
   const d = new Date();
   document.getElementById('hDate').textContent = d.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'});
   document.getElementById('dDate').value = today;
@@ -1880,6 +1885,11 @@ function showTab(id){
   const nb=document.getElementById('navBtn-'+id);
   if(nb) nb.classList.add('active');
   window.scrollTo({top:0,behavior:'smooth'});
+  // FIX v44: re-render flashcards & next-strip every time user returns to dashboard
+  if(id==='dashboard'){
+    try{renderFlashCards();}catch(_e){}
+    try{renderNext3Strip();}catch(_e){}
+  }
 }
 function showSub(section,tab,btn){
   document.querySelectorAll(`[id^="${section}-"]`).forEach(el=>el.classList.add('hidden'));
@@ -2314,14 +2324,14 @@ setInterval(function(){
 
 // ── Treatment profile remote save/load ────────────────────────
 function saveTreatmentProfileToSheets(){
-  var url=localStorage.getItem('anbucare_url');
+  var url=(localStorage.getItem('anbucare_url')||GAS_URL);
   if(!url||!S.treatmentProfile||!S.treatmentProfile.name)return;
   fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
     body:JSON.stringify({action:'saveTreatmentProfile',sheetId:localStorage.getItem('anbucare_sid')||'',data:{treatmentProfile:S.treatmentProfile}}),
     redirect:'follow'}).then(function(r){return r.json();}).catch(function(){});
 }
 async function loadTreatmentProfileFromSheets(){
-  var url=localStorage.getItem('anbucare_url');if(!url)return;
+  var url=(localStorage.getItem('anbucare_url')||GAS_URL);if(!url)return;
   try{
     var r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
       body:JSON.stringify({action:'loadTreatmentProfile',sheetId:localStorage.getItem('anbucare_sid')||''}),redirect:'follow'});
@@ -3629,7 +3639,7 @@ function downloadVoice(){
 
 function uploadVoice(){
   if(!window._voiceBlob){toast('⚠️ No recording ready');return;}
-  const url = localStorage.getItem('anbucare_url');
+  const url = (localStorage.getItem('anbucare_url')||GAS_URL);
   if(!url){
     // MOCK SAVE — for testing without a real Drive endpoint
     S.voiceNotes.unshift({
@@ -3710,7 +3720,7 @@ function uploadVoice(){
 }
 
 function callGAS(payload){
-  const url=localStorage.getItem('anbucare_url');
+  const url=(localStorage.getItem('anbucare_url')||GAS_URL);
   if(!url) return Promise.resolve({success:false,error:'No GAS URL configured'});
   payload.sheetId = localStorage.getItem('anbucare_sid')||'';
   return fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload),redirect:'follow'}).then(r=>r.json()).catch(e=>({success:false,error:String(e)}));
@@ -4152,7 +4162,7 @@ function syncToCalendar(btn){
     toast('⚠️ No upcoming events to sync'); btn.disabled=false; btn.textContent='📅 Sync to Calendar'; return;
   }
 
-  var url=localStorage.getItem('anbucare_url');
+  var url=(localStorage.getItem('anbucare_url')||GAS_URL);
   var calId=localStorage.getItem('anbucare_cal_id')||'';
 
   if(url){
@@ -5053,7 +5063,7 @@ function generatePDF(){
 }
 
 function loadConn(){
-  const url=localStorage.getItem('anbucare_url');
+  const url=(localStorage.getItem('anbucare_url')||GAS_URL);
   const dot=document.getElementById('connDot'),mdot=document.getElementById('modalDot'),lbl=document.getElementById('connLabel'),st=document.getElementById('connStatusText');
   if(url){dot?.classList.add('live');mdot?.classList.add('live');if(lbl)lbl.textContent='✅ Connected';if(st)st.textContent='✅ Connected';document.getElementById('scriptUrl').value=url;const sid=localStorage.getItem('anbucare_sid');if(sid)document.getElementById('sheetId').value=sid;}
   else{dot?.classList.remove('live');mdot?.classList.remove('live');if(lbl)lbl.textContent='🔗 Connect to Google Apps Script';if(st)st.textContent='Not connected';}
