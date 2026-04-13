@@ -576,6 +576,16 @@ input:checked+.tslider::before{transform:translateX(20px)}
 </style>
 </head>
 <body>
+<div id="anbu-ec-ov" style="display:none" onclick="if(event.target===this)anbuEcNo()">
+  <div class="anbu-ec-box">
+    <div class="anbu-ec-ico">&#x23F0;</div>
+    <div class="anbu-ec-ttl">Not due yet &#8212; are you sure?</div>
+    <div class="anbu-ec-msg">This item is <strong>scheduled later</strong>.<br>Mark it done early?</div>
+    <div class="anbu-ec-card"><span id="anbuEcLbl">&#8212;</span><small id="anbuEcTm">&#8212;</small></div>
+    <button class="anbu-ec-y" onclick="anbuEcYes()">&#x2705;&nbsp; Yes, I already did it</button>
+    <button class="anbu-ec-n" onclick="anbuEcNo()">&#8592;&nbsp; Wait, Go Back</button>
+  </div>
+</div>
 <div id="errBanner" style="display:none;background:#c0392b;color:#fff;padding:10px 14px;font-size:.85rem;font-weight:700;position:fixed;top:0;left:0;right:0;z-index:9999;text-align:center"></div>
 <div class="app">
 
@@ -642,6 +652,30 @@ input:checked+.tslider::before{transform:translateX(20px)}
   background:rgba(255,255,255,.72);border-radius:8px;}
 .dsc-item b{display:block;font-size:.8rem;margin-bottom:1px;}
 .dsc-item-sub{font-size:.7rem;color:#666;line-height:1.3;}
+
+/* ── AnbuCare FC Early-Done Confirm v48 ──────────────────────────── */
+#anbu-ec-ov{display:none;position:fixed;inset:0;z-index:99999;
+  background:rgba(0,0,0,.55);align-items:center;justify-content:center;
+  padding:20px;box-sizing:border-box;}
+#anbu-ec-ov.on{display:flex!important;}
+.anbu-ec-box{background:#fff;border-radius:22px;padding:28px 22px 22px;
+  max-width:340px;width:100%;box-shadow:0 12px 48px rgba(0,0,0,.28);
+  text-align:center;animation:anbuIn .22s cubic-bezier(.16,1,.3,1);}
+@keyframes anbuIn{from{transform:scale(.88);opacity:0}to{transform:scale(1);opacity:1}}
+.anbu-ec-ico{font-size:2.6rem;line-height:1;margin-bottom:10px}
+.anbu-ec-ttl{font-size:1.2rem;font-weight:800;color:#1f3320;margin-bottom:6px}
+.anbu-ec-msg{font-size:.95rem;color:#555;line-height:1.5;margin-bottom:12px}
+.anbu-ec-card{background:#FFFBEE;border:2px solid #E1AD01;border-radius:12px;
+  padding:10px 14px;margin-bottom:18px;font-size:1rem;font-weight:700;color:#6B4C00}
+.anbu-ec-card small{display:block;font-size:.82rem;font-weight:500;color:#8C6600;margin-top:3px}
+.anbu-ec-y{display:block;width:100%;padding:17px;margin-bottom:10px;
+  background:#3d6b43;color:#fff;border:none;border-radius:13px;
+  font-size:1.1rem;font-weight:800;cursor:pointer;}
+.anbu-ec-y:active{background:#2e5233}
+.anbu-ec-n{display:block;width:100%;padding:16px;background:#F0EDE8;color:#333;
+  border:2px solid #D4D0CA;border-radius:13px;font-size:1.1rem;font-weight:700;cursor:pointer;}
+.anbu-ec-n:active{background:#E0DDD8}
+
 </style>
   <g class="pk1w">
     <g class="pk1o">
@@ -2204,7 +2238,7 @@ function renderFlashCards(){
                '<div style="opacity:.9;font-size:.9rem">📅 '+fmtDate(t.date)+(t.lab?' · 🏥 '+esc(t.lab):'')+(t.fasting==='Yes'?' · 🚫 Fasting':'')+'</div>'+
                (t.notes?'<div style="opacity:.75;font-size:.82rem">📝 '+esc(t.notes)+'</div>':'')+
                '</div>',
-          mins:0,
+          mins:10000,
           uid:'test|'+(t.type||'')+'|'+(t.date||'')
         };
       });
@@ -2263,18 +2297,27 @@ function refreshTestTypeDatalist(){
 // ── Per-item FC state — markFCItem ────────────────────────────
 // uid format: 'diet|YYYY-MM-DD|MealType'  'med|MedName|SlotLabel'  'test|Type|Date'
 function markFCItem(key,uid,val,itemMins){
-  if(val===true && itemMins && itemMins>0 && itemMins<9999){
+  // v48: Early-confirm guard for future-scheduled items
+  if(val===true && itemMins && itemMins>0){
     var _nM=(new Date()).getHours()*60+(new Date()).getMinutes();
-    if(itemMins>_nM){
-      var _pt=uid.split('|');
-      var _lb=key==='diet'?(_pt[2]||uid):(_pt[1]||uid);
-      anbuEcShow(_lb, _anbuFmtM(itemMins), function(){ _execMarkFCItem(key,uid,true); });
+    var _pt=uid.split('|');
+    if(itemMins>=10000){
+      // Tests — always guard (date-based, always future)
+      var _lb=_pt[1]||uid;
+      var _dt=_pt[2]?('📅 Scheduled: '+_pt[2]):'Upcoming test';
+      anbuEcShow(_lb,_dt,function(){_execMFI(key,uid,true);});
+      return;
+    }
+    if(itemMins<9999 && itemMins>_nM){
+      // Med/Diet — guard only if slot is still in the future
+      var _lb2=key==='diet'?(_pt[2]||uid):(_pt[1]||uid);
+      anbuEcShow(_lb2,_anbuFmtM(itemMins),function(){_execMFI(key,uid,true);});
       return;
     }
   }
-  _execMarkFCItem(key,uid,val);
+  _execMFI(key,uid,val);
 }
-function _execMarkFCItem(key,uid,val){
+function _execMFI(key,uid,val){
   fcItemState[uid]=val;
   saveFcState();
   var _mc=_fcCarousels[key];
@@ -2382,39 +2425,46 @@ function getNextFCInfo(key){
   return{curr:null,next:null};
 }
 
-// ── AnbuCare FC Early-Done Guard v48 ───────────────────────────────────
-var _anbuEcCb = null;
+// ── AnbuCare FC Early-Done Guard v48 ─────────────────────────────────
+var _anbuEcCb=null;
 function _anbuFmtM(m){
-  var h=Math.floor(m/60), mn=m%60, ap=h>=12?'PM':'AM', hh=h%12||12;
+  var h=Math.floor(m/60),mn=m%60,ap=h>=12?'PM':'AM',hh=h%12||12;
   return hh+':'+(mn<10?'0':'')+mn+' '+ap;
 }
-function anbuEcShow(label, timeStr, onConfirm){
-  document.getElementById('anbuEcName').textContent = label;
-  document.getElementById('anbuEcTime').textContent = '⏰ Scheduled for ' + timeStr;
-  _anbuEcCb = onConfirm;
-  document.getElementById('anbu-ec-overlay').classList.add('open');
+function anbuEcShow(label,timeStr,cb){
+  var lb=document.getElementById('anbuEcLbl');
+  var tm=document.getElementById('anbuEcTm');
+  var ov=document.getElementById('anbu-ec-ov');
+  if(!lb||!tm||!ov)return;
+  lb.textContent=label;
+  tm.textContent='⏰ Scheduled for '+timeStr;
+  _anbuEcCb=cb;
+  ov.style.display='flex';
+  ov.classList.add('on');
 }
 function anbuEcYes(){
-  document.getElementById('anbu-ec-overlay').classList.remove('open');
-  if(_anbuEcCb){ _anbuEcCb(); _anbuEcCb=null; }
+  var ov=document.getElementById('anbu-ec-ov');
+  if(ov){ov.style.display='none';ov.classList.remove('on');}
+  if(_anbuEcCb){_anbuEcCb();_anbuEcCb=null;}
 }
 function anbuEcNo(){
-  document.getElementById('anbu-ec-overlay').classList.remove('open');
-  _anbuEcCb = null;
+  var ov=document.getElementById('anbu-ec-ov');
+  if(ov){ov.style.display='none';ov.classList.remove('on');}
+  _anbuEcCb=null;
 }
 
 function markFC(key,val){
   if(val===true && key==='vit'){
     var _nM=(new Date()).getHours()*60+(new Date()).getMinutes();
-    var _slots=[{l:'After Breakfast',m:510},{l:'After Lunch',m:780},{l:'After Dinner',m:1200}];
-    var _done=(S.vitals||[]).filter(function(v){return v.date===today;})
-                            .map(function(v){return (v.meal||'').toLowerCase().trim();});
-    var _next=_slots.filter(function(s){
-      return s.m>_nM && !_done.includes(s.l.replace('After ','').toLowerCase().trim());
+    var _sl=[{l:'After Breakfast',m:510},{l:'After Lunch',m:780},{l:'After Dinner',m:1200}];
+    var _dn=(S.vitals||[]).filter(function(v){return v.date===today;})
+                          .map(function(v){return (v.meal||'').toLowerCase().trim();});
+    var _nx=_sl.filter(function(s){
+      return s.m>_nM && !_dn.includes(s.l.replace('After ','').toLowerCase().trim());
     })[0];
-    if(_next && _next.m>_nM){
-      anbuEcShow(_next.l, _anbuFmtM(_next.m), function(){
-        fcState[key]=val; saveFcState(); renderFlashCards();
+    if(_nx){
+      anbuEcShow(_nx.l,_anbuFmtM(_nx.m),function(){
+        fcState[key]=val;saveFcState();renderFlashCards();
         toast('✅ Vitals marked done!');
       });
       return;
@@ -4550,47 +4600,7 @@ function _buildPDFHtml(){
     .footer-band{border-top:2px solid #7A9E7E;margin-top:24px;padding-top:6px;font-size:9px;color:#6B7C6E;display:flex;justify-content:space-between;background:#FAF9F6}
     .ind-ref-box{margin-top:8px;padding:8px 12px;background:#F0EDE8;border-left:3px solid #7A9E7E;font-size:9px;color:#4a5c4b;line-height:1.75}
     .page-hdr{border-bottom:3px solid #7A9E7E;margin-bottom:14px;padding-bottom:6px;display:flex;justify-content:space-between;align-items:center}
-  
-/* ── FC Early-Done Confirm (v48) ──────────────────────────────────── */
-#anbu-ec-overlay{
-  display:none;position:fixed;inset:0;z-index:99999;
-  background:rgba(0,0,0,.55);
-  align-items:center;justify-content:center;padding:20px;
-  box-sizing:border-box;
-}
-#anbu-ec-overlay.open{display:flex;}
-.anbu-ec-box{
-  background:#fff;border-radius:22px;
-  padding:28px 22px 22px;max-width:340px;width:100%;
-  box-shadow:0 12px 48px rgba(0,0,0,.28);
-  text-align:center;
-  animation:anbuEcIn .2s cubic-bezier(.16,1,.3,1);
-}
-@keyframes anbuEcIn{from{transform:scale(.88);opacity:0}to{transform:scale(1);opacity:1}}
-.anbu-ec-icon{font-size:2.6rem;line-height:1;margin-bottom:10px}
-.anbu-ec-title{font-size:1.2rem;font-weight:800;color:#1f3320;margin-bottom:6px}
-.anbu-ec-msg{font-size:.95rem;color:#555;line-height:1.5;margin-bottom:12px}
-.anbu-ec-item{
-  background:#FFFBEE;border:2px solid #E1AD01;border-radius:12px;
-  padding:10px 14px;margin-bottom:18px;
-  font-size:1rem;font-weight:700;color:#6B4C00;
-}
-.anbu-ec-item small{display:block;font-size:.82rem;font-weight:500;color:#8C6600;margin-top:3px}
-.anbu-ec-yes{
-  display:block;width:100%;padding:17px;margin-bottom:10px;
-  background:#3d6b43;color:#fff;border:none;border-radius:13px;
-  font-size:1.1rem;font-weight:800;cursor:pointer;
-}
-.anbu-ec-yes:active{background:#2e5233}
-.anbu-ec-no{
-  display:block;width:100%;padding:16px;
-  background:#F0EDE8;color:#333;
-  border:2px solid #D4D0CA;border-radius:13px;
-  font-size:1.1rem;font-weight:700;cursor:pointer;
-}
-.anbu-ec-no:active{background:#E0DDD8}
-
-</style>`;
+  </style>`;
 
   /* ═══════════════════════════════════════════
      PAGE 1 — COVER PAGE
@@ -5257,22 +5267,7 @@ function fmtDate(s){if(!s)return'';const p=String(s).substring(0,10).split('-');
   <div class="sos-modal-box">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px"><span style="font-weight:800">🆘 SOS Medicines</span><button onclick="closeSOSModal()" style="background:var(--surface2);border:none;border-radius:50%;width:32px;height:32px;cursor:pointer">✕</button></div>
     <div id="sosModalList"></div>
-  
-<!-- AnbuCare FC Early-Done Confirm v48 — fixed overlay, no tab content -->
-<div id="anbu-ec-overlay" onclick="if(event.target===this)anbuEcNo()">
-  <div class="anbu-ec-box">
-    <div class="anbu-ec-icon">⏰</div>
-    <div class="anbu-ec-title">Not due yet — are you sure?</div>
-    <div class="anbu-ec-msg">This item is <strong>scheduled later</strong>.<br>Mark it done early?</div>
-    <div class="anbu-ec-item">
-      <span id="anbuEcName">—</span>
-      <small id="anbuEcTime">Scheduled at —</small>
-    </div>
-    <button class="anbu-ec-yes" onclick="anbuEcYes()">✅ &nbsp;Yes, I already did it</button>
-    <button class="anbu-ec-no"  onclick="anbuEcNo()">← &nbsp;Wait, Go Back</button>
   </div>
-</div>
-</div>
 </div>
 </body>
 </html>
