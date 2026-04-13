@@ -1,4 +1,4 @@
-<!-- AnbuCare v44 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
+<!-- AnbuCare v45 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
 <!DOCTYPE html>
 <html lang="en-IN">
 <head>
@@ -3206,7 +3206,9 @@ function renderBowelHistory(){
 function deleteVital(idx){
   if(!confirm('Remove this vitals entry?')) return;
   S.vitals.splice(idx,1);
-  renderVitHist();saveNow();toast('🗑 Vitals entry removed');
+  renderVitHist();saveNow();
+  try{renderFlashCards();}catch(_re){} try{renderNext3Strip();}catch(_re){}
+  toast('🗑 Vitals entry removed');
 }
 function saveVitals(){
   const btn=document.querySelector('button[onclick="saveVitals()"]');
@@ -3216,6 +3218,7 @@ function saveVitals(){
   S.vitals.unshift(entry);
   S.notes.unshift({date:today,email:'patient@anbucare',note:`🫀 Vitals (After ${meal}) — BP:${sys}/${dia} | Pulse:${pulse}${entry.temp?` | Temp:${entry.temp}°F`:''}${entry.spo2?` | SpO₂:${entry.spo2}%`:''}`});
   renderVitHist();renderNotes();renderAllNotes();
+  try{renderFlashCards();}catch(_re){} try{renderNext3Strip();}catch(_re){} try{renderOverdue();}catch(_re){}
   ['vitSys','vitDia','vitPulse','vitTemp','vitSpo2','vitWeight'].forEach(id=>document.getElementById(id).value='');
   saveNow();
   toast(`🫀 Vitals logged after ${meal}!`);
