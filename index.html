@@ -1,4 +1,4 @@
-<!-- AnbuCare v45 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
+<!-- AnbuCare v47 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
 <!DOCTYPE html>
 <html lang="en-IN">
 <head>
@@ -2077,10 +2077,10 @@ function _renderCarouselSlide(key){
     _dEl.innerHTML='<span class="fc-done-tick">⏭ Skipped</span>';
   } else {
     _dEl.innerHTML=
-      '<button class="fc-yes" data-fckey="'+key+'" data-fcuid="'+_uid+
-      '" onclick="event.stopPropagation();markFCItem(this.dataset.fckey,this.dataset.fcuid,true)">✓ Done</button>'+
+      '<button class="fc-yes" data-fckey="'+key+'" data-fcuid="'+_uid+'" data-fcmins="'+(_itm.mins||0)+
+      '" onclick="event.stopPropagation();markFCItem(this.dataset.fckey,this.dataset.fcuid,true,+this.dataset.fcmins)">✓ Done</button>'+
       '<button class="fc-no" data-fckey="'+key+'" data-fcuid="'+_uid+
-      '" onclick="event.stopPropagation();markFCItem(this.dataset.fckey,this.dataset.fcuid,false)">✗ Skip</button>';
+      '" onclick="event.stopPropagation();markFCItem(this.dataset.fckey,this.dataset.fcuid,false,0)">✗ Skip</button>';
   }
 }
 
@@ -2262,12 +2262,24 @@ function refreshTestTypeDatalist(){
 
 // ── Per-item FC state — markFCItem ────────────────────────────
 // uid format: 'diet|YYYY-MM-DD|MealType'  'med|MedName|SlotLabel'  'test|Type|Date'
-function markFCItem(key,uid,val){
+function markFCItem(key,uid,val,itemMins){
+  // v47: use button-stamped mins — no stale carousel lookup
+  if(val===true && itemMins && itemMins>0 && itemMins<9999){
+    var _nM=(new Date()).getHours()*60+(new Date()).getMinutes();
+    if(itemMins>_nM){
+      var _pt=uid.split('|');
+      var _lb=key==='diet'?_pt[2]:_pt[1]||uid;
+      showFCEarlyConfirm(_lb,_fcFmtMins(itemMins),function(){_doMarkFCItem(key,uid,true);});
+      return;
+    }
+  }
+  _doMarkFCItem(key,uid,val);
+}
+function _doMarkFCItem(key,uid,val){
   fcItemState[uid]=val;
   saveFcState();
   var _mc=_fcCarousels[key];
   if(_mc&&_mc.items.length>1){
-    // Advance to the next UNMARKED item after marking current
     var _adv=false;
     for(var _mi=1;_mi<=_mc.items.length;_mi++){
       var _mt=(_mc.idx+_mi)%_mc.items.length;
@@ -2280,6 +2292,7 @@ function markFCItem(key,uid,val){
   _renderCarouselSlide(key);
   toast(val?'✅ Marked done':'⏭ Skipped');
 }
+
 
 // ── FC state persistence (per-item + whole-card) ──────────────
 function saveFcState(){
@@ -2370,9 +2383,56 @@ function getNextFCInfo(key){
   }
   return{curr:null,next:null};
 }
+
+// ── FC Early-Done Guard — senior error-proofing (v46) ─────────────────
+var _fcEcCb=null;
+function _fcFmtMins(m){
+  var h=Math.floor(m/60),mn=m%60,ap=h>=12?'PM':'AM',hh=h%12||12;
+  return hh+':'+(mn<10?'0':'')+mn+' '+ap;
+}
+function showFCEarlyConfirm(itemLabel,dueTimeStr,onConfirm){
+  document.getElementById('fcEcItemName').textContent=itemLabel;
+  document.getElementById('fcEcItemTime').textContent='⏰ Scheduled for '+dueTimeStr;
+  _fcEcCb=onConfirm;
+  document.getElementById('fcEarlyConfirm').style.display='flex';
+}
+function fcEcYes(){
+  document.getElementById('fcEarlyConfirm').style.display='none';
+  if(_fcEcCb){_fcEcCb();_fcEcCb=null;}
+}
+function fcEcNo(){
+  document.getElementById('fcEarlyConfirm').style.display='none';
+  _fcEcCb=null;
+}
+
 function markFC(key,val){
+  // v47: fixed slot matching + no double-popup for vitals
+  if(val===true){
+    var _nM=(new Date()).getHours()*60+(new Date()).getMinutes();
+    var _dM=null,_dl='';
+    if(key==='vit'){
+      var _vs=[{label:'After Breakfast',mins:510},{label:'After Lunch',mins:780},{label:'After Dinner',mins:1200}];
+      // Fix: compare meal field directly (e.g. 'Breakfast') not 'After Breakfast'
+      var _meals=(S.vitals||[]).filter(function(v){return v.date===today;})
+                               .map(function(v){return (v.meal||'').toLowerCase().trim();});
+      var _nx=_vs.filter(function(v){
+        var _mk=v.label.replace('After ','').toLowerCase().trim();
+        return v.mins>_nM && !_meals.includes(_mk);
+      })[0];
+      if(_nx){_dM=_nx.mins;_dl=_nx.label;}
+      if(_dM!==null&&_dM>_nM){
+        // v47: direct confirm — no double popup for vitals
+        showFCEarlyConfirm(_dl,_fcFmtMins(_dM),function(){
+          fcState[key]=val;saveFcState();renderFlashCards();
+          toast('✅ Vitals marked done!');
+        });
+        return;
+      }
+    }
+  }
   showFCNextPopup(key,val,getNextFCInfo(key));
 }
+
 function showFCNextPopup(key,val,info){
   const labels={diet:'Meal',med:'Medicine',vit:'Vitals',test:'Test'};
   const allDone={diet:'All meals done today 🎉',med:'All doses given 🎉',vit:'All vitals logged 🎉',test:'No more upcoming tests'};
@@ -4501,7 +4561,48 @@ function _buildPDFHtml(){
     .footer-band{border-top:2px solid #7A9E7E;margin-top:24px;padding-top:6px;font-size:9px;color:#6B7C6E;display:flex;justify-content:space-between;background:#FAF9F6}
     .ind-ref-box{margin-top:8px;padding:8px 12px;background:#F0EDE8;border-left:3px solid #7A9E7E;font-size:9px;color:#4a5c4b;line-height:1.75}
     .page-hdr{border-bottom:3px solid #7A9E7E;margin-bottom:14px;padding-bottom:6px;display:flex;justify-content:space-between;align-items:center}
-  </style>`;
+  
+/* ── FC Early-Done Confirmation Modal (v46) ─────────────────────── */
+#fcEarlyConfirm{
+  display:none;position:fixed;inset:0;z-index:10000;
+  background:rgba(0,0,0,.60);
+  align-items:center;justify-content:center;padding:20px;
+}
+.fc-ec-box{
+  background:#fff;border-radius:22px;padding:28px 22px 22px;
+  max-width:360px;width:100%;
+  box-shadow:0 10px 48px rgba(0,0,0,.30);
+  text-align:center;animation:fcEcSlide .22s cubic-bezier(.16,1,.3,1);
+}
+@keyframes fcEcSlide{from{transform:translateY(28px);opacity:0}to{transform:none;opacity:1}}
+.fc-ec-icon{font-size:2.8rem;line-height:1;margin-bottom:10px}
+.fc-ec-title{font-size:1.25rem;font-weight:800;color:#2c3e2d;margin-bottom:6px;line-height:1.3}
+.fc-ec-msg{font-size:1rem;color:#555;line-height:1.55;margin-bottom:14px}
+.fc-ec-item{
+  background:#F8F5E8;border:2px solid #E1AD01;border-radius:12px;
+  padding:11px 14px;margin-bottom:18px;
+  font-size:1.05rem;font-weight:700;color:#6B4C00;line-height:1.45;
+}
+.fc-ec-item .fc-ec-time{
+  display:block;font-size:.9rem;font-weight:500;color:#8C6A00;margin-top:3px;
+}
+.fc-ec-btn-yes{
+  display:block;width:100%;padding:18px 16px;margin-bottom:10px;
+  background:#4A7A50;color:#fff;border:none;border-radius:14px;
+  font-size:1.15rem;font-weight:800;cursor:pointer;letter-spacing:.01em;
+  transition:background .15s;
+}
+.fc-ec-btn-yes:active{background:#3a6040}
+.fc-ec-btn-no{
+  display:block;width:100%;padding:17px 16px;
+  background:#F0EDE8;color:#333;
+  border:2px solid #D4D0CA;border-radius:14px;
+  font-size:1.15rem;font-weight:700;cursor:pointer;
+  transition:background .15s;
+}
+.fc-ec-btn-no:active{background:#E2DED8}
+
+</style>`;
 
   /* ═══════════════════════════════════════════
      PAGE 1 — COVER PAGE
@@ -5170,5 +5271,21 @@ function fmtDate(s){if(!s)return'';const p=String(s).substring(0,10).split('-');
     <div id="sosModalList"></div>
   </div>
 </div>
+
+<!-- FC Early-Done Confirmation (senior-friendly) v46 -->
+<div id="fcEarlyConfirm" role="dialog" aria-modal="true" aria-labelledby="fcEcTitle">
+  <div class="fc-ec-box">
+    <div class="fc-ec-icon">⏰</div>
+    <div class="fc-ec-title" id="fcEcTitle">Not due yet — are you sure?</div>
+    <div class="fc-ec-msg">This item is <strong>scheduled later</strong>.<br>Do you want to mark it done early?</div>
+    <div class="fc-ec-item">
+      <span id="fcEcItemName">Item</span>
+      <span class="fc-ec-time" id="fcEcItemTime">Scheduled at —</span>
+    </div>
+    <button class="fc-ec-btn-yes" onclick="fcEcYes()">✅ &nbsp;Yes, I already did it</button>
+    <button class="fc-ec-btn-no"  onclick="fcEcNo()">← &nbsp;Wait, Go Back</button>
+  </div>
+</div>
+
 </body>
 </html>
