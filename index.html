@@ -1,4 +1,4 @@
-<!-- AnbuCare v50 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
+<!-- AnbuCare v51 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
 <!DOCTYPE html>
 <html lang="en-IN">
 <head>
@@ -676,6 +676,51 @@ input:checked+.tslider::before{transform:translateX(20px)}
   border:2px solid #D4D0CA;border-radius:13px;font-size:1.1rem;font-weight:700;cursor:pointer;}
 .anbu-ec-n:active{background:#E0DDD8}
 
+/* ── v51 Symptom Tap-Buttons ───────────────────────────── */
+.sym-btn-grp{
+  display:flex;gap:5px;width:100%;margin:8px 0 4px;
+  position:relative;z-index:1;
+  transition:transform .22s cubic-bezier(.16,1,.3,1),
+             box-shadow .22s ease,z-index 0s;
+  transform-origin:center center;
+  border-radius:16px;
+}
+/* Zoom state — triggered when user taps a button */
+.sym-btn-grp.sym-grp-zoom{
+  transform:scale(1.09);
+  z-index:200;
+  box-shadow:0 8px 32px rgba(61,107,67,.28);
+}
+.sym-btn{
+  flex:1;min-width:0;padding:9px 2px 7px;
+  border:2px solid #ddd;border-radius:13px;
+  background:#f5f7f5;cursor:pointer;text-align:center;
+  display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:3px;
+  touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+  transition:border-color .15s,background .15s,transform .12s;
+  -webkit-user-select:none;
+}
+.sym-btn:active{transform:scale(.9);}
+.sym-btn.active{
+  border-color:#3d6b43;background:#e8f5e9;
+  box-shadow:0 0 0 1px #3d6b43;
+}
+/* Zoomed group — enlarge emojis & labels slightly */
+.sym-btn-grp.sym-grp-zoom .sbe{font-size:1.75rem;}
+.sym-btn-grp.sym-grp-zoom .sbl{font-size:.72rem;}
+.sym-btn-grp.sym-grp-zoom .sym-btn{padding:11px 3px 9px;border-radius:15px;}
+.sym-btn-grp.sym-grp-zoom .sym-btn.active{
+  border-color:#3d6b43;background:#d0f0d8;
+  box-shadow:0 0 0 2px #3d6b43;}
+.sbe{font-size:1.5rem;line-height:1.1;}
+.sbl{font-size:.62rem;font-weight:700;color:#444;line-height:1.15;
+  word-break:break-word;text-align:center;}
+.sym-btn.active .sbl{color:#2e5233;}
+.sym-btn-grp.sym-grp-zoom .sym-btn.active .sbl{color:#1a3d1f;font-size:.74rem;}
+/* sym-row needs overflow visible so zoom doesn't clip */
+.sym-row{overflow:visible!important;}
+
 </style>
   <g class="pk1w">
     <g class="pk1o">
@@ -900,28 +945,58 @@ input:checked+.tslider::before{transform:translateX(20px)}
           </div>
           <div class="sym-row">
             <div class="sym-label"><span>🤢 Nausea</span><span class="sym-val v3" id="vN">3</span></div>
-            <input type="range" min="1" max="5" value="3" id="sN" oninput="updSym('N',this.value)">
-            <div class="emoji-row"><span>😊 None</span><span>🙂 Mild</span><span>😐 Mod.</span><span>😟 High</span><span>🤮 Severe</span></div>
+            <input type="hidden" id="sN" value="3">
+            <div class="sym-btn-grp" id="sgN">
+              <button class="sym-btn" data-v="1" onclick="symTap('N',1)"><span class="sbe">😊</span><span class="sbl">None</span></button>
+              <button class="sym-btn" data-v="2" onclick="symTap('N',2)"><span class="sbe">🙂</span><span class="sbl">Mild</span></button>
+              <button class="sym-btn active" data-v="3" onclick="symTap('N',3)"><span class="sbe">😐</span><span class="sbl">Mod.</span></button>
+              <button class="sym-btn" data-v="4" onclick="symTap('N',4)"><span class="sbe">😟</span><span class="sbl">High</span></button>
+              <button class="sym-btn" data-v="5" onclick="symTap('N',5)"><span class="sbe">🤮</span><span class="sbl">Severe</span></button>
+            </div>
           </div>
           <div class="sym-row">
             <div class="sym-label"><span>😴 Fatigue</span><span class="sym-val v3" id="vF">3</span></div>
-            <input type="range" min="1" max="5" value="3" id="sF" oninput="updSym('F',this.value)">
-            <div class="emoji-row"><span>⚡ Full</span><span>🔆 Good</span><span>😐 Tired</span><span>🔅 Drained</span><span>💤 Bedridden</span></div>
+            <input type="hidden" id="sF" value="3">
+            <div class="sym-btn-grp" id="sgF">
+              <button class="sym-btn" data-v="1" onclick="symTap('F',1)"><span class="sbe">⚡</span><span class="sbl">Full</span></button>
+              <button class="sym-btn" data-v="2" onclick="symTap('F',2)"><span class="sbe">🔆</span><span class="sbl">Good</span></button>
+              <button class="sym-btn active" data-v="3" onclick="symTap('F',3)"><span class="sbe">😐</span><span class="sbl">Tired</span></button>
+              <button class="sym-btn" data-v="4" onclick="symTap('F',4)"><span class="sbe">🔅</span><span class="sbl">Drained</span></button>
+              <button class="sym-btn" data-v="5" onclick="symTap('F',5)"><span class="sbe">💤</span><span class="sbl">Bedridden</span></button>
+            </div>
           </div>
           <div class="sym-row">
             <div class="sym-label"><span>🩹 Pain</span><span class="sym-val v3" id="vP">3</span></div>
-            <input type="range" min="1" max="5" value="3" id="sP" oninput="updSym('P',this.value)">
-            <div class="emoji-row"><span>😌 None</span><span>🙂 Mild</span><span>😐 Mod.</span><span>😣 High</span><span>😭 Worst</span></div>
+            <input type="hidden" id="sP" value="3">
+            <div class="sym-btn-grp" id="sgP">
+              <button class="sym-btn" data-v="1" onclick="symTap('P',1)"><span class="sbe">😌</span><span class="sbl">None</span></button>
+              <button class="sym-btn" data-v="2" onclick="symTap('P',2)"><span class="sbe">🙂</span><span class="sbl">Mild</span></button>
+              <button class="sym-btn active" data-v="3" onclick="symTap('P',3)"><span class="sbe">😐</span><span class="sbl">Mod.</span></button>
+              <button class="sym-btn" data-v="4" onclick="symTap('P',4)"><span class="sbe">😣</span><span class="sbl">High</span></button>
+              <button class="sym-btn" data-v="5" onclick="symTap('P',5)"><span class="sbe">😭</span><span class="sbl">Worst</span></button>
+            </div>
           </div>
           <div class="sym-row">
             <div class="sym-label"><span>😊 Mood</span><span class="sym-val v3" id="vM">3</span></div>
-            <input type="range" min="1" max="5" value="3" id="sM" oninput="updSym('M',this.value)">
-            <div class="emoji-row"><span>🌟 Great</span><span>😊 Good</span><span>😐 OK</span><span>😕 Low</span><span>😢 Very Low</span></div>
+            <input type="hidden" id="sM" value="3">
+            <div class="sym-btn-grp" id="sgM">
+              <button class="sym-btn" data-v="1" onclick="symTap('M',1)"><span class="sbe">🌟</span><span class="sbl">Great</span></button>
+              <button class="sym-btn" data-v="2" onclick="symTap('M',2)"><span class="sbe">😊</span><span class="sbl">Good</span></button>
+              <button class="sym-btn active" data-v="3" onclick="symTap('M',3)"><span class="sbe">😐</span><span class="sbl">OK</span></button>
+              <button class="sym-btn" data-v="4" onclick="symTap('M',4)"><span class="sbe">😕</span><span class="sbl">Low</span></button>
+              <button class="sym-btn" data-v="5" onclick="symTap('M',5)"><span class="sbe">😢</span><span class="sbl">Very Low</span></button>
+            </div>
           </div>
           <div class="sym-row">
             <div class="sym-label"><span>🍽️ Appetite</span><span class="sym-val v3" id="vA">3</span></div>
-            <input type="range" min="1" max="5" value="3" id="sA" oninput="updSym('A',this.value)">
-            <div class="emoji-row"><span>😋 Normal</span><span>🙂 OK</span><span>😐 Low</span><span>😟 Poor</span><span>🚫 None</span></div>
+            <input type="hidden" id="sA" value="3">
+            <div class="sym-btn-grp" id="sgA">
+              <button class="sym-btn" data-v="1" onclick="symTap('A',1)"><span class="sbe">😋</span><span class="sbl">Normal</span></button>
+              <button class="sym-btn" data-v="2" onclick="symTap('A',2)"><span class="sbe">🙂</span><span class="sbl">OK</span></button>
+              <button class="sym-btn active" data-v="3" onclick="symTap('A',3)"><span class="sbe">😐</span><span class="sbl">Low</span></button>
+              <button class="sym-btn" data-v="4" onclick="symTap('A',4)"><span class="sbe">😟</span><span class="sbl">Poor</span></button>
+              <button class="sym-btn" data-v="5" onclick="symTap('A',5)"><span class="sbe">🚫</span><span class="sbl">None</span></button>
+            </div>
           </div>
           <div class="divider"></div>
           <div class="form-label" style="margin-bottom:8px">Also experiencing:</div>
@@ -946,8 +1021,14 @@ input:checked+.tslider::before{transform:translateX(20px)}
         <div class="card-body">
           <div class="sym-row">
             <div class="sym-label"><span>🚽 Stool Type</span><span class="sym-val v3" id="vBwl">3</span></div>
-            <input type="range" min="1" max="5" value="3" id="sBwl" oninput="updBowelSlider(this.value)">
-            <div class="emoji-row"><span>💧 Watery</span><span>🌊 Loose</span><span>✅ Normal</span><span>🪨 Hard</span><span>🚫 None</span></div>
+            <input type="hidden" id="sBwl" value="3">
+            <div class="sym-btn-grp" id="sgBwl">
+              <button class="sym-btn" data-v="1" onclick="bowelTap(1)"><span class="sbe">💧</span><span class="sbl">Watery</span></button>
+              <button class="sym-btn" data-v="2" onclick="bowelTap(2)"><span class="sbe">🌊</span><span class="sbl">Loose</span></button>
+              <button class="sym-btn active" data-v="3" onclick="bowelTap(3)"><span class="sbe">✅</span><span class="sbl">Normal</span></button>
+              <button class="sym-btn" data-v="4" onclick="bowelTap(4)"><span class="sbe">🪨</span><span class="sbl">Hard</span></button>
+              <button class="sym-btn" data-v="5" onclick="bowelTap(5)"><span class="sbe">🚫</span><span class="sbl">None</span></button>
+            </div>
           </div>
           <div class="form-group"><label class="form-label">Number of times today</label><input type="number" class="form-input" id="bowelCount" min="0" max="20" placeholder="e.g. 2"></div>
           <div id="bowelHistory" style="margin-top:14px"></div>
@@ -1024,8 +1105,14 @@ input:checked+.tslider::before{transform:translateX(20px)}
           </div>
           <div class="sym-row">
             <div class="sym-label"><span>⭐ Sleep Quality</span><span class="sym-val v3" id="vSQ">3</span></div>
-            <input type="range" min="1" max="5" value="3" id="sSQ" oninput="updSym('SQ',this.value)">
-            <div class="emoji-row"><span>😴 Great</span><span>🙂 Good</span><span>😐 Fair</span><span>😟 Poor</span><span>😫 Awful</span></div>
+            <input type="hidden" id="sSQ" value="3">
+            <div class="sym-btn-grp" id="sgSQ">
+              <button class="sym-btn" data-v="1" onclick="symTap('SQ',1)"><span class="sbe">😴</span><span class="sbl">Great</span></button>
+              <button class="sym-btn" data-v="2" onclick="symTap('SQ',2)"><span class="sbe">🙂</span><span class="sbl">Good</span></button>
+              <button class="sym-btn active" data-v="3" onclick="symTap('SQ',3)"><span class="sbe">😐</span><span class="sbl">Fair</span></button>
+              <button class="sym-btn" data-v="4" onclick="symTap('SQ',4)"><span class="sbe">😟</span><span class="sbl">Poor</span></button>
+              <button class="sym-btn" data-v="5" onclick="symTap('SQ',5)"><span class="sbe">😩</span><span class="sbl">Terrible</span></button>
+            </div>
           </div>
           <div class="form-label" style="margin-bottom:8px">Disruptions:</div>
           <div class="chip-row" id="sleepChips">
@@ -2153,6 +2240,10 @@ function renderFlashCards(){
     // ── MEDICINE FLASHCARD — all slots, auto-scroll ──
     const allMedSlots=(S.medicines||[]).flatMap(m=>{
       if(!m||!Array.isArray(m.times)) return [];
+      var _ms=String(m.start||'').substring(0,10);
+      var _me=String(m.end||m.start||'').substring(0,10);
+      if(_ms && _ms>localToday) return [];
+      if(_me && _me<localToday) return [];
       return m.times.map(t=>({
         name:m.name,qty:m.qty||1,unit:m.unit||'tablet(s)',food:m.food||'',
         mins:slotMins(t),tl:slotLabel(t)
@@ -2231,6 +2322,7 @@ function renderFlashCards(){
     const upcomingTests=(S.tests||[]).filter(t=>t.status==='upcoming'||t.status==='Upcoming')
       .sort((a,b)=>(a.date||'').localeCompare(b.date||''));
     if(upcomingTests.length){
+      const _doneTestSet=_loadDoneTests();
       const testItems=upcomingTests.map(function(t){
         return {
           html:'<div style="text-align:left;line-height:1.5;padding:2px 4px">'+
@@ -2241,12 +2333,13 @@ function renderFlashCards(){
           mins:10000,
           uid:'test|'+(t.type||'')+'|'+(t.date||'')
         };
-      // v49: exclude tests already marked done in this session
-      }).filter(function(item){return fcItemState[item.uid]!==true;});
+      }).filter(function(item){
+        return fcItemState[item.uid]!==true && !_doneTestSet.has(item.uid);
+      });
       if(testItems.length){
         setFCCarousel('fcTestNext','fcTestDone','test',testItems);
-      } else {
-        setFC('fcTestNext','fcTestDone','test','🥳 All done! No more upcoming tests.');
+      }else{
+        setFC('fcTestNext','fcTestDone','test','🥳 All done! No upcoming tests.');
       }
     }
 
@@ -2317,22 +2410,31 @@ function markFCItem(key,uid,val,itemMins){
   }
   _execMFI(key,uid,val);
 }
+function _loadDoneTests(){
+  try{return new Set(JSON.parse(localStorage.getItem('anbucare_done_tests')||'[]'));}
+  catch(e){return new Set();}
+}
+function _saveDoneTest(uid){
+  try{
+    var s=_loadDoneTests();s.add(uid);
+    localStorage.setItem('anbucare_done_tests',JSON.stringify([...s]));
+  }catch(e){}
+}
 function _execMFI(key,uid,val){
   fcItemState[uid]=val;
   saveFcState();
   if(key==='test' && val===true){
     var _pt=uid.split('|');
-    var _tname=_pt[1]||'', _tdate=_pt[2]||'';
+    var _tname=_pt[1]||'',_tdate=_pt[2]||'';
     if(Array.isArray(S.tests)){
       S.tests.forEach(function(t){
-        if((t.type||'')=== _tname &&
-           String(t.date||'').substring(0,10)===_tdate){
+        if((t.type||'')===_tname && String(t.date||'').substring(0,10)===_tdate)
           t.status='done';
-        }
       });
     }
+    _saveDoneTest(uid);
     try{saveNow();}catch(e){}
-    try{renderFlashCards();}catch(e){} // rebuild carousel — done test disappears
+    try{renderFlashCards();}catch(e){}
     toast('✅ Test marked done');
     return;
   }
@@ -2467,6 +2569,36 @@ function anbuEcNo(){
   var ov=document.getElementById('anbu-ec-ov');
   if(ov){ov.style.display='none';ov.classList.remove('on');}
   _anbuEcCb=null;
+}
+
+// ── v51 Symptom Tap-Button helpers with ZOOM ─────────────────────────
+var _symZoomTm=null;
+function _symZoom(grpId){
+  // Un-zoom every group, then zoom the tapped one
+  document.querySelectorAll('.sym-btn-grp').forEach(function(g){
+    g.classList.remove('sym-grp-zoom');
+    if(g._zoomTm){clearTimeout(g._zoomTm);g._zoomTm=null;}
+  });
+  var grp=document.getElementById(grpId);
+  if(!grp)return;
+  grp.classList.add('sym-grp-zoom');
+  // Auto-dismiss after 1.8s of inactivity
+  grp._zoomTm=setTimeout(function(){
+    grp.classList.remove('sym-grp-zoom');
+    grp._zoomTm=null;
+  },1800);
+}
+function symTap(k,v){
+  var inp=document.getElementById('s'+k);
+  if(inp)inp.value=v;
+  updSym(k,v);
+  _symZoom('sg'+k);
+}
+function bowelTap(v){
+  var inp=document.getElementById('sBwl');
+  if(inp)inp.value=v;
+  updBowelSlider(v);
+  _symZoom('sgBwl');
 }
 
 function markFC(key,val){
@@ -2661,6 +2793,10 @@ function renderMedsDaySummary(){
   _SUM_SLOTS.forEach(function(s){buckets[s.label]='';});
   S.medicines.forEach(function(m){
     if(!m||!Array.isArray(m.times)) return;
+    var _ms=String(m.start||'').substring(0,10);
+    var _me=String(m.end||m.start||'').substring(0,10);
+    if(_ms && _ms>today) return;
+    if(_me && _me<today) return;
     m.times.forEach(function(t){
       var slot=_dscMatchSlot(t);
       var dose=(m.qty||1)+' '+(m.unit||'tablet');
@@ -2762,6 +2898,7 @@ function deleteMed(id){
   renderMeds();
   try{renderFlashCards();}catch(_re){}
   try{renderNext3Strip();}catch(_re){}
+  try{renderMedsDaySummary();}catch(_re){}
   toast('🗑 Medicine removed');saveNow();
 }
 function deleteDiet(id){
@@ -2770,6 +2907,7 @@ function deleteDiet(id){
   renderDiet();
   try{renderFlashCards();}catch(_re){}
   try{renderNext3Strip();}catch(_re){}
+  try{renderDietDaySummary();}catch(_re){}
   toast('🗑 Diet entry removed');saveNow();
 }
 
@@ -2800,16 +2938,15 @@ function deleteTest(id){
   S.tests=S.tests.filter(t=>t.id!==id);
   renderTests();
   try{renderFlashCards();}catch(_re){}
-  try{renderNext3Strip();}catch(_re){}
   toast('🗑 Test removed');saveNow();
 }
 function markTestDone(id){
   const t=S.tests.find(t=>t.id===id);
   if(!t)return;
   t.status='done';
+  _saveDoneTest('test|'+(t.type||'')+'|'+String(t.date||'').substring(0,10));
   renderTests();
-  try{renderFlashCards();}catch(_re){} // v50: test card updates immediately
-  try{renderNext3Strip();}catch(_re){}
+  try{renderFlashCards();}catch(_re){}
   toast('✅ Test marked done!');saveNow();
 }
 
@@ -3168,7 +3305,16 @@ function deleteChemo(id){
 // ═══════════════════════════════════════════
 // SYMPTOMS
 // ═══════════════════════════════════════════
-function updSym(k,v){const el=document.getElementById('v'+k);if(el){el.textContent=v;el.className='sym-val v'+v;}}
+function updSym(k,v){
+  const el=document.getElementById('v'+k);
+  if(el){el.textContent=v;el.className='sym-val v'+v;}
+  const grp=document.getElementById('sg'+k);
+  if(grp){grp.querySelectorAll('.sym-btn').forEach(function(b){
+    b.classList.toggle('active',+b.dataset.v===+v);
+  });}
+  const inp=document.getElementById('s'+k);
+  if(inp)inp.value=v;
+}
 function _saveSymInternal(){
   const entry={id:S.nextId++,date:today,session:symSession,nausea:+document.getElementById('sN').value,fatigue:+document.getElementById('sF').value,pain:+document.getElementById('sP').value,mood:+document.getElementById('sM').value,appetite:+document.getElementById('sA').value,extras:chips('extraChips'),notes:document.getElementById('symNotes').value,chemoId:S.chemoSessions.length?S.chemoSessions[S.chemoSessions.length-1].id:null};
   S.symptoms.unshift(entry);
@@ -3320,7 +3466,15 @@ function renderSymHist(){
       +'</div>';
   }
 }
-function updBowelSlider(v){selectedBowel=+v;const el=document.getElementById('vBwl');if(el){el.textContent=v;el.className='sym-val v'+v;}}
+function updBowelSlider(v){
+  selectedBowel=+v;
+  const el=document.getElementById('vBwl');
+  if(el){el.textContent=v;el.className='sym-val v'+v;}
+  const grp=document.getElementById('sgBwl');
+  if(grp){grp.querySelectorAll('.sym-btn').forEach(function(b){
+    b.classList.toggle('active',+b.dataset.v===+v);
+  });}
+}
 
 function renderBowelHistory(){
   const el=document.getElementById('bowelHistory');if(!el)return;
