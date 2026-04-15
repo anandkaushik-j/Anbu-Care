@@ -1,4 +1,4 @@
-<!-- AnbuCare v56 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
+<!-- AnbuCare v57 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
 <!DOCTYPE html>
 <html lang="en-IN">
 <head>
@@ -1286,7 +1286,9 @@ input:checked+.tslider::before{transform:translateX(20px)}
         </div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-primary btn-block" onclick="previewReport()" style="flex:2">👁️ Preview</button>
-          <button class="btn btn-accent" onclick="generatePDF()" style="flex:1">⬇️ Download PDF</button>
+          <button class="btn btn-accent" onclick="downloadPDFReport()" style="flex:1" id="btnDlPDF">⬇️ Download PDF</button>
+          <button class="btn btn-primary" onclick="sharePDFReport()" style="flex:1" id="btnSharePDF">📤 Share</button>
+          <button class="btn" onclick="printPDFReport()" style="flex:1;background:#f5f5f5;color:#333">🖨️ Print</button>
         </div>
         <div id="reportPreview" class="hidden" style="margin-top:14px;border-radius:10px;overflow:hidden;border:1.5px solid #7A9E7E;"></div>
       </div>
@@ -5390,83 +5392,128 @@ function _buildPDFHtml(){
   return out;
 }
 
-function generatePDF(){
 
-  const{from,to}=getDateRange(),
-        patient=document.getElementById('pdfPatient').value||'Patient',
-        prepBy=document.getElementById('pdfPrepared').value||'Caregiver';
-  const inR=d=>d>=from&&d<=to;
-  const fS=S.symptoms.filter(s=>inR(s.date)),
-        fV=S.vitals.filter(v=>inR(v.date)),
-        fSl=S.sleepLogs.filter(s=>inR(s.date)),
-        fC=S.chemoSessions.filter(c=>inR(c.date)),
-        fN=(S.notes||[]).filter(n=>inR(n.date)&&n.type!=='auto'),
-        fM=S.medicines||[],
-        fT=S.tests||[];
-
-  const tp=Array.isArray(S.treatmentProfile)?S.treatmentProfile[0]||{}:(S.treatmentProfile||{});
-  const treatName=tp.name||'—', protocol=tp.protocol||'', oncologist=tp.oncologist||'—',
-        patientName=tp.patientName||patient, startDate=tp.startDate||'';
-
-  /* ── helpers ── */
-  const SL=['','None','Mild','Moderate','Severe','Very Severe'];
-  const SLC=['','#27ae60','#2980b9','#f39c12','#e74c3c','#8e44ad'];
-  const symLabel=v=>SL[+v]||'—';
-  const symCol=v=>SLC[+v]||'#888';
-  const fmtDate=d=>{if(!d)return'—';const p=String(d).substring(0,10).split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d;};
-  const fmtDT=dt=>{if(!dt)return'—';const[d,t]=(String(dt)+' ').split('T').join(' ').split(' ');return fmtDate(d)+(t&&t.length>4?' '+t.substring(0,5):'');};
-  const avgArr=(arr,key)=>arr.length?(arr.reduce((a,x)=>a+(+x[key]||0),0)/arr.length).toFixed(1):null;
-  const avgSym=k=>avgArr(fS,k);
-  const repId='AC-'+today.replace(/-/g,'').substring(0,8)+'-'+Math.floor(1000+Math.random()*9000);
-
-  /* BP avg: only count rows where BOTH systolic & diastolic > 0 */
-  const fVbp=fV.filter(v=>(+v.systolic||0)>0&&(+v.diastolic||0)>0);
-  const avgBP_s=fVbp.length?(fVbp.reduce((a,v)=>a+(+v.systolic),0)/fVbp.length).toFixed(0):null;
-  const avgBP_d=fVbp.length?(fVbp.reduce((a,v)=>a+(+v.diastolic),0)/fVbp.length).toFixed(0):null;
-  const avgPulse=avgArr(fV.filter(v=>(+v.pulse||0)>0),'pulse');
-  const avgTemp=avgArr(fV.filter(v=>(+v.temp||0)>0),'temp');
-  const avgSpo2=avgArr(fV.filter(v=>(+v.spo2||0)>0),'spo2');
-  const avgSleep=avgArr(fSl,'hours');
-
-  /* Abnormal flag helpers (clinical reference ranges) */
-  const flagBP=(s,d)=>(+s>140||+s<90||+d>90||+d<60)?'*':'';
-  const flagPulse=v=>(+v>100||+v<60)?'*':'';
-  const flagTemp=v=>(+v>99.5||+v<97)?'*':'';
-  const flagSpo2=v=>(+v<95)?'*':'';
-  const hasBPFlag=fV.some(v=>flagBP(v.systolic,v.diastolic)==='*');
-  const hasPulseFlag=fV.some(v=>flagPulse(v.pulse)==='*');
-  const hasTempFlag=fV.some(v=>flagTemp(v.temp)==='*');
-  const hasSpo2Flag=fV.some(v=>flagSpo2(v.spo2)==='*');
-  const anyVitalFlag=hasBPFlag||hasPulseFlag||hasTempFlag||hasSpo2Flag;
-
-  /* Symptom trend: compare first half vs second half */
-  const symTrend=k=>{
-    if(fS.length<2) return '';
-    const sorted=[...fS].sort((a,b)=>a.date.localeCompare(b.date));
-    const mid=Math.floor(sorted.length/2);
-    const avg1=sorted.slice(0,mid).reduce((a,x)=>a+(+x[k]||0),0)/mid;
-    const avg2=sorted.slice(mid).reduce((a,x)=>a+(+x[k]||0),0)/(sorted.length-mid);
-    const d=avg2-avg1;
-    if(Math.abs(d)<0.3) return '<span style="color:#888">→ Stable</span>';
-    if(d>0) return '<span style="color:#e74c3c">↑ Worsening</span>';
-    return '<span style="color:#27ae60">↓ Improving</span>';
-  };
-
-  /* Sleep quality label */
-  const sleepQL=q=>{const n=+q;return n>=4.5?'Excellent':n>=3.5?'Good':n>=2.5?'Fair':'Poor';};
-  const sleepQC=q=>{const n=+q;return n>=4.5?'#27ae60':n>=3.5?'#2980b9':n>=2.5?'#f39c12':'#e74c3c';};
-
-  /* CSS reset for print */
-  const out=_buildPDFHtml();
-  document.getElementById('printReport').innerHTML=out;
-  // Set filename: AnbuCare_Report_<Patient>_DD-MM-YY
-  const _dd=today.substring(8,10),_mm=today.substring(5,7),_yy=today.substring(2,4);
-  const _pname=(patientName||patient).replace(/\s+/g,'-').substring(0,20);
-  const _prevTitle=document.title;
-  document.title='AnbuCare_Report_'+_pname+'_'+_dd+'-'+_mm+'-'+_yy;
-  toast('📄 Opening Download PDF dialog…');
-  setTimeout(()=>{window.print();setTimeout(()=>{document.title=_prevTitle;},2000);},400);
+// ── v57 lazy CDN loader ───────────────────────────────────────────────
+function _loadScript(src){
+  return new Promise(function(resolve,reject){
+    if(document.querySelector('script[src="'+src+'"]')){resolve();return;}
+    var s=document.createElement('script');
+    s.src=src; s.onload=resolve; s.onerror=reject;
+    document.head.appendChild(s);
+  });
 }
+
+// ── v57 PDF filename helper ───────────────────────────────────────────
+function _pdfFilename(){
+  var patient=(document.getElementById('pdfPatient').value||'Patient')
+               .replace(/\s+/g,'-').substring(0,20);
+  var dd=today.substring(8,10),mm=today.substring(5,7),yy=today.substring(2,4);
+  return 'AnbuCare_Report_'+patient+'_'+dd+'-'+mm+'-'+yy+'.pdf';
+}
+
+// ── v57 core PDF generator — returns jsPDF doc ────────────────────────
+async function _makePDFDoc(btnId){
+  var btn=document.getElementById(btnId);
+  if(btn){btn.disabled=true;btn.textContent='⏳ Generating…';}
+  try{
+    // Build and inject report HTML
+    var out=_buildPDFHtml();
+    var el=document.getElementById('printReport');
+    el.innerHTML=out;
+    el.style.cssText='display:block;position:fixed;left:-9999px;top:0;width:794px;background:#fff;z-index:-1;';
+    // Give DOM time to paint
+    await new Promise(function(r){setTimeout(r,300);});
+    // Load CDN libs lazily
+    await _loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+    await _loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+    // Render to canvas at 2x for crisp text
+    var canvas=await html2canvas(el,{
+      scale:2, useCORS:true, logging:false,
+      backgroundColor:'#ffffff', windowWidth:794
+    });
+    el.style.cssText='display:none';
+    // Build multi-page PDF
+    var {jsPDF}=window.jspdf;
+    var pdf=new jsPDF('p','mm','a4');
+    var pgW=pdf.internal.pageSize.getWidth();
+    var pgH=pdf.internal.pageSize.getHeight();
+    var imgW=pgW;
+    var imgH=(canvas.height*pgW)/canvas.width;
+    var imgData=canvas.toDataURL('image/jpeg',0.92);
+    var pos=0, left=imgH;
+    pdf.addImage(imgData,'JPEG',0,pos,imgW,imgH);
+    left-=pgH;
+    while(left>0){
+      pos-=pgH;
+      pdf.addPage();
+      pdf.addImage(imgData,'JPEG',0,pos,imgW,imgH);
+      left-=pgH;
+    }
+    return pdf;
+  } finally {
+    if(btn){btn.disabled=false;btn.textContent=btn.id==='btnDlPDF'?'⬇️ Download PDF':'📤 Share';}
+  }
+}
+
+// ── v57 Download directly to device ──────────────────────────────────
+async function downloadPDFReport(){
+  try{
+    toast('📄 Generating PDF…');
+    var pdf=await _makePDFDoc('btnDlPDF');
+    pdf.save(_pdfFilename());
+    toast('✅ PDF saved to your device!');
+  }catch(e){
+    toast('⚠️ PDF failed: '+e.message);
+    console.error(e);
+  }
+}
+
+// ── v57 Share via Web Share API (WhatsApp, email, Drive, etc.) ────────
+async function sharePDFReport(){
+  try{
+    toast('📤 Preparing to share…');
+    var pdf=await _makePDFDoc('btnSharePDF');
+    var fname=_pdfFilename();
+    var blob=pdf.output('blob');
+    var file=new File([blob],fname,{type:'application/pdf'});
+    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
+      await navigator.share({
+        title:'AnbuCare Health Report',
+        text:'Health report from AnbuCare',
+        files:[file]
+      });
+      toast('✅ Shared successfully!');
+    } else if(navigator.share){
+      // File sharing not supported — fallback to text share
+      await navigator.share({title:'AnbuCare Health Report',text:'Health report from AnbuCare'});
+      toast('📥 PDF also downloaded to your device');
+      pdf.save(fname);
+    } else {
+      // Desktop fallback — download + guide
+      pdf.save(fname);
+      toast('📥 PDF downloaded — open it and share via WhatsApp');
+    }
+  }catch(e){
+    if(e.name!=='AbortError') toast('⚠️ Share failed: '+e.message);
+  }
+}
+
+// ── v57 Print fallback (for desktop) ─────────────────────────────────
+function printPDFReport(){
+  var out=_buildPDFHtml();
+  document.getElementById('printReport').innerHTML=out;
+  var _prevTitle=document.title;
+  document.title=_pdfFilename().replace('.pdf','');
+  toast('🖨️ Opening print dialog…');
+  setTimeout(function(){
+    window.print();
+    setTimeout(function(){document.title=_prevTitle;},2000);
+  },400);
+}
+
+// ── v57 generatePDF kept as alias for backward compat ────────────────
+function generatePDF(){ downloadPDFReport(); }
+
 
 function loadConn(){
   const url=(localStorage.getItem('anbucare_url')||GAS_URL);
