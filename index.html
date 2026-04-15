@@ -1,4 +1,4 @@
-<!-- AnbuCare v51 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
+<!-- AnbuCare v52 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
 <!DOCTYPE html>
 <html lang="en-IN">
 <head>
@@ -592,7 +592,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
 <!-- HEADER -->
 <div class="header">
   <div class="hbrand">
-    <div><div class="htitle">AnbuCare</div><div class="hdate" id="hDate"></div></div>
+    <div><div class="htitle">AnbuCare</div><div class="hdate" id="hDate"></div><span id="syncBadge" title="Last synced from Sheets"></span></div>
     <button class="red-cross-btn" onclick="openModal('helplineModal')" title="Emergency">✚</button>
   </div>
   <div class="hright">
@@ -675,51 +675,35 @@ input:checked+.tslider::before{transform:translateX(20px)}
 .anbu-ec-n{display:block;width:100%;padding:16px;background:#F0EDE8;color:#333;
   border:2px solid #D4D0CA;border-radius:13px;font-size:1.1rem;font-weight:700;cursor:pointer;}
 .anbu-ec-n:active{background:#E0DDD8}
-
 /* ── v51 Symptom Tap-Buttons ───────────────────────────── */
-.sym-btn-grp{
-  display:flex;gap:5px;width:100%;margin:8px 0 4px;
+.sym-btn-grp{display:flex;gap:5px;width:100%;margin:8px 0 4px;
   position:relative;z-index:1;
-  transition:transform .22s cubic-bezier(.16,1,.3,1),
-             box-shadow .22s ease,z-index 0s;
-  transform-origin:center center;
-  border-radius:16px;
-}
-/* Zoom state — triggered when user taps a button */
-.sym-btn-grp.sym-grp-zoom{
-  transform:scale(1.09);
-  z-index:200;
-  box-shadow:0 8px 32px rgba(61,107,67,.28);
-}
-.sym-btn{
-  flex:1;min-width:0;padding:9px 2px 7px;
-  border:2px solid #ddd;border-radius:13px;
-  background:#f5f7f5;cursor:pointer;text-align:center;
-  display:flex;flex-direction:column;align-items:center;
-  justify-content:center;gap:3px;
-  touch-action:manipulation;-webkit-tap-highlight-color:transparent;
-  transition:border-color .15s,background .15s,transform .12s;
-  -webkit-user-select:none;
-}
+  transition:transform .22s cubic-bezier(.16,1,.3,1),box-shadow .22s ease;
+  transform-origin:center center;border-radius:16px;}
+.sym-btn-grp.sym-grp-zoom{transform:scale(1.09);z-index:200;
+  box-shadow:0 8px 32px rgba(61,107,67,.28);}
+.sym-btn{flex:1;min-width:0;padding:9px 2px 7px;border:2px solid #ddd;
+  border-radius:13px;background:#f5f7f5;cursor:pointer;text-align:center;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+  transition:border-color .15s,background .15s,transform .12s;-webkit-user-select:none;}
 .sym-btn:active{transform:scale(.9);}
-.sym-btn.active{
-  border-color:#3d6b43;background:#e8f5e9;
-  box-shadow:0 0 0 1px #3d6b43;
-}
-/* Zoomed group — enlarge emojis & labels slightly */
+.sym-btn.active{border-color:#3d6b43;background:#e8f5e9;box-shadow:0 0 0 1px #3d6b43;}
 .sym-btn-grp.sym-grp-zoom .sbe{font-size:1.75rem;}
 .sym-btn-grp.sym-grp-zoom .sbl{font-size:.72rem;}
 .sym-btn-grp.sym-grp-zoom .sym-btn{padding:11px 3px 9px;border-radius:15px;}
-.sym-btn-grp.sym-grp-zoom .sym-btn.active{
-  border-color:#3d6b43;background:#d0f0d8;
-  box-shadow:0 0 0 2px #3d6b43;}
+.sym-btn-grp.sym-grp-zoom .sym-btn.active{border-color:#3d6b43;background:#d0f0d8;box-shadow:0 0 0 2px #3d6b43;}
 .sbe{font-size:1.5rem;line-height:1.1;}
-.sbl{font-size:.62rem;font-weight:700;color:#444;line-height:1.15;
-  word-break:break-word;text-align:center;}
+.sbl{font-size:.62rem;font-weight:700;color:#444;line-height:1.15;word-break:break-word;text-align:center;}
 .sym-btn.active .sbl{color:#2e5233;}
-.sym-btn-grp.sym-grp-zoom .sym-btn.active .sbl{color:#1a3d1f;font-size:.74rem;}
-/* sym-row needs overflow visible so zoom doesn't clip */
 .sym-row{overflow:visible!important;}
+/* ── v52 Live Sync badge ────────────────────────────────── */
+#syncBadge{display:inline-flex;align-items:center;gap:5px;
+  font-size:.72rem;color:var(--muted);padding:3px 8px;
+  background:var(--surface2,#f0f4f0);border-radius:20px;
+  margin-left:8px;vertical-align:middle;transition:opacity .4s;}
+#syncBadge.syncing{color:#3d6b43;}
+#syncBadge.updated{color:#1a7a1a;font-weight:700;}
 
 </style>
   <g class="pk1w">
@@ -1686,6 +1670,10 @@ window.onload = async () => {
   fetchAffirmation(); // re-run after data load to ensure affirmation is visible
   setInterval(renderNext3Strip, 60000);
   setInterval(function(){try{renderFlashCards();}catch(_e){}},15*60*1000);
+  // v52: background live-sync every 45 s — keeps all family devices in sync
+  setInterval(_bgSync, 45*1000);
+  // Set initial sync stamp from what was loaded at startup
+  setTimeout(function(){try{_bgSync();}catch(e){}},5000);
 };
 
 // ── Slot normalisation helpers (handles emoji-prefixed chips) ──
@@ -2242,8 +2230,8 @@ function renderFlashCards(){
       if(!m||!Array.isArray(m.times)) return [];
       var _ms=String(m.start||'').substring(0,10);
       var _me=String(m.end||m.start||'').substring(0,10);
-      if(_ms && _ms>localToday) return [];
-      if(_me && _me<localToday) return [];
+      if(_ms&&_ms>localToday) return [];
+      if(_me&&_me<localToday) return [];
       return m.times.map(t=>({
         name:m.name,qty:m.qty||1,unit:m.unit||'tablet(s)',food:m.food||'',
         mins:slotMins(t),tl:slotLabel(t)
@@ -2334,13 +2322,16 @@ function renderFlashCards(){
           uid:'test|'+(t.type||'')+'|'+(t.date||'')
         };
       }).filter(function(item){
-        return fcItemState[item.uid]!==true && !_doneTestSet.has(item.uid);
+        return fcItemState[item.uid]!==true&&!_doneTestSet.has(item.uid);
       });
       if(testItems.length){
         setFCCarousel('fcTestNext','fcTestDone','test',testItems);
       }else{
         setFC('fcTestNext','fcTestDone','test','🥳 All done! No upcoming tests.');
       }
+    } else {
+      // v52 Fix 2: explicit no-tests message
+      setFC('fcTestNext','fcTestDone','test','🗓 No tests scheduled');
     }
 
   }catch(err){console.error('renderFlashCards error:',err);}
@@ -2393,19 +2384,17 @@ function refreshTestTypeDatalist(){
 // ── Per-item FC state — markFCItem ────────────────────────────
 // uid format: 'diet|YYYY-MM-DD|MealType'  'med|MedName|SlotLabel'  'test|Type|Date'
 function markFCItem(key,uid,val,itemMins){
-  if(val===true && itemMins && itemMins>0){
+  if(val===true&&itemMins&&itemMins>0){
     var _nM=(new Date()).getHours()*60+(new Date()).getMinutes();
     var _pt=uid.split('|');
     if(itemMins>=10000){
       var _lb=_pt[1]||uid;
       var _dt=_pt[2]?('📅 Scheduled: '+_pt[2]):'Upcoming test';
-      anbuEcShow(_lb,_dt,function(){_execMFI(key,uid,true);});
-      return;
+      anbuEcShow(_lb,_dt,function(){_execMFI(key,uid,true);});return;
     }
-    if(itemMins<9999 && itemMins>_nM){
+    if(itemMins<9999&&itemMins>_nM){
       var _lb2=key==='diet'?(_pt[2]||uid):(_pt[1]||uid);
-      anbuEcShow(_lb2,_anbuFmtM(itemMins),function(){_execMFI(key,uid,true);});
-      return;
+      anbuEcShow(_lb2,_anbuFmtM(itemMins),function(){_execMFI(key,uid,true);});return;
     }
   }
   _execMFI(key,uid,val);
@@ -2415,28 +2404,22 @@ function _loadDoneTests(){
   catch(e){return new Set();}
 }
 function _saveDoneTest(uid){
-  try{
-    var s=_loadDoneTests();s.add(uid);
-    localStorage.setItem('anbucare_done_tests',JSON.stringify([...s]));
-  }catch(e){}
+  try{var s=_loadDoneTests();s.add(uid);
+    localStorage.setItem('anbucare_done_tests',JSON.stringify([...s]));}catch(e){}
 }
 function _execMFI(key,uid,val){
-  fcItemState[uid]=val;
-  saveFcState();
-  if(key==='test' && val===true){
-    var _pt=uid.split('|');
-    var _tname=_pt[1]||'',_tdate=_pt[2]||'';
+  fcItemState[uid]=val;saveFcState();
+  if(key==='test'&&val===true){
+    var _pt=uid.split('|'),_tname=_pt[1]||'',_tdate=_pt[2]||'';
     if(Array.isArray(S.tests)){
       S.tests.forEach(function(t){
-        if((t.type||'')===_tname && String(t.date||'').substring(0,10)===_tdate)
-          t.status='done';
+        if((t.type||'')===_tname&&String(t.date||'').substring(0,10)===_tdate)t.status='done';
       });
     }
     _saveDoneTest(uid);
     try{saveNow();}catch(e){}
     try{renderFlashCards();}catch(e){}
-    toast('✅ Test marked done');
-    return;
+    toast('✅ Test marked done');return;
   }
   var _mc=_fcCarousels[key];
   if(_mc&&_mc.items.length>1){
@@ -2572,9 +2555,7 @@ function anbuEcNo(){
 }
 
 // ── v51 Symptom Tap-Button helpers with ZOOM ─────────────────────────
-var _symZoomTm=null;
 function _symZoom(grpId){
-  // Un-zoom every group, then zoom the tapped one
   document.querySelectorAll('.sym-btn-grp').forEach(function(g){
     g.classList.remove('sym-grp-zoom');
     if(g._zoomTm){clearTimeout(g._zoomTm);g._zoomTm=null;}
@@ -2582,23 +2563,72 @@ function _symZoom(grpId){
   var grp=document.getElementById(grpId);
   if(!grp)return;
   grp.classList.add('sym-grp-zoom');
-  // Auto-dismiss after 1.8s of inactivity
   grp._zoomTm=setTimeout(function(){
-    grp.classList.remove('sym-grp-zoom');
-    grp._zoomTm=null;
+    grp.classList.remove('sym-grp-zoom');grp._zoomTm=null;
   },1800);
 }
 function symTap(k,v){
-  var inp=document.getElementById('s'+k);
-  if(inp)inp.value=v;
-  updSym(k,v);
-  _symZoom('sg'+k);
+  var inp=document.getElementById('s'+k);if(inp)inp.value=v;
+  updSym(k,v);_symZoom('sg'+k);
 }
 function bowelTap(v){
-  var inp=document.getElementById('sBwl');
-  if(inp)inp.value=v;
-  updBowelSlider(v);
-  _symZoom('sgBwl');
+  var inp=document.getElementById('sBwl');if(inp)inp.value=v;
+  updBowelSlider(v);_symZoom('sgBwl');
+}
+
+// ── v52 LIVE SYNC — background poll every 45 seconds ─────────────────
+var _syncBusy=false, _lastSyncStamp='', _lastSyncTime=0;
+function _updSyncBadge(state,txt){
+  var b=document.getElementById('syncBadge');if(!b)return;
+  b.className=''; b.classList.add(state);
+  b.textContent=txt;
+}
+async function _bgSync(){
+  if(_syncBusy||saving)return;
+  var url=localStorage.getItem('anbucare_url')||GAS_URL;
+  if(!url)return;
+  _syncBusy=true;
+  _updSyncBadge('syncing',' Syncing…');
+  try{
+    var sid=localStorage.getItem('anbucare_sid');
+    var r=await Promise.race([
+      fetch(url,{method:'POST',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body:JSON.stringify({action:'loadAll',sheetId:sid}),
+        redirect:'follow'}),
+      new Promise(function(_,rej){setTimeout(function(){rej(new Error('timeout'));},12000);})
+    ]);
+    var txt=await r.text();
+    var d; try{d=JSON.parse(txt);}catch(e){_updSyncBadge('','');return;}
+    if(d&&d.ok&&d.success&&d.data){
+      var ns=d.data.savedAt||'';
+      _lastSyncTime=Date.now();
+      if(ns&&ns===_lastSyncStamp){
+        _updSyncBadge('','✓ Up to date');
+        return;
+      }
+      _lastSyncStamp=ns;
+      // Merge updated data
+      var loaded=d.data;
+      var MK=['tasks','medicines','dietPlan','tests','chemoSessions',
+              'symptoms','vitals','sleepLogs','notes','voiceNotes',
+              'helplines','reminders','treatmentProfile','nextId'];
+      MK.forEach(function(k){if(loaded[k]!==undefined)S[k]=loaded[k];});
+      if(loaded.bowelLog&&Array.isArray(loaded.bowelLog)){
+        bowelLog.length=0;loaded.bowelLog.forEach(function(x){bowelLog.push(x);});
+      }
+      try{normalizeAll();}catch(e){}
+      try{renderAll();}catch(e){}
+      _updSyncBadge('updated','✅ Updated');
+      setTimeout(function(){_updSyncBadge('','');},3000);
+    }else{
+      _updSyncBadge('','');
+    }
+  }catch(e){
+    _updSyncBadge('',''); // silent fail on mobile
+  }finally{
+    _syncBusy=false;
+  }
 }
 
 function markFC(key,val){
@@ -2795,8 +2825,8 @@ function renderMedsDaySummary(){
     if(!m||!Array.isArray(m.times)) return;
     var _ms=String(m.start||'').substring(0,10);
     var _me=String(m.end||m.start||'').substring(0,10);
-    if(_ms && _ms>today) return;
-    if(_me && _me<today) return;
+    if(_ms&&_ms>today) return;
+    if(_me&&_me<today) return;
     m.times.forEach(function(t){
       var slot=_dscMatchSlot(t);
       var dose=(m.qty||1)+' '+(m.unit||'tablet');
