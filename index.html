@@ -1,4 +1,4 @@
-<!-- AnbuCare v59 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
+<!-- AnbuCare v60 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
 <!DOCTYPE html>
 <html lang="en-IN">
 <head>
@@ -1284,32 +1284,81 @@ input:checked+.tslider::before{transform:translateX(20px)}
           <div class="form-group"><label class="form-label">Patient Name</label><input type="text" class="form-input" id="pdfPatient" placeholder="Patient name"></div>
           <div class="form-group"><label class="form-label">Prepared by</label><input type="text" class="form-input" id="pdfPrepared" value="AnbuCare"></div>
         </div>
-        <!-- v59: 3-button mobile-portrait layout -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <button class="btn btn-primary btn-block"
-            onclick="previewReport()"
-            style="grid-column:1/-1;padding:16px 12px;font-size:1rem;font-weight:700;
-                   border-radius:14px;display:flex;align-items:center;justify-content:center;gap:8px;
-                   touch-action:manipulation;">
-            <span style="font-size:1.3rem">👁️</span> Preview Report
+        <!-- v60: Redesigned portrait buttons -->
+        <div style="display:flex;flex-direction:column;gap:12px;margin-top:4px;">
+
+          <!-- Preview — hero button -->
+          <button onclick="previewReport()"
+            style="width:100%;padding:0;border:none;cursor:pointer;
+                   background:linear-gradient(135deg,#7A9E7E 0%,#6B9E72 100%);
+                   border-radius:18px;
+                   box-shadow:0 4px 18px rgba(107,158,114,.35);
+                   display:flex;align-items:center;gap:0;
+                   overflow:hidden;touch-action:manipulation;
+                   transition:transform .15s,box-shadow .15s;"
+            onmousedown="this.style.transform='scale(.97)'"
+            onmouseup="this.style.transform='scale(1)'"
+            ontouchstart="this.style.transform='scale(.97)'"
+            ontouchend="this.style.transform='scale(1)'">
+            <span style="background:rgba(0,0,0,.10);width:62px;height:62px;
+                         display:flex;align-items:center;justify-content:center;
+                         font-size:1.6rem;flex-shrink:0;">👁️</span>
+            <span style="flex:1;text-align:center;color:#fff;font-size:1.05rem;
+                         font-weight:800;letter-spacing:.02em;padding-right:62px;">
+              Preview Report
+            </span>
           </button>
-          <button class="btn btn-accent" id="btnDlPDF"
-            onclick="downloadPDFReport()"
-            style="padding:15px 8px;font-size:.92rem;font-weight:700;border-radius:14px;
-                   display:flex;flex-direction:column;align-items:center;gap:5px;
-                   touch-action:manipulation;">
-            <span style="font-size:1.6rem">⬇️</span>
-            <span>Download PDF</span>
-          </button>
-          <button class="btn" id="btnSharePDF"
-            onclick="sharePDFReport()"
-            style="padding:15px 8px;font-size:.92rem;font-weight:700;border-radius:14px;
-                   background:linear-gradient(135deg,#25D366,#128C7E);color:#fff;
-                   display:flex;flex-direction:column;align-items:center;gap:5px;
-                   touch-action:manipulation;">
-            <span style="font-size:1.6rem">📤</span>
-            <span>Share / WhatsApp</span>
-          </button>
+
+          <!-- Download PDF + Share — side by side -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+
+            <!-- Download PDF -->
+            <button id="btnDlPDF" onclick="downloadPDFReport()"
+              style="padding:0;border:none;cursor:pointer;
+                     background:linear-gradient(160deg,#B5C9A4 0%,#7A9E7E 100%);
+                     border-radius:18px;
+                     box-shadow:0 4px 14px rgba(122,158,126,.30);
+                     display:flex;flex-direction:column;
+                     align-items:center;justify-content:center;
+                     gap:6px;height:90px;
+                     touch-action:manipulation;
+                     transition:transform .15s;"
+              onmousedown="this.style.transform='scale(.96)'"
+              onmouseup="this.style.transform='scale(1)'"
+              ontouchstart="this.style.transform='scale(.96)'"
+              ontouchend="this.style.transform='scale(1)'">
+              <span style="font-size:1.8rem;line-height:1;">⬇️</span>
+              <span style="color:#fff;font-size:.82rem;font-weight:800;
+                           letter-spacing:.03em;text-transform:uppercase;
+                           line-height:1.2;text-align:center;padding:0 6px;">
+                Download<br>PDF
+              </span>
+            </button>
+
+            <!-- Share / WhatsApp -->
+            <button id="btnSharePDF" onclick="sharePDFReport()"
+              style="padding:0;border:none;cursor:pointer;
+                     background:linear-gradient(160deg,#4FCB7A 0%,#1A8A4A 100%);
+                     border-radius:18px;
+                     box-shadow:0 4px 14px rgba(37,211,102,.30);
+                     display:flex;flex-direction:column;
+                     align-items:center;justify-content:center;
+                     gap:6px;height:90px;
+                     touch-action:manipulation;
+                     transition:transform .15s;"
+              onmousedown="this.style.transform='scale(.96)'"
+              onmouseup="this.style.transform='scale(1)'"
+              ontouchstart="this.style.transform='scale(.96)'"
+              ontouchend="this.style.transform='scale(1)'">
+              <span style="font-size:1.8rem;line-height:1;">📤</span>
+              <span style="color:#fff;font-size:.82rem;font-weight:800;
+                           letter-spacing:.03em;text-transform:uppercase;
+                           line-height:1.2;text-align:center;padding:0 6px;">
+                Share /<br>WhatsApp
+              </span>
+            </button>
+
+          </div>
         </div>
         <div id="reportPreview" class="hidden" style="margin-top:14px;border-radius:10px;overflow:hidden;border:1.5px solid #7A9E7E;"></div>
       </div>
