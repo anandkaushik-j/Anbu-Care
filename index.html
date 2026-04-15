@@ -1,4 +1,4 @@
-<!-- AnbuCare v48 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
+<!-- AnbuCare v50 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
 <!DOCTYPE html>
 <html lang="en-IN">
 <head>
@@ -653,7 +653,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
 .dsc-item b{display:block;font-size:.8rem;margin-bottom:1px;}
 .dsc-item-sub{font-size:.7rem;color:#666;line-height:1.3;}
 
-/* ── AnbuCare FC Early-Done Confirm v48 ──────────────────────────── */
+/* ── AnbuCare FC Early-Done Confirm v48 ────────────────── */
 #anbu-ec-ov{display:none;position:fixed;inset:0;z-index:99999;
   background:rgba(0,0,0,.55);align-items:center;justify-content:center;
   padding:20px;box-sizing:border-box;}
@@ -2241,10 +2241,13 @@ function renderFlashCards(){
           mins:10000,
           uid:'test|'+(t.type||'')+'|'+(t.date||'')
         };
-      });
-      setFCCarousel('fcTestNext','fcTestDone','test',testItems);
-    } else {
-      setFC('fcTestNext','fcTestDone','test','No upcoming tests');
+      // v49: exclude tests already marked done in this session
+      }).filter(function(item){return fcItemState[item.uid]!==true;});
+      if(testItems.length){
+        setFCCarousel('fcTestNext','fcTestDone','test',testItems);
+      } else {
+        setFC('fcTestNext','fcTestDone','test','🥳 All done! No more upcoming tests.');
+      }
     }
 
   }catch(err){console.error('renderFlashCards error:',err);}
@@ -2297,19 +2300,16 @@ function refreshTestTypeDatalist(){
 // ── Per-item FC state — markFCItem ────────────────────────────
 // uid format: 'diet|YYYY-MM-DD|MealType'  'med|MedName|SlotLabel'  'test|Type|Date'
 function markFCItem(key,uid,val,itemMins){
-  // v48: Early-confirm guard for future-scheduled items
   if(val===true && itemMins && itemMins>0){
     var _nM=(new Date()).getHours()*60+(new Date()).getMinutes();
     var _pt=uid.split('|');
     if(itemMins>=10000){
-      // Tests — always guard (date-based, always future)
       var _lb=_pt[1]||uid;
       var _dt=_pt[2]?('📅 Scheduled: '+_pt[2]):'Upcoming test';
       anbuEcShow(_lb,_dt,function(){_execMFI(key,uid,true);});
       return;
     }
     if(itemMins<9999 && itemMins>_nM){
-      // Med/Diet — guard only if slot is still in the future
       var _lb2=key==='diet'?(_pt[2]||uid):(_pt[1]||uid);
       anbuEcShow(_lb2,_anbuFmtM(itemMins),function(){_execMFI(key,uid,true);});
       return;
@@ -2320,6 +2320,22 @@ function markFCItem(key,uid,val,itemMins){
 function _execMFI(key,uid,val){
   fcItemState[uid]=val;
   saveFcState();
+  if(key==='test' && val===true){
+    var _pt=uid.split('|');
+    var _tname=_pt[1]||'', _tdate=_pt[2]||'';
+    if(Array.isArray(S.tests)){
+      S.tests.forEach(function(t){
+        if((t.type||'')=== _tname &&
+           String(t.date||'').substring(0,10)===_tdate){
+          t.status='done';
+        }
+      });
+    }
+    try{saveNow();}catch(e){}
+    try{renderFlashCards();}catch(e){} // rebuild carousel — done test disappears
+    toast('✅ Test marked done');
+    return;
+  }
   var _mc=_fcCarousels[key];
   if(_mc&&_mc.items.length>1){
     var _adv=false;
@@ -2425,7 +2441,7 @@ function getNextFCInfo(key){
   return{curr:null,next:null};
 }
 
-// ── AnbuCare FC Early-Done Guard v48 ─────────────────────────────────
+// ── AnbuCare FC Early-Done Guard v48 ────────────────────────────────
 var _anbuEcCb=null;
 function _anbuFmtM(m){
   var h=Math.floor(m/60),mn=m%60,ap=h>=12?'PM':'AM',hh=h%12||12;
@@ -2743,12 +2759,18 @@ function renderTreatProfileBanner(){
 function deleteMed(id){
   if(!confirm('Delete this medicine?'))return;
   S.medicines=S.medicines.filter(m=>m.id!==id);
-  renderMeds();toast('🗑 Medicine removed');saveNow();
+  renderMeds();
+  try{renderFlashCards();}catch(_re){}
+  try{renderNext3Strip();}catch(_re){}
+  toast('🗑 Medicine removed');saveNow();
 }
 function deleteDiet(id){
   if(!confirm('Delete this diet entry?'))return;
   S.dietPlan=S.dietPlan.filter(d=>d.id!==id);
-  renderDiet();toast('🗑 Diet entry removed');saveNow();
+  renderDiet();
+  try{renderFlashCards();}catch(_re){}
+  try{renderNext3Strip();}catch(_re){}
+  toast('🗑 Diet entry removed');saveNow();
 }
 
 function editTest(id){
@@ -2776,11 +2798,19 @@ function editTest(id){
 function deleteTest(id){
   if(!confirm('Delete this test?'))return;
   S.tests=S.tests.filter(t=>t.id!==id);
-  renderTests();toast('🗑 Test removed');saveNow();
+  renderTests();
+  try{renderFlashCards();}catch(_re){}
+  try{renderNext3Strip();}catch(_re){}
+  toast('🗑 Test removed');saveNow();
 }
 function markTestDone(id){
   const t=S.tests.find(t=>t.id===id);
-  if(t){t.status='done';renderTests();toast('✅ Test marked done!');saveNow();}
+  if(!t)return;
+  t.status='done';
+  renderTests();
+  try{renderFlashCards();}catch(_re){} // v50: test card updates immediately
+  try{renderNext3Strip();}catch(_re){}
+  toast('✅ Test marked done!');saveNow();
 }
 
 // ═══ DATE DURATION HELPERS ═══
