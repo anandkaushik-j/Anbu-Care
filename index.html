@@ -1,4 +1,4 @@
-<!-- AnbuCare v52 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
+<!-- AnbuCare v54 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
 <!DOCTYPE html>
 <html lang="en-IN">
 <head>
@@ -705,6 +705,18 @@ input:checked+.tslider::before{transform:translateX(20px)}
 #syncBadge.syncing{color:#3d6b43;}
 #syncBadge.updated{color:#1a7a1a;font-weight:700;}
 
+
+/* ── v53 Custom Date Text Input ──────────────────────────── */
+.date-text-input{
+  letter-spacing:.08em;
+  font-variant-numeric:tabular-nums;
+}
+.date-text-input::placeholder{
+  letter-spacing:.04em;
+  opacity:.55;
+  font-size:.88rem;
+}
+
 </style>
   <g class="pk1w">
     <g class="pk1o">
@@ -871,7 +883,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
         <div class="form-group"><label class="form-label">Oncologist</label>
           <input type="text" class="form-input" id="cgTpOncologist" placeholder="Dr. Name"></div>
         <div class="form-group"><label class="form-label">Start Date</label>
-          <input type="date" lang="en-GB" class="form-input" id="cgTpStartDate"></div>
+          <input type="text" class="form-input date-text-input" id="cgTpStartDateDisp" inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10" autocomplete="off" oninput="autoDateFmt(this,'cgTpStartDate')" onblur="valDateInp(this,'cgTpStartDate')"><input type="hidden" id="cgTpStartDate"></div>
       </div>
       <button class="btn btn-chemo btn-block" onclick="saveTreatmentProfile()">💾 Save Treatment</button>
     </div>
@@ -889,7 +901,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
     <div class="card"><div class="card-header"><div class="card-title">💉 Log Treatment Session</div></div>
       <div class="card-body">
         <div class="form-row">
-          <div class="form-group"><label class="form-label">Date</label><input type="date" lang="en-GB" class="form-input" id="cDate"></div>
+          <div class="form-group"><label class="form-label">Date</label><input type="text" class="form-input date-text-input" id="cDateDisp" inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10" autocomplete="off" oninput="autoDateFmt(this,'cDate')" onblur="valDateInp(this,'cDate')"><input type="hidden" id="cDate"></div>
           <div class="form-group"><label class="form-label">Cycle No.</label><input type="number" class="form-input" id="cCycle" min="1" placeholder="1"></div>
         </div>
         <div class="form-group"><label class="form-label">Session No.</label><input type="number" class="form-input" id="cSession" min="1" placeholder="1"></div>
@@ -1265,8 +1277,8 @@ input:checked+.tslider::before{transform:translateX(20px)}
           <button class="rbtn" onclick="setRange('custom',this)">Custom</button>
         </div>
         <div id="customRange" class="form-row hidden">
-          <div class="form-group"><label class="form-label">From</label><input type="date" lang="en-GB" class="form-input" id="rangeFrom"></div>
-          <div class="form-group"><label class="form-label">To</label><input type="date" lang="en-GB" class="form-input" id="rangeTo"></div>
+          <div class="form-group"><label class="form-label">From</label><input type="text" class="form-input date-text-input" id="rangeFromDisp" inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10" autocomplete="off" oninput="autoDateFmt(this,'rangeFrom')" onblur="valDateInp(this,'rangeFrom')"><input type="hidden" id="rangeFrom"></div>
+          <div class="form-group"><label class="form-label">To</label><input type="text" class="form-input date-text-input" id="rangeToDisp" inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10" autocomplete="off" oninput="autoDateFmt(this,'rangeTo')" onblur="valDateInp(this,'rangeTo')"><input type="hidden" id="rangeTo"></div>
         </div>
         <div class="form-row">
           <div class="form-group"><label class="form-label">Patient Name</label><input type="text" class="form-input" id="pdfPatient" placeholder="Patient name"></div>
@@ -1326,7 +1338,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
       <div class="form-group"><label class="form-label">Food Instructions</label><select class="form-select" id="mFood"><option>After food</option><option>Before food</option><option>With food</option><option>Empty stomach</option><option>No restriction</option></select></div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Start Date</label>
-          <input type="date" lang="en-GB" class="form-input" id="mStart" oninput="calcMedEnd()"></div>
+          <input type="text" class="form-input date-text-input" id="mStartDisp" inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10" autocomplete="off" oninput="autoDateFmt(this,'mStart','calcMedEnd')" onblur="valDateInp(this,'mStart')"><input type="hidden" id="mStart"></div>
         <div class="form-group"><label class="form-label">No. of Days</label>
           <div style="display:flex;gap:6px;align-items:center">
             <input type="number" class="form-input" id="mDays" min="1" max="365" placeholder="e.g. 30" oninput="calcMedEnd()">
@@ -1362,7 +1374,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
       <div class="form-group"><label class="form-label">Dietary Tags</label><div class="chip-row" id="dTagChips"><div class="chip" onclick="this.classList.toggle('sel')">🌾 Low fiber</div><div class="chip" onclick="this.classList.toggle('sel')">✂️ Low residue</div><div class="chip" onclick="this.classList.toggle('sel')">💪 High protein</div><div class="chip" onclick="this.classList.toggle('sel')">🥣 Soft/mashed</div><div class="chip" onclick="this.classList.toggle('sel')">🚫 No spice</div><div class="chip" onclick="this.classList.toggle('sel')">🧂 Low salt</div><div class="chip" onclick="this.classList.toggle('sel')">🫙 Strained</div></div></div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Start Date</label>
-          <input type="date" lang="en-GB" class="form-input" id="dDate" oninput="calcDietEnd()"></div>
+          <input type="text" class="form-input date-text-input" id="dDateDisp" inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10" autocomplete="off" oninput="autoDateFmt(this,'dDate','calcDietEnd')" onblur="valDateInp(this,'dDate')"><input type="hidden" id="dDate"></div>
         <div class="form-group"><label class="form-label">No. of Days</label>
           <div style="display:flex;gap:6px;align-items:center">
             <input type="number" class="form-input" id="dDays" min="1" max="365" placeholder="e.g. 7" oninput="calcDietEnd()">
@@ -1381,7 +1393,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
     </div>
     <div id="af-test" class="hidden">
       <div class="form-group"><label class="form-label">Test Type</label><input type="text" class="form-input" id="tType" placeholder="e.g. Blood CBC, MRI, CT Scan" list="tTypeDatalist" autocomplete="off"><datalist id="tTypeDatalist"></datalist></div>
-      <div class="form-row"><div class="form-group"><label class="form-label">Scheduled Date</label><input type="date" lang="en-GB" class="form-input" id="tDate"></div><div class="form-group"><label class="form-label">Fasting?</label><select class="form-select" id="tFasting"><option>No</option><option>Yes – 8 hours</option><option>Yes – 12 hours</option><option>Yes – overnight</option></select></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label">Scheduled Date</label><input type="text" class="form-input date-text-input" id="tDateDisp" inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10" autocomplete="off" oninput="autoDateFmt(this,'tDate')" onblur="valDateInp(this,'tDate')"><input type="hidden" id="tDate"></div><div class="form-group"><label class="form-label">Fasting?</label><select class="form-select" id="tFasting"><option>No</option><option>Yes – 8 hours</option><option>Yes – 12 hours</option><option>Yes – overnight</option></select></div></div>
       <div class="form-group"><label class="form-label">Lab / Hospital</label><input type="text" class="form-input" id="tLab" placeholder="e.g. Apollo Diagnostics"></div>
       <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="tNotes" rows="2" placeholder="Bring previous reports…"></textarea></div>
       <button class="btn btn-purple btn-block" onclick="submitTest()">🧪 Schedule Test</button>
@@ -1655,11 +1667,11 @@ window.onload = async () => {
   if(!localStorage.getItem('anbucare_url')) localStorage.setItem('anbucare_url', GAS_URL);
   const d = new Date();
   document.getElementById('hDate').textContent = d.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'});
-  document.getElementById('dDate').value = today;
-  document.getElementById('tDate').value = today;
-  document.getElementById('cDate').value = today;
+  setDateInput('dDate', today);
+  setDateInput('tDate', today);
+  setDateInput('cDate', today);
   const ms = new Date(); ms.setMonth(ms.getMonth()+1);
-  document.getElementById('mStart').value = today;
+  setDateInput('mStart', today);
   document.getElementById('mEnd').value = ms.toISOString().substring(0,10);
   loadConn();
   try{var ci=localStorage.getItem('anbucare_cal_id');var ce=document.getElementById('calendarIdInput');if(ci&&ce)ce.value=ci;}catch(ex){}
@@ -2904,7 +2916,7 @@ function toggleTreatEdit(){
     document.getElementById('cgTpName').value=p.name||'';
     document.getElementById('cgTpProtocol').value=p.protocol||'';
     document.getElementById('cgTpOncologist').value=p.oncologist||'';
-    document.getElementById('cgTpStartDate').value=p.startDate||'';
+    setDateInput('cgTpStartDate', p.startDate||'');
   }
 }
 function renderTreatProfileBanner(){
@@ -2914,7 +2926,7 @@ function renderTreatProfileBanner(){
     if(!p||!p.name){
       disp.innerHTML='<span style="color:var(--muted);font-style:italic">No treatment set — tap Edit to define.</span>';
     } else {
-      disp.innerHTML=(p.patientName?'<span style="font-weight:800;font-size:1rem;color:var(--text)">&#128100; '+esc(p.patientName)+'</span><br>':'')+'<span style="font-weight:800;font-size:1rem;color:var(--chemo)">'+esc(p.name)+'</span>'+(p.protocol?'<br><span style="color:var(--muted)">💊 '+esc(p.protocol)+'</span>':'')+(p.oncologist?'<br><span style="color:var(--muted)">👨‍⚕️ '+esc(p.oncologist)+'</span>':'')+(p.startDate?'<br><span style="color:var(--muted)">📅 Started: '+esc(p.startDate)+'</span>':'');
+      disp.innerHTML=(p.patientName?'<span style="font-weight:800;font-size:1rem;color:var(--text)">&#128100; '+esc(p.patientName)+'</span><br>':'')+'<span style="font-weight:800;font-size:1rem;color:var(--chemo)">'+esc(p.name)+'</span>'+(p.protocol?'<br><span style="color:var(--muted)">💊 '+esc(p.protocol)+'</span>':'')+(p.oncologist?'<br><span style="color:var(--muted)">👨‍⚕️ '+esc(p.oncologist)+'</span>':'')+(p.startDate?'<br><span style="color:var(--muted)">📅 Started: '+fmtDate(p.startDate)+'</span>':'');
     }
   }
   const ld=document.getElementById('treatProfileDisplay');
@@ -2999,6 +3011,61 @@ function fmtDate(ds){
   if(isNaN(d)) return s;
   return String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0')+'/'+d.getFullYear();
 }
+// v53: fmtDT — formats 'YYYY-MM-DD HH:MM' as 'dd/mm/yyyy HH:MM'
+function fmtDT(dt){
+  if(!dt)return '—';
+  var pts=(dt+'').trim().split(' ');
+  return fmtDate(pts[0])+(pts[1]?' '+pts[1]:'');
+}
+// ── v53 DD/MM/YYYY date input helpers ────────────────────────────────
+function isoToDisp(iso){
+  if(!iso)return'';
+  var m=iso.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  return m?m[3]+'/'+m[2]+'/'+m[1]:'';
+}
+function autoDateFmt(el,hiddenId,cb){
+  var raw=el.value;
+  var digits=raw.replace(/\D/g,'').substring(0,8);
+  var out='';
+  if(digits.length>0)out=digits.substring(0,2);
+  if(digits.length>2)out+='/'+digits.substring(2,4);
+  if(digits.length>4)out+='/'+digits.substring(4,8);
+  el.value=out;
+  var hid=document.getElementById(hiddenId);
+  if(!hid)return;
+  if(digits.length===8){
+    var dd=digits.substring(0,2),mm=digits.substring(2,4),yyyy=digits.substring(4,8);
+    var iso=yyyy+'-'+mm+'-'+dd;
+    var d=new Date(iso+'T00:00:00');
+    if(!isNaN(d)&&d.getFullYear()===+yyyy&&(d.getMonth()+1)===+mm&&d.getDate()===+dd){
+      hid.value=iso;
+      el.style.borderColor='';
+      if(cb&&typeof window[cb]==='function')window[cb]();
+    }else{
+      hid.value='';el.style.borderColor='#e53935';
+    }
+  }else{
+    hid.value='';
+    el.style.borderColor=(digits.length>0&&digits.length<8)?'#f39c12':'';
+  }
+}
+function valDateInp(el,hiddenId){
+  var hid=document.getElementById(hiddenId);
+  if(hid&&hid.value){el.style.borderColor='';return;}
+  var v=el.value.replace(/\D/g,'');
+  if(v.length>0&&v.length<8){
+    el.style.borderColor='#e53935';
+    toast('\u26a0\ufe0f Enter date as DD/MM/YYYY');
+  }
+}
+function setDateInput(id,isoVal){
+  var hid=document.getElementById(id);
+  if(hid)hid.value=isoVal||'';
+  var disp=document.getElementById(id+'Disp');
+  if(disp)disp.value=isoToDisp(isoVal||'');
+  if(disp)disp.style.borderColor='';
+}
+
 function calcMedEnd(){
   const s=document.getElementById('mStart').value;
   const n=parseInt(document.getElementById('mDays').value);
@@ -3049,7 +3116,10 @@ function submitMed(){
   if(window._editMedId){ updateMed(); return; }
   const name=document.getElementById('mName').value.trim();if(!name){toast('⚠️ Name required');return;}
   const times=chips('mTimeChips');
-  const ms=document.getElementById('mStart').value,md=parseInt(document.getElementById('mDays').value)||0;
+  const _mdRaw=document.getElementById('mDays').value.trim();
+  const md=parseInt(_mdRaw)||0;
+  if(!_mdRaw||md<1){toast('⚠️ Please enter number of days');return;}
+  const ms=document.getElementById('mStart').value;
   S.medicines.push({id:S.nextId++,name,qty:+document.getElementById('mQty').value||1,unit:document.getElementById('mUnit').value,freq:document.getElementById('mFreq').value,times:times.length?times:['Morning'],food:document.getElementById('mFood').value,start:ms,days:md,end:document.getElementById('mEnd').value||(ms&&md?addDays(ms,md-1):''),notes:document.getElementById('mNotes').value});
   normalizeMed(S.medicines[S.medicines.length-1]);renderMeds();renderFlashCards();renderNext3Strip();closeModal('addModal');resetChips('mTimeChips');setTimeout(renderReminders,50);['mName','mNotes','mDays'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});const md2=document.getElementById('mEndDisplay');if(md2)md2.textContent='— set start & days';
   var _hS=times.some(function(t){return t.includes('SOS');});
@@ -3098,7 +3168,7 @@ function editDiet(id){
   setTimeout(function(){
     document.getElementById('dMeal').value  = d.mealType||'';
     document.getElementById('dTime').value  = d.time||'08:00';
-    document.getElementById('dDate').value  = d.date||today;
+    setDateInput('dDate', d.date||today);
     document.getElementById('dFoods').value = d.foods||'';
     document.getElementById('dPrep').value  = d.prep||'';
     document.getElementById('dDays').value  = 1;
@@ -3125,7 +3195,7 @@ function editMed(id){
     document.getElementById('mUnit').value  = m.unit||'tablet(s)';
     document.getElementById('mFreq').value  = m.freq||'Once daily';
     document.getElementById('mFood').value  = m.food||'';
-    document.getElementById('mStart').value = m.start||'';
+    setDateInput('mStart', m.start||'');
     document.getElementById('mEnd').value   = m.end||'';
     document.getElementById('mDays').value  = m.days||'';
     document.getElementById('mNotes').value = m.notes||'';
@@ -3201,7 +3271,9 @@ function updateDiet(){
 function submitDiet(){
   if(window._editDietId){ updateDiet(); return; }
   const foods=document.getElementById('dFoods').value.trim();if(!foods){toast('⚠️ Food items required');return;}
-  const ds=document.getElementById('dDate').value||today,dn=Math.max(1,parseInt(document.getElementById('dDays').value)||1);
+  const _dnRaw=document.getElementById('dDays').value.trim();
+  if(!_dnRaw||parseInt(_dnRaw)<1){toast('⚠️ Please enter number of days');return;}
+  const ds=document.getElementById('dDate').value||today,dn=Math.max(1,parseInt(_dnRaw));
   const dm=document.getElementById('dMeal').value,dt=document.getElementById('dTime').value,dp=document.getElementById('dPrep').value,dtg=chips('dTagChips');
   const de=addDays(ds,dn-1);
   S.dietPlan.push({id:S.nextId++,mealType:dm,time:dt,foods,prep:dp,tags:dtg,date:ds,days:dn,endDate:de});
@@ -3281,7 +3353,7 @@ function renderChemoBySym(){
 }
 function editChemo(id){
   var s=S.chemoSessions.find(function(x){return String(x.id)===String(id);});if(!s)return;
-  document.getElementById('cDate').value=s.date||today;document.getElementById('cCycle').value=s.cycle||1;
+  setDateInput('cDate', s.date||today);document.getElementById('cCycle').value=s.cycle||1;
   document.getElementById('cSession').value=s.session||1;document.getElementById('cHospital').value=s.hospital||'';
   document.getElementById('cNotes').value=s.notes||'';_editingChemoId=s.id;
   var btn=document.getElementById('btnSubmitChemo');if(btn)btn.textContent='💉 Update Session';
