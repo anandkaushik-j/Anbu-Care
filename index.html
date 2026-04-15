@@ -1,4 +1,4 @@
-<!-- AnbuCare v55 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
+<!-- AnbuCare v56 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
 <!DOCTYPE html>
 <html lang="en-IN">
 <head>
@@ -2594,7 +2594,8 @@ function bowelTap(v){
 var _syncBusy=false, _isSaving=false, _lastSyncStamp='', _lastSyncTime=0;
 function _updSyncBadge(state,txt){
   var b=document.getElementById('syncBadge');if(!b)return;
-  b.className=''; b.classList.add(state);
+  b.className='';
+  if(state) b.classList.add(state); // v56: guard — classList.add('') throws SyntaxError
   b.textContent=txt;
 }
 // v55: fully fixed _bgSync — 5 bugs resolved
