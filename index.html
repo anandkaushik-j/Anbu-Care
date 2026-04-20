@@ -1,4 +1,4 @@
-<!-- AnbuCare v64 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
+<!-- AnbuCare v66 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
 <!DOCTYPE html>
 <html lang="en-IN">
 <head>
@@ -636,21 +636,21 @@ input:checked+.tslider::before{transform:translateX(20px)}
     <div class="pin-dot" id="pd3"></div>
   </div>
   <div class="pin-pad">
-    <button class="pin-btn" onclick="_pinKey('1')">1</button>
-    <button class="pin-btn" onclick="_pinKey('2')">2<span class="pin-sub">ABC</span></button>
-    <button class="pin-btn" onclick="_pinKey('3')">3<span class="pin-sub">DEF</span></button>
-    <button class="pin-btn" onclick="_pinKey('4')">4<span class="pin-sub">GHI</span></button>
-    <button class="pin-btn" onclick="_pinKey('5')">5<span class="pin-sub">JKL</span></button>
-    <button class="pin-btn" onclick="_pinKey('6')">6<span class="pin-sub">MNO</span></button>
-    <button class="pin-btn" onclick="_pinKey('7')">7<span class="pin-sub">PQRS</span></button>
-    <button class="pin-btn" onclick="_pinKey('8')">8<span class="pin-sub">TUV</span></button>
-    <button class="pin-btn" onclick="_pinKey('9')">9<span class="pin-sub">WXYZ</span></button>
-    <button class="pin-btn pin-del" onclick="_pinDel()">⌫</button>
-    <button class="pin-btn pin-zero" onclick="_pinKey('0')">0</button>
+    <button class="pin-btn" data-pin-key="1">1</button>
+    <button class="pin-btn" data-pin-key="2">2<span class="pin-sub">ABC</span></button>
+    <button class="pin-btn" data-pin-key="3">3<span class="pin-sub">DEF</span></button>
+    <button class="pin-btn" data-pin-key="4">4<span class="pin-sub">GHI</span></button>
+    <button class="pin-btn" data-pin-key="5">5<span class="pin-sub">JKL</span></button>
+    <button class="pin-btn" data-pin-key="6">6<span class="pin-sub">MNO</span></button>
+    <button class="pin-btn" data-pin-key="7">7<span class="pin-sub">PQRS</span></button>
+    <button class="pin-btn" data-pin-key="8">8<span class="pin-sub">TUV</span></button>
+    <button class="pin-btn" data-pin-key="9">9<span class="pin-sub">WXYZ</span></button>
+    <button class="pin-btn pin-del" id="pinDelBtn">⌫</button>
+    <button class="pin-btn pin-zero" data-pin-key="0">0</button>
     <div></div>
   </div>
   <div class="pin-msg" id="pinMsg"></div>
-  <button class="pin-forgot" id="pinForgotBtn" onclick="_pinForgot()">Forgot PIN?</button>
+  <button class="pin-forgot" id="pinForgotBtn">Forgot PIN?</button>
 </div>
 
 <div id="anbu-ec-ov" style="display:none" onclick="if(event.target===this)anbuEcNo()">
@@ -1832,7 +1832,7 @@ window.onload = async () => {
   setInterval(renderNext3Strip, 60000);
   setInterval(function(){try{renderFlashCards();}catch(_e){}},15*60*1000);
   // v52: background live-sync every 45 s — keeps all family devices in sync
-  setInterval(_bgSync, 45*1000);
+  // v65: adaptive polling started below by _startAdaptivePoll()
   // Set initial sync stamp from what was loaded at startup
   setTimeout(function(){try{_bgSync();}catch(e){}},5000);
 };
@@ -5892,12 +5892,115 @@ function fmtDate(s){if(!s)return'';const p=String(s).substring(0,10).split('-');
     document.getElementById('pinLockScreen').classList.remove('hidden');
   };
 
+  // ── Attach event listeners (no inline onclick needed) ──────────────
+  function _attachPinListeners(){
+    // Digit buttons via data-pin-key
+    document.querySelectorAll('[data-pin-key]').forEach(function(btn){
+      btn.addEventListener('click', function(){ _pinKey(this.getAttribute('data-pin-key')); });
+    });
+    // Delete button
+    var delBtn = document.getElementById('pinDelBtn');
+    if(delBtn) delBtn.addEventListener('click', _pinDel);
+    // Forgot button
+    var fgtBtn = document.getElementById('pinForgotBtn');
+    if(fgtBtn) fgtBtn.addEventListener('click', _pinForgot);
+  }
+
+  // ── Also keep window.* for any legacy calls ───────────────────────
+  window._pinKey     = _pinKey;
+  window._pinDel     = _pinDel;
+  window._pinForgot  = _pinForgot;
+
   // ── Boot on DOM ready ─────────────────────────────────────────────
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded', _pinBoot);
-  } else {
+  function _init(){
+    _attachPinListeners();
     _pinBoot();
   }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', _init);
+  } else {
+    _init();
+  }
+})();
+
+// ══════════════════════════════════════════════════════
+// REAL-TIME SYNC ENGINE  (v65)
+// ══════════════════════════════════════════════════════
+(function(){
+  var _syncChannel = null;
+  var _afterSaveTimer = null;
+  var _adaptiveTimer  = null;
+  var ACTIVE_POLL_MS  = 8000;   // 8s when tab is visible
+  var IDLE_POLL_MS    = 45000;  // 45s when tab is hidden
+
+  // ── 1. Replace fixed 45s interval with adaptive polling ─────────────
+  function _startAdaptivePoll(){
+    if(_adaptiveTimer) clearInterval(_adaptiveTimer);
+    var ms = document.hidden ? IDLE_POLL_MS : ACTIVE_POLL_MS;
+    _adaptiveTimer = setInterval(function(){
+      try{ _bgSync(); }catch(e){}
+    }, ms);
+  }
+
+  // ── 2. Page Visibility — instant resync when tab regains focus ───────
+  document.addEventListener('visibilitychange', function(){
+    if(!document.hidden){
+      // Tab came back into view — sync immediately
+      setTimeout(function(){ try{ _bgSync(); }catch(e){} }, 300);
+    }
+    // Restart adaptive poller with appropriate interval
+    _startAdaptivePoll();
+  });
+
+  // ── 3. BroadcastChannel — instant cross-tab sync on same device ──────
+  try{
+    _syncChannel = new BroadcastChannel('anbucare_sync');
+    _syncChannel.onmessage = function(e){
+      if(e.data && e.data.type === 'data_updated'){
+        // Another tab saved data — pull from localStorage immediately
+        try{
+          var fresh = localStorage.getItem('anbucare_data');
+          if(fresh){
+            var parsed = JSON.parse(fresh);
+            if(parsed && parsed.savedAt !== (S.savedAt||'')){
+              Object.assign(S, parsed);
+              try{ normalizeAll(); }catch(_e){}
+              try{ renderAll(); }catch(_e){}
+              _updSyncBadge('ok','✓ Live');
+            }
+          }
+        }catch(_e){}
+      }
+    };
+  }catch(_e){ _syncChannel = null; }
+
+  // ── 4. Patch saveNow to broadcast + trigger immediate push sync ──────
+  var _origSaveNow = window.saveNow;
+  window.saveNow = function(){
+    if(typeof _origSaveNow === 'function') _origSaveNow.apply(this, arguments);
+    // Broadcast to other tabs on same device
+    try{
+      if(_syncChannel) _syncChannel.postMessage({type:'data_updated', ts: Date.now()});
+    }catch(_e){}
+    // Trigger a background pull 1.5s after save (debounced) to confirm sync
+    clearTimeout(_afterSaveTimer);
+    _afterSaveTimer = setTimeout(function(){
+      try{ _bgSync(); }catch(e){}
+    }, 1500);
+  };
+
+  // ── 5. Start adaptive polling (replaces old fixed 45s interval) ──────
+  // Remove old interval (set in window.onload) and replace with adaptive
+  // Old: setInterval(_bgSync, 45*1000) → replaced by _startAdaptivePoll()
+  window._startAdaptivePoll = _startAdaptivePoll;
+
+  // Boot adaptive polling after DOM ready
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', _startAdaptivePoll);
+  } else {
+    _startAdaptivePoll();
+  }
+
 })();
 </script>
 
