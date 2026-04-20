@@ -1,4 +1,4 @@
-<!-- AnbuCare v66 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
+<!-- AnbuCare v68 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
 <!DOCTYPE html>
 <html lang="en-IN">
 <head>
@@ -574,84 +574,10 @@ input:checked+.tslider::before{transform:translateX(20px)}
 .fc-dot-done{background:rgba(255,255,255,.95)!important;box-shadow:0 0 0 2px #4ade80!important;}
 .fc-dot-skip{background:rgba(255,255,255,.4)!important;box-shadow:0 0 0 2px #fbbf24!important;}
 
-/* ── PIN Lock ─────────────────────────────────────────────────── */
-#pinLockScreen{
-  position:fixed;inset:0;z-index:99999;
-  background:var(--bg,#FAF9F6);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:0;padding:24px 20px;
-}
-#pinLockScreen.hidden{display:none;}
-.pin-logo{font-size:2.8rem;margin-bottom:6px;}
-.pin-app-name{font-size:1.15rem;font-weight:800;color:var(--primary,#7A9E7E);margin-bottom:4px;letter-spacing:.02em;}
-.pin-subtitle{font-size:.82rem;color:var(--muted,#6B7C6E);margin-bottom:28px;text-align:center;}
-.pin-dots{display:flex;gap:14px;margin-bottom:28px;}
-.pin-dot{
-  width:16px;height:16px;border-radius:50%;
-  border:2px solid var(--primary,#7A9E7E);
-  background:transparent;
-  transition:background .15s,transform .1s;
-}
-.pin-dot.filled{background:var(--primary,#7A9E7E);transform:scale(1.15);}
-.pin-dot.error{border-color:#e53935;background:#e53935;}
-.pin-pad{
-  display:grid;grid-template-columns:repeat(3,1fr);
-  gap:12px;width:100%;max-width:280px;
-}
-.pin-btn{
-  height:68px;border-radius:18px;border:none;
-  background:var(--surface2,#F0EDE8);
-  font-size:1.5rem;font-weight:700;color:var(--text,#333);
-  cursor:pointer;transition:background .12s,transform .1s;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
-  touch-action:manipulation;
-  box-shadow:0 2px 8px rgba(100,120,100,.08);
-}
-.pin-btn:active{background:var(--primary-l,#A8C5A0);transform:scale(.94);}
-.pin-btn .pin-sub{font-size:.55rem;letter-spacing:.12em;color:var(--muted,#6B7C6E);font-weight:600;text-transform:uppercase;}
-.pin-btn.pin-zero{grid-column:2;}
-.pin-btn.pin-del{background:transparent;box-shadow:none;font-size:1.3rem;color:var(--muted,#6B7C6E);}
-.pin-btn.pin-del:active{background:var(--surface2,#F0EDE8);}
-.pin-msg{font-size:.82rem;color:#e53935;min-height:20px;margin-top:6px;font-weight:600;}
-.pin-setup-label{font-size:.9rem;color:var(--text,#333);font-weight:700;margin-bottom:10px;text-align:center;}
-.pin-forgot{
-  margin-top:20px;font-size:.78rem;color:var(--muted,#6B7C6E);
-  background:none;border:none;cursor:pointer;text-decoration:underline;
-}
-.pin-shake{animation:pinShake .35s ease;}
-@keyframes pinShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
 </style>
 </head>
 <body>
-<!-- ═══ PIN LOCK SCREEN ═══ -->
-<div id="pinLockScreen">
-  <div class="pin-logo">🏥</div>
-  <div class="pin-app-name">AnbuCare</div>
-  <div class="pin-subtitle" id="pinSubtitle">Enter your PIN to continue</div>
-  <div class="pin-setup-label" id="pinSetupLabel" style="display:none"></div>
-  <div class="pin-dots" id="pinDots">
-    <div class="pin-dot" id="pd0"></div>
-    <div class="pin-dot" id="pd1"></div>
-    <div class="pin-dot" id="pd2"></div>
-    <div class="pin-dot" id="pd3"></div>
-  </div>
-  <div class="pin-pad">
-    <button class="pin-btn" data-pin-key="1">1</button>
-    <button class="pin-btn" data-pin-key="2">2<span class="pin-sub">ABC</span></button>
-    <button class="pin-btn" data-pin-key="3">3<span class="pin-sub">DEF</span></button>
-    <button class="pin-btn" data-pin-key="4">4<span class="pin-sub">GHI</span></button>
-    <button class="pin-btn" data-pin-key="5">5<span class="pin-sub">JKL</span></button>
-    <button class="pin-btn" data-pin-key="6">6<span class="pin-sub">MNO</span></button>
-    <button class="pin-btn" data-pin-key="7">7<span class="pin-sub">PQRS</span></button>
-    <button class="pin-btn" data-pin-key="8">8<span class="pin-sub">TUV</span></button>
-    <button class="pin-btn" data-pin-key="9">9<span class="pin-sub">WXYZ</span></button>
-    <button class="pin-btn pin-del" id="pinDelBtn">⌫</button>
-    <button class="pin-btn pin-zero" data-pin-key="0">0</button>
-    <div></div>
-  </div>
-  <div class="pin-msg" id="pinMsg"></div>
-  <button class="pin-forgot" id="pinForgotBtn">Forgot PIN?</button>
-</div>
 
 <div id="anbu-ec-ov" style="display:none" onclick="if(event.target===this)anbuEcNo()">
   <div class="anbu-ec-box">
@@ -674,7 +600,6 @@ input:checked+.tslider::before{transform:translateX(20px)}
   </div>
   <div class="hright">
     <button class="hbtn" onclick="openModal('connectModal')" title="Settings">⚙️</button>
-    <button class="hbtn" onclick="lockApp()" title="Lock App" style="font-size:1.1rem;">🔒</button>
     <!-- PK1: Pavithra Kolam — Sacred 8-petal lotus -->
 <div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;cursor:default" title="AnbuCare — Healing Kolam">
 <svg width="44" height="44" viewBox="0 0 100 100" style="overflow:visible">
@@ -1593,7 +1518,6 @@ input:checked+.tslider::before{transform:translateX(20px)}
     <button class="btn btn-primary btn-block mt-8" onclick="saveConn()">🔗 Save &amp; Connect</button>
     <button class="btn btn-block mt-8" style="background:var(--surface2);color:var(--muted);padding:11px;border-radius:30px;font-weight:700;font-size:.88rem" onclick="clearConn()">🗑️ Clear Connection</button>
   </div>
-</div>
 
 <div class="toast" id="toast"></div>
 <div id="printReport"></div>
@@ -5725,203 +5649,6 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
 function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fmtDate(s){if(!s)return'';const p=String(s).substring(0,10).split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:s;}
 
-// ══════════════════════════════════════════════════════
-// PIN LOCK  (v62)
-// ══════════════════════════════════════════════════════
-(function(){
-  var PIN_KEY   = 'anbucare_pin_hash';
-  var TRUST_KEY = 'anbucare_pin_trust';
-  var TRUST_HRS = 12;   // stay unlocked for 12 hours after correct entry
-  var _buf = '';        // current digit buffer
-  var _mode = 'unlock'; // 'unlock' | 'setup1' | 'setup2'
-  var _setup1 = '';
-
-  // ── Simple hash (FNV-1a 32-bit) ─────────────────────────────────
-  function _hash(s){
-    var h=0x811c9dc5;
-    for(var i=0;i<s.length;i++){
-      h^=s.charCodeAt(i);
-      h=(h*0x01000193)>>>0;
-    }
-    return h.toString(16);
-  }
-
-  // ── Check trust window ────────────────────────────────────────────
-  function _isTrusted(){
-    try{
-      var t=localStorage.getItem(TRUST_KEY);
-      if(!t) return false;
-      return (Date.now()-parseInt(t,10)) < TRUST_HRS*3600*1000;
-    }catch(e){ return false; }
-  }
-
-  function _setTrust(){
-    try{ localStorage.setItem(TRUST_KEY, Date.now().toString()); }catch(e){}
-  }
-
-  // ── Show/hide dots ───────────────────────────────────────────────
-  function _renderDots(shake, err){
-    for(var i=0;i<4;i++){
-      var d=document.getElementById('pd'+i);
-      d.className='pin-dot'+(i<_buf.length?' filled':'')+(err?' error':'');
-    }
-    if(shake){
-      var dots=document.getElementById('pinDots');
-      dots.classList.remove('pin-shake');
-      void dots.offsetWidth;
-      dots.classList.add('pin-shake');
-    }
-  }
-
-  // ── Boot ─────────────────────────────────────────────────────────
-  function _pinBoot(){
-    var hasPin = !!localStorage.getItem(PIN_KEY);
-    if(!hasPin){
-      // First launch — set up PIN
-      _mode='setup1';
-      document.getElementById('pinSubtitle').style.display='none';
-      document.getElementById('pinSetupLabel').style.display='block';
-      document.getElementById('pinSetupLabel').textContent='Create a 4-digit PIN to secure the app';
-      document.getElementById('pinForgotBtn').style.display='none';
-    } else if(_isTrusted()){
-      // Still within trust window — skip lock
-      _unlock();
-      return;
-    } else {
-      _mode='unlock';
-      document.getElementById('pinSubtitle').textContent='Enter PIN to open AnbuCare';
-      document.getElementById('pinForgotBtn').style.display='block';
-    }
-    // Show lock screen
-    document.getElementById('pinLockScreen').classList.remove('hidden');
-  }
-
-  // ── Handle digit press ────────────────────────────────────────────
-  window._pinKey = function(d){
-    if(_buf.length>=4) return;
-    _buf+=d;
-    _renderDots(false, false);
-    document.getElementById('pinMsg').textContent='';
-    if(_buf.length===4) setTimeout(_pinSubmit, 120);
-  };
-
-  window._pinDel = function(){
-    _buf=_buf.slice(0,-1);
-    _renderDots(false, false);
-    document.getElementById('pinMsg').textContent='';
-  };
-
-  // ── Submit 4-digit entry ──────────────────────────────────────────
-  function _pinSubmit(){
-    if(_mode==='unlock'){
-      var stored=localStorage.getItem(PIN_KEY);
-      if(_hash(_buf)===stored){
-        _setTrust();
-        _unlock();
-      } else {
-        _buf='';
-        _renderDots(true, true);
-        document.getElementById('pinMsg').textContent='Incorrect PIN. Try again.';
-        setTimeout(function(){ _renderDots(false,false); },600);
-      }
-    } else if(_mode==='setup1'){
-      _setup1=_buf; _buf='';
-      _renderDots(false,false);
-      _mode='setup2';
-      document.getElementById('pinSetupLabel').textContent='Confirm your PIN';
-    } else if(_mode==='setup2'){
-      if(_buf===_setup1){
-        try{ localStorage.setItem(PIN_KEY, _hash(_buf)); }catch(e){}
-        _setTrust();
-        _unlock();
-      } else {
-        _buf=''; _setup1='';
-        _renderDots(true, true);
-        _mode='setup1';
-        document.getElementById('pinSetupLabel').textContent='PINs didn\'t match — try again';
-        document.getElementById('pinMsg').textContent='Please set a new PIN';
-        setTimeout(function(){ _renderDots(false,false); document.getElementById('pinMsg').textContent=''; },700);
-      }
-    }
-  }
-
-  // ── Unlock app ────────────────────────────────────────────────────
-  function _unlock(){
-    document.getElementById('pinLockScreen').classList.add('hidden');
-  }
-
-  // ── Forgot PIN ────────────────────────────────────────────────────
-  window._pinForgot = function(){
-    if(confirm('Reset PIN? This will clear the saved PIN.\nYou will need to set a new one.')){
-      try{ localStorage.removeItem(PIN_KEY); localStorage.removeItem(TRUST_KEY); }catch(e){}
-      _buf=''; _mode='setup1';
-      _renderDots(false,false);
-      document.getElementById('pinSubtitle').style.display='none';
-      document.getElementById('pinSetupLabel').style.display='block';
-      document.getElementById('pinSetupLabel').textContent='Create a new 4-digit PIN';
-      document.getElementById('pinForgotBtn').style.display='none';
-      document.getElementById('pinMsg').textContent='';
-    }
-  };
-
-  // ── Change PIN (called from settings) ────────────────────────────
-  window.changePIN = function(){
-    try{ localStorage.removeItem(PIN_KEY); localStorage.removeItem(TRUST_KEY); }catch(e){}
-    _buf=''; _mode='setup1';
-    _renderDots(false,false);
-    document.getElementById('pinSubtitle').style.display='none';
-    document.getElementById('pinSetupLabel').style.display='block';
-    document.getElementById('pinSetupLabel').textContent='Create a new 4-digit PIN';
-    document.getElementById('pinForgotBtn').style.display='none';
-    document.getElementById('pinMsg').textContent='';
-    document.getElementById('pinLockScreen').classList.remove('hidden');
-    toast('Set your new PIN 🔒');
-  };
-
-  // ── Lock now (manual) ─────────────────────────────────────────────
-  window.lockApp = function(){
-    try{ localStorage.removeItem(TRUST_KEY); }catch(e){}
-    _buf='';
-    _renderDots(false,false);
-    _mode='unlock';
-    document.getElementById('pinSubtitle').style.display='block';
-    document.getElementById('pinSubtitle').textContent='Enter PIN to open AnbuCare';
-    document.getElementById('pinSetupLabel').style.display='none';
-    document.getElementById('pinForgotBtn').style.display='block';
-    document.getElementById('pinMsg').textContent='';
-    document.getElementById('pinLockScreen').classList.remove('hidden');
-  };
-
-  // ── Attach event listeners (no inline onclick needed) ──────────────
-  function _attachPinListeners(){
-    // Digit buttons via data-pin-key
-    document.querySelectorAll('[data-pin-key]').forEach(function(btn){
-      btn.addEventListener('click', function(){ _pinKey(this.getAttribute('data-pin-key')); });
-    });
-    // Delete button
-    var delBtn = document.getElementById('pinDelBtn');
-    if(delBtn) delBtn.addEventListener('click', _pinDel);
-    // Forgot button
-    var fgtBtn = document.getElementById('pinForgotBtn');
-    if(fgtBtn) fgtBtn.addEventListener('click', _pinForgot);
-  }
-
-  // ── Also keep window.* for any legacy calls ───────────────────────
-  window._pinKey     = _pinKey;
-  window._pinDel     = _pinDel;
-  window._pinForgot  = _pinForgot;
-
-  // ── Boot on DOM ready ─────────────────────────────────────────────
-  function _init(){
-    _attachPinListeners();
-    _pinBoot();
-  }
-  if(document.readyState==='loading'){
-    document.addEventListener('DOMContentLoaded', _init);
-  } else {
-    _init();
-  }
-})();
 
 // ══════════════════════════════════════════════════════
 // REAL-TIME SYNC ENGINE  (v65)
