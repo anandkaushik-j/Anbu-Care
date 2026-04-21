@@ -1680,14 +1680,18 @@ function saveNow(){
       notes:(S.notes||[]).filter(function(n){return n.type!=='auto';}),
       helplines:S.helplines, reminders:S.reminders,
       treatmentProfile:S.treatmentProfile, nextId:S.nextId,
-      bowelLog:bowelLog, savedAt:new Date().toISOString()
+      bowelLog:[], savedAt:new Date().toISOString()
     }));
   }catch(_le){}
   const url=(_LS.getItem('anbucare_url')||GAS_URL);
   if(!url){ toast('⚠️ No Sheet URL — data saved locally only'); return; }
+  // Always extend cooldown on EVERY saveNow call (even queued retries)
+  // This ensures rapid consecutive edits never open a sync window
+  _lastSaveStartTs=new Date().toISOString();
+  _syncCooldownUntil=Date.now()+12000; // 12s cooldown: always refreshed before _saving check
   // Guard against concurrent saves — queue a retry if one is in flight
-  if(_saving){ _saveTimer=setTimeout(saveNow,1200); return; }
-  _saving=true; _isSaving=true; // stale-guard support
+  if(_saving){ _saveTimer=setTimeout(saveNow,1500); return; } // retry after 1.5s
+  _saving=true; _isSaving=true;
   const sid=_LS.getItem('anbucare_sid')||'';
   let bodyStr;
   try{
@@ -2690,7 +2694,8 @@ function _updSyncBadge(state,txt){
 }
 // v55: fully fixed _bgSync — 5 bugs resolved
 async function _bgSync(){
-  if(_syncBusy||_isSaving||_saving) return; // triple-guard: never overwrite during save
+  if(_syncBusy||_isSaving||_saving) return; // triple-guard
+  if(Date.now()<_syncCooldownUntil) return; // cooldown: wait for GAS to commit before syncing back
   var url=_LS.getItem?_LS.getItem('anbucare_url'):_LS.getItem('anbucare_url');
   if(!url) url=GAS_URL;
   if(!url) return;
@@ -2718,12 +2723,11 @@ async function _bgSync(){
       }
 
       // ── STALE-SHEET GUARD ─────────────────────────────────────
-      // If our last confirmed local save is NEWER than the Sheet's savedAt,
-      // the Sheet hasn't received our changes yet — do NOT overwrite local data.
-      var _lsKey=_LS.getItem?'anbucare_last_save':null;
-      var _lastSave=_lsKey?(_LS.getItem('anbucare_last_save')||''):
-                           (typeof _LS!=='undefined'?_LS.getItem('anbucare_last_save')||'':'');
-      if(_lastSave&&ns&&ns<_lastSave){
+      // If our last save start OR confirmed save is NEWER than Sheet's savedAt,
+      // GAS hasn't committed yet — do NOT overwrite local data.
+      var _lastSave=(_LS&&_LS.getItem)?(_LS.getItem('anbucare_last_save')||''):'';
+      var _isStale=((_lastSaveStartTs&&ns&&ns<_lastSaveStartTs)||(_lastSave&&ns&&ns<_lastSave));
+      if(_isStale){
         _updSyncBadge('','⏳');
         _syncBusy=false; return;
       }
@@ -5740,7 +5744,7 @@ function fmtDate(s){if(!s)return'';const p=String(s).substring(0,10).split('-');
 // Post-save delay 4s to allow GAS write to complete
 // ======================================================
 (function(){
-  var _ch=null, _afTimer=null, _apTimer=null;
+  var _ch=null, _afTimer=null, _apTimer=null, _syncCooldownUntil=0, _lastSaveStartTs='';
   var ACTIVE_MS=8000, IDLE_MS=45000;
 
   function _startPoll(){
@@ -5779,7 +5783,7 @@ function fmtDate(s){if(!s)return'';const p=String(s).substring(0,10).split('-');
     try{if(_ch)_ch.postMessage({type:'data_updated',ts:Date.now()});}catch(_e){}
     clearTimeout(_afTimer);
     // 4000ms delay — give GAS time to write before pulling back
-    _afTimer=setTimeout(function(){try{_bgSync();}catch(e){}},4000);
+    _afTimer=setTimeout(function(){try{_bgSync();}catch(e){}},12000); // delayed: give GAS time to commit
   };
 
   window._startAdaptivePoll=_startPoll;
