@@ -1,4 +1,4 @@
-<!-- AnbuCare v70 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
+<!-- AnbuCare v71 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
 <!DOCTYPE html>
 <html lang="en-IN">
 <head>
@@ -762,7 +762,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
   <button class="tab-btn" id="navBtn-careplan" onclick="showTab('careplan')"><span style="font-size:1.35rem">💊</span><span>Care Plan</span></button>
   <button class="tab-btn" id="navBtn-chemo" onclick="showTab('chemo')"><span style="font-size:1.35rem">🩺</span><span>Treatment</span></button>
   <button class="tab-btn" id="navBtn-health" onclick="showTab('health')"><span style="font-size:1.35rem">📊</span><span>Health</span></button>
-  <button class="tab-btn" id="navBtn-notes" onclick="showTab('notes')"><span style="font-size:1.35rem">📝</span><span>Notes</span></button>
+  <button class="tab-btn" id="navBtn-notes" onclick="showTab('notes');showSub('notes','write',null)"><span style="font-size:1.35rem">📝</span><span>Notes</span></button>
   <button class="tab-btn cg-only" id="navBtn-caregiver" onclick="showTab('caregiver')"><span style="font-size:1.35rem">👩‍⚕️</span><span>Caregiver</span></button>
 </div>
 
@@ -790,7 +790,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
     <div style="font-size:1.6rem">📝</div>
     <div style="flex:1;min-width:0">
       <div style="color:#fff;font-weight:800;font-size:.95rem" id="textNoteBannerTitle">New Note Saved</div>
-      <div style="color:#bbdefb;font-size:.75rem;margin-top:2px" id="textNoteBannerSub">Tap to view in Notes</div>
+      <div style="color:#bbdefb;font-size:.75rem;margin-top:2px" id="textNoteBannerSub">Tap to open in Notes</div>
     </div>
     <span style="background:rgba(255,255,255,.2);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem">→</span>
   </div>
@@ -4559,7 +4559,7 @@ function updateVoiceBanner(){
     const sub    = document.getElementById('voiceNoteBannerSub');
     const count  = todayNotes.length;
     if(title) title.textContent = count>1 ? `${count} Voice Notes Today` : '🎙️ New Voice Note Saved';
-    if(sub)   sub.textContent   = latest.filename ? latest.filename.replace(/\.webm|\.ogg|\.mp4/,'') : 'Tap to listen in Voice Archive';
+    if(sub)   sub.textContent   = latest.filename ? latest.filename.replace(/\.webm|\.ogg|\.mp4/i,'') : 'Tap to play in Voice Archive';
     banner.style.display = 'flex';
   } else {
     banner.style.display = 'none';
@@ -4580,7 +4580,7 @@ function updateTextNoteBanner(){
     if(title) title.textContent=count>1?count+' Notes Written Today':'📝 New Note Saved';
     if(sub){
       const preview=(latest.note||'').substring(0,50);
-      sub.textContent=preview+(preview.length<(latest.note||'').length?'…':'');
+      sub.textContent=(preview+(preview.length<(latest.note||'').length?'…':''))||'Tap to open in Notes';
     }
     banner.style.display='flex';
   } else {
