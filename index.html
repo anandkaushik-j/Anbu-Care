@@ -1551,7 +1551,7 @@ const S = {
 };
 
 // Bowel log sample data
-// v63: bowelLog removed
+const bowelLog = []; // v63: kept as [] for backward-compat; bowel data stored in S.notes
 const bowelLabels = ['','💧 Watery Diarrhea','🌊 Loose Stool','✅ Normal','🪨 Hard/Lumpy','🚫 No Movement'];
 const bowelColors = ['','#1565c0','#2e7d32','#43a87a','#e65100','#c62828'];
 let selectedBowel = 3;
@@ -3533,11 +3533,13 @@ function saveSym(){
 }
 function _saveBowelInternal(){
   const count=parseInt(document.getElementById('bowelCount').value)||0;
+  // v63: store in S.notes, remove today's existing bowel note
   S.notes=S.notes.filter(function(n){return !(n.note&&n.note.startsWith('🚽')&&n.date===today);});
   S.notes.unshift({id:Date.now(),date:today,email:'patient@anbucare',type:'auto',
     note:`🚽 Bowel — ${bowelLabels[selectedBowel]} · ${count} time${count!==1?'s':''} today`});
   renderBowelHistory();renderNotes();renderAllNotes();
   document.getElementById('bowelCount').value='';
+  saveNow();
 }
 
 function saveBowel(){_saveBowelInternal();toast('🚽 Bowel log saved!');saveNow();
@@ -3546,6 +3548,7 @@ function saveBowel(){_saveBowelInternal();toast('🚽 Bowel log saved!');saveNow
 function deleteBowelEntry(date){
   if(!confirm('Delete bowel log for '+date+'?')) return;
   const before=S.notes.length;
+  // v63: remove from S.notes
   S.notes=S.notes.filter(function(n){return !(n.note&&n.note.startsWith('🚽')&&n.date===date);});
   if(S.notes.length<before){
     renderBowelHistory();updBowelSlider(3);renderNotes();renderAllNotes();
@@ -3668,6 +3671,7 @@ function updBowelSlider(v){
 
 function renderBowelHistory(){
   const el=document.getElementById('bowelHistory');if(!el)return;
+  // v63: read from S.notes
   const bwNotes=(S.notes||[]).filter(function(n){return n.note&&n.note.startsWith('🚽');}).slice(0,5);
   if(!bwNotes.length){el.innerHTML='';return;}
   el.innerHTML='<div style="font-size:.78rem;font-weight:700;color:var(--muted);margin-bottom:6px">Recent Logs</div>'+
@@ -3678,7 +3682,6 @@ function renderBowelHistory(){
     return `<div style="display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:1.3rem">${icon}</span><div style="flex:1"><div style="font-weight:700;font-size:.86rem">${parts[0]}</div><div style="font-size:.74rem;color:var(--muted)">${fmtDate(n.date)} · ${parts[1]||''}</div></div><button onclick="deleteBowelEntry('${safeDate}')" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:1rem;padding:2px 6px;">🗑️</button></div>`;
   }).join('');
 }
-
 
 
 // ═══════════════════════════════════════════
@@ -5646,6 +5649,7 @@ function fmtDate(s){if(!s)return'';const p=String(s).substring(0,10).split('-');
 
 // ======================================================
 // REAL-TIME ADAPTIVE SYNC  (v65)
+// Post-save delay 4s to allow GAS write to complete
 // ======================================================
 (function(){
   var _ch=null, _afTimer=null, _apTimer=null;
@@ -5686,7 +5690,8 @@ function fmtDate(s){if(!s)return'';const p=String(s).substring(0,10).split('-');
     if(typeof _orig==='function') _orig.apply(this,arguments);
     try{if(_ch)_ch.postMessage({type:'data_updated',ts:Date.now()});}catch(_e){}
     clearTimeout(_afTimer);
-    _afTimer=setTimeout(function(){try{_bgSync();}catch(e){}},1500);
+    // 4000ms delay — give GAS time to write before pulling back
+    _afTimer=setTimeout(function(){try{_bgSync();}catch(e){}},4000);
   };
 
   window._startAdaptivePoll=_startPoll;
