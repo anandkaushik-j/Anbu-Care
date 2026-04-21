@@ -1,4 +1,4 @@
-<!-- AnbuCare v68 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
+<!-- AnbuCare v69 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
 <!DOCTYPE html>
 <html lang="en-IN">
 <head>
@@ -573,12 +573,9 @@ input:checked+.tslider::before{transform:translateX(20px)}
 .sos-modal-note{font-size:.83rem;color:var(--text);margin-top:8px;background:#fffbeb;border-radius:8px;padding:7px 10px;border-left:3px solid #d97706}
 .fc-dot-done{background:rgba(255,255,255,.95)!important;box-shadow:0 0 0 2px #4ade80!important;}
 .fc-dot-skip{background:rgba(255,255,255,.4)!important;box-shadow:0 0 0 2px #fbbf24!important;}
-
-20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
 </style>
 </head>
 <body>
-
 <div id="anbu-ec-ov" style="display:none" onclick="if(event.target===this)anbuEcNo()">
   <div class="anbu-ec-box">
     <div class="anbu-ec-ico">&#x23F0;</div>
@@ -599,7 +596,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
     <button class="red-cross-btn" onclick="openModal('helplineModal')" title="Emergency">✚</button>
   </div>
   <div class="hright">
-    <button class="hbtn" onclick="openModal('connectModal')" title="Settings">⚙️</button>
+    <button class="hbtn" onclick="openModal('connectModal')">⚙️</button>
     <!-- PK1: Pavithra Kolam — Sacred 8-petal lotus -->
 <div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;cursor:default" title="AnbuCare — Healing Kolam">
 <svg width="44" height="44" viewBox="0 0 100 100" style="overflow:visible">
@@ -1554,7 +1551,7 @@ const S = {
 };
 
 // Bowel log sample data
-// v63: bowelLog removed — bowel data stored in S.notes only
+// v63: bowelLog removed
 const bowelLabels = ['','💧 Watery Diarrhea','🌊 Loose Stool','✅ Normal','🪨 Hard/Lumpy','🚫 No Movement'];
 const bowelColors = ['','#1565c0','#2e7d32','#43a87a','#e65100','#c62828'];
 let selectedBowel = 3;
@@ -1629,7 +1626,10 @@ const MERGE_KEYS = ['tasks','medicines','dietPlan','tests','chemoSessions',
       if(Array.isArray(S.voiceNotes)){
         S.voiceNotes.forEach(n=>{ if(n.blobUrl && n.blobUrl.startsWith('blob:')) n.blobUrl = null; });
       }
-      // v63: bowelLog deprecated — data in S.notes
+      if(loaded.bowelLog && Array.isArray(loaded.bowelLog)){
+        bowelLog.length = 0;
+        loaded.bowelLog.forEach(x=>bowelLog.push(x));
+      }
       if(S.treatmentProfile&&S.treatmentProfile.name){try{localStorage.setItem('anbucare_treatprofile',JSON.stringify(S.treatmentProfile));}catch(_e){}}
       toast('✅ Data loaded from Sheets');
     } else {
@@ -1661,7 +1661,7 @@ function saveNow(){
       notes:(S.notes||[]).filter(function(n){return n.type!=='auto';}),
       helplines:S.helplines, reminders:S.reminders,
       treatmentProfile:S.treatmentProfile, nextId:S.nextId,
-      bowelLog:[], savedAt:new Date().toISOString()
+      bowelLog:bowelLog, savedAt:new Date().toISOString()
     }));
   }catch(_le){}
   const url=(localStorage.getItem('anbucare_url')||GAS_URL);
@@ -1681,7 +1681,7 @@ function saveNow(){
         notes:(S.notes||[]).filter(function(n){return n.type!=='auto';}), voiceNotes:(S.voiceNotes||[]).filter(function(n){return !n.isMock;}),
         helplines:S.helplines, reminders:S.reminders,
         treatmentProfile:(S.treatmentProfile&&S.treatmentProfile.name)?S.treatmentProfile:null,
-        nextId:S.nextId, bowelLog:[], sheetId:sid,
+        nextId:S.nextId, bowelLog:bowelLog, sheetId:sid,
         savedAt:new Date().toISOString()
       }
     });
@@ -1720,7 +1720,7 @@ async function saveToSheets(section){
           notes:S.notes, voiceNotes:S.voiceNotes.filter(n=>!n.isMock),
           helplines:S.helplines, reminders:S.reminders,
           treatmentProfile:S.treatmentProfile, nextId:S.nextId,
-          bowelLog:[], sheetId:sid, savedAt:new Date().toISOString()
+          bowelLog:bowelLog, sheetId:sid, savedAt:new Date().toISOString()
         }
       });
     }catch(je){ _saving=false; toast('⚠️ Data error: '+je.message); return; }
@@ -1756,7 +1756,7 @@ window.onload = async () => {
   setInterval(renderNext3Strip, 60000);
   setInterval(function(){try{renderFlashCards();}catch(_e){}},15*60*1000);
   // v52: background live-sync every 45 s — keeps all family devices in sync
-  // v65: adaptive polling started below by _startAdaptivePoll()
+  /* v65: replaced by adaptive engine */;
   // Set initial sync stamp from what was loaded at startup
   setTimeout(function(){try{_bgSync();}catch(e){}},5000);
 };
@@ -1808,10 +1808,6 @@ function normalizeSleep(sl){
   return sl;
 }
 function normalizeAll(){
-  // v63: purge legacy bowel log notes from S.notes
-  if(Array.isArray(S.notes)){
-    S.notes=S.notes.filter(function(n){return !(n.note&&n.note.startsWith('🚽'));});
-  }
   if(Array.isArray(S.medicines))  S.medicines.forEach(normalizeMed);
   // Fix voice note dates loaded from Sheets as ISO date strings
   if(Array.isArray(S.voiceNotes)) S.voiceNotes.forEach(function(vn){
@@ -1860,7 +1856,13 @@ function normalizeAll(){
       });
     });
   });
-  // v63: bowelLog deprecated
+  if(Array.isArray(bowelLog)){
+    bowelLog.forEach(function(item){
+      if(item.date && typeof item.date==='string' && ISO_RE.test(item.date)){
+        item.date = item.date.substring(0,10);
+      }
+    });
+  }
 }
 
 function renderAll(){
@@ -2713,7 +2715,9 @@ async function _bgSync(){
           if(loaded[k]!==undefined)S[k]=loaded[k];
         }
       });
-      // v63: bowelLog deprecated
+      if(loaded.bowelLog&&Array.isArray(loaded.bowelLog)){
+        bowelLog.length=0;loaded.bowelLog.forEach(function(x){bowelLog.push(x);});
+      }
       try{normalizeAll();}catch(e){}
       try{renderAll();}catch(e){}
       _updSyncBadge('updated','✅ Updated');
@@ -3529,19 +3533,19 @@ function saveSym(){
 }
 function _saveBowelInternal(){
   const count=parseInt(document.getElementById('bowelCount').value)||0;
-  // v63: bowel stored in S.notes only — remove today's existing bowel note if any
   S.notes=S.notes.filter(function(n){return !(n.note&&n.note.startsWith('🚽')&&n.date===today);});
-  S.notes.unshift({id:Date.now(),date:today,email:'patient@anbucare',type:'auto',note:`🚽 Bowel — ${bowelLabels[selectedBowel]} · ${count} time${count!==1?'s':''} today`});
-  renderNotes();renderAllNotes();
+  S.notes.unshift({id:Date.now(),date:today,email:'patient@anbucare',type:'auto',
+    note:`🚽 Bowel — ${bowelLabels[selectedBowel]} · ${count} time${count!==1?'s':''} today`});
+  renderBowelHistory();renderNotes();renderAllNotes();
   document.getElementById('bowelCount').value='';
 }
+
 function saveBowel(){_saveBowelInternal();toast('🚽 Bowel log saved!');saveNow();
   try{renderFlashCards();}catch(_re){} try{renderNext3Strip();}catch(_re){} try{renderOverdue();}catch(_re){}
 }
 function deleteBowelEntry(date){
   if(!confirm('Delete bowel log for '+date+'?')) return;
-  var before=S.notes.length;
-  // v63: remove from S.notes only
+  const before=S.notes.length;
   S.notes=S.notes.filter(function(n){return !(n.note&&n.note.startsWith('🚽')&&n.date===date);});
   if(S.notes.length<before){
     renderBowelHistory();updBowelSlider(3);renderNotes();renderAllNotes();
@@ -3549,6 +3553,7 @@ function deleteBowelEntry(date){
     saveNow();toast('🗑️ Bowel log deleted');
   }
 }
+
 
 function saveAllLog(){
   const btn=document.getElementById('btnSaveAllLog');
@@ -3639,22 +3644,17 @@ function renderSymHist(){
   }).join('');
 
   // Bowel summary
-  // v63: bowel data from S.notes
-  const _bwNotes=(S.notes||[]).filter(function(n){return n.note&&n.note.startsWith('🚽');}).slice(0,7);
-  if(_bwNotes.length){
+  if(typeof bowelLog!=='undefined' && bowelLog.length){
+    const recent=bowelLog.slice(0,7);
     el.innerHTML += '<div style="margin-top:16px;padding:12px 14px;background:var(--surface2);border-radius:12px;border:1.5px solid var(--border)">'
       +'<div style="font-weight:700;font-size:.88rem;color:var(--primary);margin-bottom:8px">🚽 Bowel Log — Last 7 Days</div>'
-      +_bwNotes.map(function(n){
-        var parts=(n.note||'').replace('🚽 Bowel — ','').split(' · ');
-        return '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:.82rem">'
-          +'<span>'+fmtDate(n.date)+'</span>'
-          +'<span style="font-weight:600">'+(parts[0]||'—')+'</span>'
-          +'<span style="color:var(--muted)">'+(parts[1]||'')+'</span>'
-          +'</div>';
-      }).join('')
+      +recent.map(b=>'<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:.82rem">'
+        +'<span>'+fmtDate(b.date)+'</span>'
+        +'<span style="color:'+(bowelColors[b.type]||'var(--text)')+';font-weight:600">'+(bowelLabels[b.type]||'—')+'</span>'
+        +'<span style="color:var(--muted)">'+(b.count||0)+' time'+((b.count||0)!==1?'s':'')+'</span>'
+        +'</div>').join('')
       +'</div>';
   }
-}
 }
 function updBowelSlider(v){
   selectedBowel=+v;
@@ -3668,23 +3668,18 @@ function updBowelSlider(v){
 
 function renderBowelHistory(){
   const el=document.getElementById('bowelHistory');if(!el)return;
-  // Show recent bowel entries from S.notes
   const bwNotes=(S.notes||[]).filter(function(n){return n.note&&n.note.startsWith('🚽');}).slice(0,5);
   if(!bwNotes.length){el.innerHTML='';return;}
-  el.innerHTML='<div style="font-size:.78rem;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em">Recent Logs</div>'+
+  el.innerHTML='<div style="font-size:.78rem;font-weight:700;color:var(--muted);margin-bottom:6px">Recent Logs</div>'+
   bwNotes.map(function(n){
-    var parts=(n.note||'').replace('🚽 Bowel — ','').split(' · ');
-    var typeLabel=parts[0]||'';
-    var countLabel=parts[1]||'';
-    var icon=typeLabel.split(' ')[0]||'🚽';
-    return '<div style="display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--border)">'+
-      '<span style="font-size:1.3rem">'+icon+'</span>'+
-      '<div style="flex:1">'+
-        '<div style="font-weight:700;font-size:.86rem">'+typeLabel+'</div>'+
-        '<div style="font-size:.74rem;color:var(--muted)">'+fmtDate(n.date)+' · '+countLabel+'</div>'+
-      '</div></div>';
+    const parts=(n.note||'').replace('🚽 Bowel — ','').split(' · ');
+    const icon=parts[0]?parts[0].split(' ')[0]:'🚽';
+    const safeDate=String(n.date||'');
+    return `<div style="display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:1.3rem">${icon}</span><div style="flex:1"><div style="font-weight:700;font-size:.86rem">${parts[0]}</div><div style="font-size:.74rem;color:var(--muted)">${fmtDate(n.date)} · ${parts[1]||''}</div></div><button onclick="deleteBowelEntry('${safeDate}')" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:1rem;padding:2px 6px;">🗑️</button></div>`;
   }).join('');
 }
+
+
 
 // ═══════════════════════════════════════════
 // VITALS
@@ -3856,7 +3851,7 @@ function noteHTML(n){
   var tag=sl?'ntag-sl':sy?'ntag-sym':vt?'ntag-vit':bw?'ntag-sl':'ntag-n';
   var lbl=sl?'😴 Sleep':sy?'📊 Symptoms':vt?'🫀 Vitals':bw?'🚽 Bowel':'📝 Note';
   var safeNote=encodeURIComponent(note_);
-  var del='<button onclick="deleteNoteByContent(decodeURIComponent(\'' + safeNote + '\'))" style="background:none;border:none;color:#e53935;font-size:.88rem;cursor:pointer;padding:2px 6px;margin-left:auto;line-height:1;flex-shrink:0" title="Delete">🗑</button>';
+  var del=`<button onclick="deleteNoteByContent(decodeURIComponent('${safeNote}'))" style="background:none;border:none;color:#e53935;font-size:.88rem;cursor:pointer;padding:2px 6px;margin-left:auto;line-height:1;flex-shrink:0" title="Delete">🗑</button>`;
   return '<div class="note-item"><div class="note-meta" style="display:flex;align-items:center;flex-wrap:wrap;gap:4px"><span class="ntag '+tag+'">'+lbl+'</span><span>'+fmtDate(n.date)+'</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(n.email||'')+'</span>'+del+'</div><div class="note-text">'+esc(n.note)+'</div></div>';
 }
 function renderNotes(){
@@ -5649,86 +5644,57 @@ function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t
 function esc(s){if(s==null)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function fmtDate(s){if(!s)return'';const p=String(s).substring(0,10).split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:s;}
 
-
-// ══════════════════════════════════════════════════════
-// REAL-TIME SYNC ENGINE  (v65)
-// ══════════════════════════════════════════════════════
+// ======================================================
+// REAL-TIME ADAPTIVE SYNC  (v65)
+// ======================================================
 (function(){
-  var _syncChannel = null;
-  var _afterSaveTimer = null;
-  var _adaptiveTimer  = null;
-  var ACTIVE_POLL_MS  = 8000;   // 8s when tab is visible
-  var IDLE_POLL_MS    = 45000;  // 45s when tab is hidden
+  var _ch=null, _afTimer=null, _apTimer=null;
+  var ACTIVE_MS=8000, IDLE_MS=45000;
 
-  // ── 1. Replace fixed 45s interval with adaptive polling ─────────────
-  function _startAdaptivePoll(){
-    if(_adaptiveTimer) clearInterval(_adaptiveTimer);
-    var ms = document.hidden ? IDLE_POLL_MS : ACTIVE_POLL_MS;
-    _adaptiveTimer = setInterval(function(){
-      try{ _bgSync(); }catch(e){}
-    }, ms);
+  function _startPoll(){
+    if(_apTimer) clearInterval(_apTimer);
+    _apTimer=setInterval(function(){try{_bgSync();}catch(e){}},
+      document.hidden?IDLE_MS:ACTIVE_MS);
   }
 
-  // ── 2. Page Visibility — instant resync when tab regains focus ───────
-  document.addEventListener('visibilitychange', function(){
-    if(!document.hidden){
-      // Tab came back into view — sync immediately
-      setTimeout(function(){ try{ _bgSync(); }catch(e){} }, 300);
-    }
-    // Restart adaptive poller with appropriate interval
-    _startAdaptivePoll();
+  document.addEventListener('visibilitychange',function(){
+    if(!document.hidden) setTimeout(function(){try{_bgSync();}catch(e){}},300);
+    _startPoll();
   });
 
-  // ── 3. BroadcastChannel — instant cross-tab sync on same device ──────
   try{
-    _syncChannel = new BroadcastChannel('anbucare_sync');
-    _syncChannel.onmessage = function(e){
-      if(e.data && e.data.type === 'data_updated'){
-        // Another tab saved data — pull from localStorage immediately
+    _ch=new BroadcastChannel('anbucare_sync');
+    _ch.onmessage=function(e){
+      if(e.data&&e.data.type==='data_updated'){
         try{
-          var fresh = localStorage.getItem('anbucare_data');
-          if(fresh){
-            var parsed = JSON.parse(fresh);
-            if(parsed && parsed.savedAt !== (S.savedAt||'')){
-              Object.assign(S, parsed);
-              try{ normalizeAll(); }catch(_e){}
-              try{ renderAll(); }catch(_e){}
-              _updSyncBadge('ok','✓ Live');
+          var f=localStorage.getItem('anbucare_data');
+          if(f){var p=JSON.parse(f);
+            if(p&&p.savedAt!==(S.savedAt||'')){
+              Object.assign(S,p);
+              try{normalizeAll();}catch(_e){}
+              try{renderAll();}catch(_e){}
+              _updSyncBadge('ok','Live');
             }
           }
         }catch(_e){}
       }
     };
-  }catch(_e){ _syncChannel = null; }
+  }catch(_e){_ch=null;}
 
-  // ── 4. Patch saveNow to broadcast + trigger immediate push sync ──────
-  var _origSaveNow = window.saveNow;
-  window.saveNow = function(){
-    if(typeof _origSaveNow === 'function') _origSaveNow.apply(this, arguments);
-    // Broadcast to other tabs on same device
-    try{
-      if(_syncChannel) _syncChannel.postMessage({type:'data_updated', ts: Date.now()});
-    }catch(_e){}
-    // Trigger a background pull 1.5s after save (debounced) to confirm sync
-    clearTimeout(_afterSaveTimer);
-    _afterSaveTimer = setTimeout(function(){
-      try{ _bgSync(); }catch(e){}
-    }, 1500);
+  var _orig=window.saveNow;
+  window.saveNow=function(){
+    if(typeof _orig==='function') _orig.apply(this,arguments);
+    try{if(_ch)_ch.postMessage({type:'data_updated',ts:Date.now()});}catch(_e){}
+    clearTimeout(_afTimer);
+    _afTimer=setTimeout(function(){try{_bgSync();}catch(e){}},1500);
   };
 
-  // ── 5. Start adaptive polling (replaces old fixed 45s interval) ──────
-  // Remove old interval (set in window.onload) and replace with adaptive
-  // Old: setInterval(_bgSync, 45*1000) → replaced by _startAdaptivePoll()
-  window._startAdaptivePoll = _startAdaptivePoll;
-
-  // Boot adaptive polling after DOM ready
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', _startAdaptivePoll);
-  } else {
-    _startAdaptivePoll();
-  }
-
+  window._startAdaptivePoll=_startPoll;
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',_startPoll);
+  } else { _startPoll(); }
 })();
+
 </script>
 
 <!-- ═══ FLASHCARD NEXT POPUP ═══ -->
