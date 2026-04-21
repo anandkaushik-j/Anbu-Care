@@ -1,4 +1,4 @@
-<!-- AnbuCare v69 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
+<!-- AnbuCare v70 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
 <!DOCTYPE html>
 <html lang="en-IN">
 <head>
@@ -1520,6 +1520,12 @@ input:checked+.tslider::before{transform:translateX(20px)}
 <div id="printReport"></div>
 
 <script>
+// Safe _LS shim (handles sandboxed preview iframes)
+var _LS = (function(){
+  try{ _LS.setItem('__t','1'); _LS.removeItem('__t'); return _LS; }
+  catch(e){ var _m={}; return {getItem:function(k){return _m[k]||null;},setItem:function(k,v){_m[k]=String(v);},removeItem:function(k){delete _m[k];}}; }
+})();
+
 
 // ── Baked-in Google Apps Script URL (v44) ──────────────────────
 const GAS_URL='https://script.google.com/macros/s/AKfycbzTI47hg9Ljp5nvayGasEuyR9Sx1q7FZqHYkue5YFXrxaLhednLPcz-mKlbmSQdDvhiWw/exec';
@@ -1567,8 +1573,8 @@ const fcState = {diet:null,med:null,vit:null,test:null};
 
 async function loadFromSheets(){
   // Notes are managed exclusively via Google Sheets (single source of truth)
-  // localStorage notes cache is only used as a fallback when no Sheet URL is configured
-  const url = (localStorage.getItem('anbucare_url')||GAS_URL);
+  // _LS notes cache is only used as a fallback when no Sheet URL is configured
+  const url = (_LS.getItem('anbucare_url')||GAS_URL);
   if(!url){ loadFcState(); renderAll(); return; }
 
   // Show loading banner below affirmation — don't overwrite it
@@ -1576,7 +1582,7 @@ async function loadFromSheets(){
   if(loadBanner) loadBanner.style.display = 'block';
 
   try{
-    const _sid = localStorage.getItem('anbucare_sid')||'';
+    const _sid = _LS.getItem('anbucare_sid')||'';
     const r = await Promise.race([
       fetch(url, {
         method: 'POST',
@@ -1598,7 +1604,7 @@ async function loadFromSheets(){
 const MERGE_KEYS = ['tasks','medicines','dietPlan','tests','chemoSessions',
         'symptoms','vitals','sleepLogs','notes','voiceNotes','helplines',
         'reminders','treatmentProfile','nextId'];
-      // Merge notes: preserve localStorage-only notes not yet in Sheets
+      // Merge notes: preserve _LS-only notes not yet in Sheets
       if(loaded.notes && Array.isArray(loaded.notes)){
         const sheetIds=new Set(loaded.notes.map(n=>n.id));
         const localOnly=(S.notes||[]).filter(n=>n.id&&!sheetIds.has(n.id));
@@ -1626,11 +1632,24 @@ const MERGE_KEYS = ['tasks','medicines','dietPlan','tests','chemoSessions',
       if(Array.isArray(S.voiceNotes)){
         S.voiceNotes.forEach(n=>{ if(n.blobUrl && n.blobUrl.startsWith('blob:')) n.blobUrl = null; });
       }
-      if(loaded.bowelLog && Array.isArray(loaded.bowelLog)){
-        bowelLog.length = 0;
-        loaded.bowelLog.forEach(x=>bowelLog.push(x));
+      // Migrate old bowelLog[] entries into S.symptoms type:'bowel', then clear
+      if(loaded.bowelLog&&Array.isArray(loaded.bowelLog)&&loaded.bowelLog.length){
+        var _existBD=new Set((S.symptoms||[]).filter(function(e){return e.type==='bowel';}).map(function(e){return e.date;}));
+        loaded.bowelLog.forEach(function(b){
+          if(b.date&&!_existBD.has(b.date)){
+            if(!S.symptoms) S.symptoms=[];
+            S.symptoms.push({
+              id:Date.now()+Math.random(),date:b.date,session:'',type:'bowel',
+              bowelType:b.type||3,bowelCount:b.count||0,
+              bowelLabel:b.label||(bowelLabels&&bowelLabels[b.type])||'Bowel',
+              nausea:0,fatigue:0,pain:0,mood:0,appetite:0,extras:[],notes:'',chemoId:null
+            });
+            _existBD.add(b.date);
+          }
+        });
       }
-      if(S.treatmentProfile&&S.treatmentProfile.name){try{localStorage.setItem('anbucare_treatprofile',JSON.stringify(S.treatmentProfile));}catch(_e){}}
+      bowelLog.length=0; // always clear legacy array
+      if(S.treatmentProfile&&S.treatmentProfile.name){try{_LS.setItem('anbucare_treatprofile',JSON.stringify(S.treatmentProfile));}catch(_e){}}
       toast('✅ Data loaded from Sheets');
     } else {
       toast('❌ Sheets error: ' + (d.error||'Check Sheet ID in Connect settings'));
@@ -1652,9 +1671,9 @@ let _saveTimer=null,_saving=false,_editingChemoId=null,fcItemState={},_fcLastDat
 function saveNow(){
   // Cancel any pending debounced save
   clearTimeout(_saveTimer);
-  // Always write to localStorage as offline fallback (family data safety)
+  // Always write to _LS as offline fallback (family data safety)
   try{
-    localStorage.setItem('anbucare_offline_backup', JSON.stringify({
+    _LS.setItem('anbucare_offline_backup', JSON.stringify({
       tasks:S.tasks, medicines:S.medicines, dietPlan:S.dietPlan,
       tests:S.tests, chemoSessions:S.chemoSessions,
       symptoms:S.symptoms, vitals:S.vitals, sleepLogs:S.sleepLogs,
@@ -1664,12 +1683,12 @@ function saveNow(){
       bowelLog:bowelLog, savedAt:new Date().toISOString()
     }));
   }catch(_le){}
-  const url=(localStorage.getItem('anbucare_url')||GAS_URL);
+  const url=(_LS.getItem('anbucare_url')||GAS_URL);
   if(!url){ toast('⚠️ No Sheet URL — data saved locally only'); return; }
   // Guard against concurrent saves — queue a retry if one is in flight
   if(_saving){ _saveTimer=setTimeout(saveNow,1200); return; }
-  _saving=true;
-  const sid=localStorage.getItem('anbucare_sid')||'';
+  _saving=true; _isSaving=true; // stale-guard support
+  const sid=_LS.getItem('anbucare_sid')||'';
   let bodyStr;
   try{
     bodyStr=JSON.stringify({
@@ -1681,7 +1700,7 @@ function saveNow(){
         notes:(S.notes||[]).filter(function(n){return n.type!=='auto';}), voiceNotes:(S.voiceNotes||[]).filter(function(n){return !n.isMock;}),
         helplines:S.helplines, reminders:S.reminders,
         treatmentProfile:(S.treatmentProfile&&S.treatmentProfile.name)?S.treatmentProfile:null,
-        nextId:S.nextId, bowelLog:bowelLog, sheetId:sid,
+        nextId:S.nextId, bowelLog:[], sheetId:sid,
         savedAt:new Date().toISOString()
       }
     });
@@ -1695,20 +1714,20 @@ function saveNow(){
   .then(function(r){return r.text();})
   .then(function(txt){
     var res; try{res=JSON.parse(txt);}catch(e){throw new Error('Bad response');}
-    if(res.ok||res.success){toast('☁️ Saved');}
+    if(res.ok||res.success){var _ts=new Date().toISOString();try{_LS.setItem('anbucare_last_save',_ts);}catch(e){}toast('☁️ Saved');}
     else{toast('⚠️ Save error: '+(res.error||'Check Sheet ID'));}
   })
   .catch(function(e){toast('⚠️ Save failed: '+e.message);})
-  .finally(function(){_saving=false;});
+  .finally(function(){_saving=false; _isSaving=false;});
 }
 async function saveToSheets(section){
-  const url = (localStorage.getItem('anbucare_url')||GAS_URL);
+  const url = (_LS.getItem('anbucare_url')||GAS_URL);
   if(!url) return;
   clearTimeout(_saveTimer);
   _saveTimer = setTimeout(async ()=>{
     if(_saving){ _saveTimer=setTimeout(()=>saveToSheets(section),1500); return; }
     _saving=true;
-    const sid = localStorage.getItem('anbucare_sid')||'';
+    const sid = _LS.getItem('anbucare_sid')||'';
     let bodyStr;
     try{
       bodyStr = JSON.stringify({
@@ -1736,8 +1755,8 @@ async function saveToSheets(section){
 }
 
 window.onload = async () => {
-  // v44: seed baked URL into localStorage so app connects immediately
-  if(!localStorage.getItem('anbucare_url')) localStorage.setItem('anbucare_url', GAS_URL);
+  // v44: seed baked URL into _LS so app connects immediately
+  if(!_LS.getItem('anbucare_url')) _LS.setItem('anbucare_url', GAS_URL);
   const d = new Date();
   document.getElementById('hDate').textContent = d.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'});
   setDateInput('dDate', today);
@@ -1747,9 +1766,9 @@ window.onload = async () => {
   setDateInput('mStart', today);
   document.getElementById('mEnd').value = ms.toISOString().substring(0,10);
   loadConn();
-  try{var ci=localStorage.getItem('anbucare_cal_id');var ce=document.getElementById('calendarIdInput');if(ci&&ce)ce.value=ci;}catch(ex){}
-  document.getElementById('calendarIdInput')?.addEventListener('input',function(){localStorage.setItem('anbucare_cal_id',this.value);});
-  try{var _pc=localStorage.getItem('anbucare_treatprofile');if(_pc){var _pp=JSON.parse(_pc);if(_pp&&_pp.name)S.treatmentProfile=_pp;}}catch(_pe){}
+  try{var ci=_LS.getItem('anbucare_cal_id');var ce=document.getElementById('calendarIdInput');if(ci&&ce)ce.value=ci;}catch(ex){}
+  document.getElementById('calendarIdInput')?.addEventListener('input',function(){_LS.setItem('anbucare_cal_id',this.value);});
+  try{var _pc=_LS.getItem('anbucare_treatprofile');if(_pc){var _pp=JSON.parse(_pc);if(_pp&&_pp.name)S.treatmentProfile=_pp;}}catch(_pe){}
   fetchAffirmation();
   await loadFromSheets(); // loads data then calls renderAll()
   fetchAffirmation(); // re-run after data load to ensure affirmation is visible
@@ -2103,12 +2122,12 @@ document.addEventListener('click',e=>{if(S.fabOpen&&!document.getElementById('fa
 // ═══════════════════════════════════════════
 // ── 4h Window: vertical list + persist minimize ─────────────
 var _stripOpen=true;
-try{var _sv=localStorage.getItem('anbucare_strip_open');if(_sv!==null)_stripOpen=_sv==='1';}catch(_le){}
+try{var _sv=_LS.getItem('anbucare_strip_open');if(_sv!==null)_stripOpen=_sv==='1';}catch(_le){}
 
 function toggleStrip(e){
   if(e)e.stopPropagation();
   _stripOpen=!_stripOpen;
-  try{localStorage.setItem('anbucare_strip_open',_stripOpen?'1':'0');}catch(_e){}
+  try{_LS.setItem('anbucare_strip_open',_stripOpen?'1':'0');}catch(_e){}
   _applyStripOpen();
 }
 function _applyStripOpen(){
@@ -2485,12 +2504,12 @@ function markFCItem(key,uid,val,itemMins){
   _execMFI(key,uid,val);
 }
 function _loadDoneTests(){
-  try{return new Set(JSON.parse(localStorage.getItem('anbucare_done_tests')||'[]'));}
+  try{return new Set(JSON.parse(_LS.getItem('anbucare_done_tests')||'[]'));}
   catch(e){return new Set();}
 }
 function _saveDoneTest(uid){
   try{var s=_loadDoneTests();s.add(uid);
-    localStorage.setItem('anbucare_done_tests',JSON.stringify([...s]));}catch(e){}
+    _LS.setItem('anbucare_done_tests',JSON.stringify([...s]));}catch(e){}
 }
 function _execMFI(key,uid,val){
   fcItemState[uid]=val;saveFcState();
@@ -2524,7 +2543,7 @@ function _execMFI(key,uid,val){
 // ── FC state persistence (per-item + whole-card) ──────────────
 function saveFcState(){
   try{
-    localStorage.setItem('anbucare_fcstate',JSON.stringify({
+    _LS.setItem('anbucare_fcstate',JSON.stringify({
       date:today,
       fcState:fcState,
       fcItemState:fcItemState
@@ -2533,7 +2552,7 @@ function saveFcState(){
 }
 function loadFcState(){
   try{
-    var _raw=localStorage.getItem('anbucare_fcstate');if(!_raw)return;
+    var _raw=_LS.getItem('anbucare_fcstate');if(!_raw)return;
     var _sv=JSON.parse(_raw);
     if(_sv&&_sv.date===today){
       // Restore whole-card states (vitals etc.)
@@ -2542,7 +2561,7 @@ function loadFcState(){
       if(_sv.fcItemState)Object.assign(fcItemState,_sv.fcItemState);
     } else {
       // Different day — wipe everything
-      localStorage.removeItem('anbucare_fcstate');
+      _LS.removeItem('anbucare_fcstate');
     }
   }catch(e){}
 }
@@ -2553,7 +2572,7 @@ setInterval(function(){
   if(_nd!==_fcLastDate){
     fcItemState={};
     Object.keys(fcState).forEach(function(k){fcState[k]=null;});
-    localStorage.removeItem('anbucare_fcstate');
+    _LS.removeItem('anbucare_fcstate');
     _fcLastDate=_nd;
     renderFlashCards();
     try{renderMedsDaySummary();}catch(_e){}
@@ -2564,21 +2583,21 @@ setInterval(function(){
 
 // ── Treatment profile remote save/load ────────────────────────
 function saveTreatmentProfileToSheets(){
-  var url=(localStorage.getItem('anbucare_url')||GAS_URL);
+  var url=(_LS.getItem('anbucare_url')||GAS_URL);
   if(!url||!S.treatmentProfile||!S.treatmentProfile.name)return;
   fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
-    body:JSON.stringify({action:'saveTreatmentProfile',sheetId:localStorage.getItem('anbucare_sid')||'',data:{treatmentProfile:S.treatmentProfile}}),
+    body:JSON.stringify({action:'saveTreatmentProfile',sheetId:_LS.getItem('anbucare_sid')||'',data:{treatmentProfile:S.treatmentProfile}}),
     redirect:'follow'}).then(function(r){return r.json();}).catch(function(){});
 }
 async function loadTreatmentProfileFromSheets(){
-  var url=(localStorage.getItem('anbucare_url')||GAS_URL);if(!url)return;
+  var url=(_LS.getItem('anbucare_url')||GAS_URL);if(!url)return;
   try{
     var r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body:JSON.stringify({action:'loadTreatmentProfile',sheetId:localStorage.getItem('anbucare_sid')||''}),redirect:'follow'});
+      body:JSON.stringify({action:'loadTreatmentProfile',sheetId:_LS.getItem('anbucare_sid')||''}),redirect:'follow'});
     var d=await r.json();
     if((d.ok||d.success)&&d.data&&d.data.name){
       S.treatmentProfile=d.data;
-      try{localStorage.setItem('anbucare_treatprofile',JSON.stringify(d.data));}catch(_e){}
+      try{_LS.setItem('anbucare_treatprofile',JSON.stringify(d.data));}catch(_e){}
       renderTreatProfileBanner();
     }
   }catch(_e){}
@@ -2671,13 +2690,14 @@ function _updSyncBadge(state,txt){
 }
 // v55: fully fixed _bgSync — 5 bugs resolved
 async function _bgSync(){
-  if(_syncBusy||_isSaving)return;               // FIX 1: was 'saving' (undeclared → ReferenceError)
-  var url=localStorage.getItem('anbucare_url')||GAS_URL;
-  if(!url)return;
+  if(_syncBusy||_isSaving||_saving) return; // triple-guard: never overwrite during save
+  var url=_LS.getItem?_LS.getItem('anbucare_url'):_LS.getItem('anbucare_url');
+  if(!url) url=GAS_URL;
+  if(!url) return;
   _syncBusy=true;
   _updSyncBadge('syncing',' Syncing…');
   try{
-    var sid=localStorage.getItem('anbucare_sid');
+    var sid=_LS.getItem?_LS.getItem('anbucare_sid'):_LS.getItem('anbucare_sid');
     var r=await Promise.race([
       fetch(url,{method:'POST',
         headers:{'Content-Type':'text/plain;charset=utf-8'},
@@ -2686,43 +2706,78 @@ async function _bgSync(){
       new Promise(function(_,rej){setTimeout(function(){rej(new Error('timeout'));},12000);})
     ]);
     var txt=await r.text();
-    var d; try{d=JSON.parse(txt);}catch(e){_updSyncBadge('','');return;}
-    if(d&&(d.ok||d.success)&&d.data){             // FIX 2: was &&d.ok&&d.success (too strict)
+    var d; try{d=JSON.parse(txt);}catch(e){_updSyncBadge('','');_syncBusy=false;return;}
+    if(d&&(d.ok||d.success)&&d.data){
       var ns=d.data.savedAt||'';
       _lastSyncTime=Date.now();
+
+      // Skip if Sheet data is identical to what we already have
       if(ns&&ns===_lastSyncStamp){
         _updSyncBadge('','✓ Up to date');
-        return;
+        _syncBusy=false; return;
       }
+
+      // ── STALE-SHEET GUARD ─────────────────────────────────────
+      // If our last confirmed local save is NEWER than the Sheet's savedAt,
+      // the Sheet hasn't received our changes yet — do NOT overwrite local data.
+      var _lsKey=_LS.getItem?'anbucare_last_save':null;
+      var _lastSave=_lsKey?(_LS.getItem('anbucare_last_save')||''):
+                           (typeof _LS!=='undefined'?_LS.getItem('anbucare_last_save')||'':'');
+      if(_lastSave&&ns&&ns<_lastSave){
+        _updSyncBadge('','⏳');
+        _syncBusy=false; return;
+      }
+
       _lastSyncStamp=ns;
       var loaded=d.data;
-      // FIX 3: preserve localStorage-only notes not yet in Sheets
+
+      // ── MIGRATE old bowelLog[] from Sheet into S.symptoms ─────
+      if(loaded.bowelLog&&Array.isArray(loaded.bowelLog)&&loaded.bowelLog.length){
+        var existBD=new Set((S.symptoms||[]).filter(function(e){return e.type==='bowel';}).map(function(e){return e.date;}));
+        var alsoInSymptoms=new Set((loaded.symptoms||[]).filter(function(e){return e.type==='bowel';}).map(function(e){return e.date;}));
+        loaded.bowelLog.forEach(function(b){
+          if(b.date&&!existBD.has(b.date)&&!alsoInSymptoms.has(b.date)){
+            if(!loaded.symptoms) loaded.symptoms=[];
+            loaded.symptoms.push({
+              id:Date.now()+Math.random(),date:b.date,session:'',type:'bowel',
+              bowelType:b.type||3,bowelCount:b.count||0,
+              bowelLabel:b.label||(bowelLabels&&bowelLabels[b.type])||'Bowel',
+              nausea:0,fatigue:0,pain:0,mood:0,appetite:0,extras:[],notes:'',chemoId:null
+            });
+            existBD.add(b.date);
+          }
+        });
+      }
+      // Always clear legacy bowelLog array
+      bowelLog.length=0;
+      if(loaded.bowelLog) loaded.bowelLog=[];
+
+      // ── Preserve local-only notes not yet in Sheet ────────────
       if(loaded.notes&&Array.isArray(loaded.notes)){
         var _sheetIds=new Set(loaded.notes.map(function(n){return n.id;}));
         var _localOnly=(S.notes||[]).filter(function(n){return n.id&&!_sheetIds.has(n.id);});
         loaded.notes=[..._localOnly,...loaded.notes];
       }
+
+      // ── Apply Sheet data ──────────────────────────────────────
       var MK=['tasks','medicines','dietPlan','tests','chemoSessions',
               'symptoms','vitals','sleepLogs','notes','voiceNotes',
               'helplines','reminders','treatmentProfile','nextId'];
       MK.forEach(function(k){
-        // FIX 4: treatmentProfile is an object, not an array — merge correctly
         if(k==='treatmentProfile'){
           var _t=loaded[k];
           if(_t&&typeof _t==='object'&&!Array.isArray(_t)&&_t.name){S.treatmentProfile=_t;}
           else if(Array.isArray(_t)&&_t[0]&&_t[0].name){S.treatmentProfile=_t[0];}
         } else {
-          if(loaded[k]!==undefined)S[k]=loaded[k];
+          if(loaded[k]!==undefined) S[k]=loaded[k];
         }
       });
-      if(loaded.bowelLog&&Array.isArray(loaded.bowelLog)){
-        bowelLog.length=0;loaded.bowelLog.forEach(function(x){bowelLog.push(x);});
-      }
+
       try{normalizeAll();}catch(e){}
       try{renderAll();}catch(e){}
       _updSyncBadge('updated','✅ Updated');
       setTimeout(function(){_updSyncBadge('','');},3000);
-    }else{
+    } else {
       _updSyncBadge('','');
     }
   }catch(e){
@@ -2992,7 +3047,7 @@ function saveTreatmentProfile(){
   var nm=document.getElementById('cgTpName').value.trim();if(!nm){toast('⚠️ Enter treatment name');return;}
   var pf=document.getElementById('cgTpPatient');
   S.treatmentProfile={patientName:pf?pf.value.trim():'',name:nm,protocol:document.getElementById('cgTpProtocol').value.trim(),oncologist:document.getElementById('cgTpOncologist').value.trim(),startDate:document.getElementById('cgTpStartDate').value,setOn:today};
-  try{localStorage.setItem('anbucare_treatprofile',JSON.stringify(S.treatmentProfile));}catch(_e){}
+  try{_LS.setItem('anbucare_treatprofile',JSON.stringify(S.treatmentProfile));}catch(_e){}
   renderTreatProfileBanner();document.getElementById('cgTreatEditBox').classList.add('hidden');
   toast('✅ Treatment saved!');saveNow();setTimeout(function(){try{saveTreatmentProfileToSheets();}catch(_e){}},1200);
   try{renderFlashCards();}catch(_re){} try{renderNext3Strip();}catch(_re){} try{renderOverdue();}catch(_re){}
@@ -3533,11 +3588,17 @@ function saveSym(){
 }
 function _saveBowelInternal(){
   const count=parseInt(document.getElementById('bowelCount').value)||0;
-  // v63: store in S.notes, remove today's existing bowel note
-  S.notes=S.notes.filter(function(n){return !(n.note&&n.note.startsWith('🚽')&&n.date===today);});
-  S.notes.unshift({id:Date.now(),date:today,email:'patient@anbucare',type:'auto',
-    note:`🚽 Bowel — ${bowelLabels[selectedBowel]} · ${count} time${count!==1?'s':''} today`});
-  renderBowelHistory();renderNotes();renderAllNotes();
+  const today_=(function(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})();
+  // Remove any existing bowel entry for today (de-dup)
+  S.symptoms=S.symptoms.filter(function(e){return !(e.type==='bowel'&&e.date===today_);});
+  S.symptoms.unshift({
+    id:Date.now(),date:today_,session:'',type:'bowel',
+    bowelType:selectedBowel,bowelCount:count,
+    bowelLabel:bowelLabels[selectedBowel]||'Bowel',
+    nausea:0,fatigue:0,pain:0,mood:0,appetite:0,extras:[],notes:'',chemoId:null
+  });
+  renderBowelHistory();
+  renderSymHist();
   document.getElementById('bowelCount').value='';
   saveNow();
 }
@@ -3547,13 +3608,15 @@ function saveBowel(){_saveBowelInternal();toast('🚽 Bowel log saved!');saveNow
 }
 function deleteBowelEntry(date){
   if(!confirm('Delete bowel log for '+date+'?')) return;
-  const before=S.notes.length;
-  // v63: remove from S.notes
-  S.notes=S.notes.filter(function(n){return !(n.note&&n.note.startsWith('🚽')&&n.date===date);});
-  if(S.notes.length<before){
-    renderBowelHistory();updBowelSlider(3);renderNotes();renderAllNotes();
-    try{renderFlashCards();}catch(_e){} try{renderNext3Strip();}catch(_e){}
-    saveNow();toast('🗑️ Bowel log deleted');
+  const before=S.symptoms.length;
+  S.symptoms=S.symptoms.filter(function(e){return !(e.type==='bowel'&&e.date===date);});
+  if(S.symptoms.length<before){
+    renderBowelHistory();
+    renderSymHist();
+    try{renderFlashCards();}catch(e){}
+    try{renderNext3Strip();}catch(e){}
+    saveNow();
+    toast('🗑 Bowel log deleted');
   }
 }
 
@@ -3575,17 +3638,17 @@ function bulkDeleteSymBySession(){
   const val=sel.value;
   let count=0;
   if(val==='__none__'){
-    count=S.symptoms.filter(e=>!e.chemoId).length;
+    count=S.symptoms.filter(e=>!e.chemoId&&e.type!=='bowel').length;
     if(!count){toast('No unlinked entries found');return;}
     if(!confirm(`Remove all ${count} unlinked symptom entries? This cannot be undone.`)) return;
-    S.symptoms=S.symptoms.filter(e=>e.chemoId);
+    S.symptoms=S.symptoms.filter(e=>e.chemoId||e.type==='bowel');
   } else {
     count=S.symptoms.filter(e=>String(e.chemoId)===String(val)).length;
     if(!count){toast('No entries found for this session');return;}
     const cs=S.chemoSessions.find(s=>String(s.id)===String(val));
     const lbl=cs?`Cycle ${cs.cycle} · Session ${cs.session}`:'this session';
     if(!confirm(`Remove all ${count} symptom entries for ${lbl}? This cannot be undone.`)) return;
-    S.symptoms=S.symptoms.filter(e=>String(e.chemoId)!==String(val));
+    S.symptoms=S.symptoms.filter(e=>e.type==='bowel'||String(e.chemoId)!==String(val));
   }
   renderSymHist();
   toast(`🗑 ${count} symptom entries removed`);
@@ -3593,6 +3656,8 @@ function bulkDeleteSymBySession(){
 }
 function deleteSymEntry(entryId, fallbackIdx){
   if(!confirm('Remove this symptom entry?')) return;
+  const _tgt=S.symptoms.find(e=>String(e.id)===String(entryId))||S.symptoms[fallbackIdx];
+  if(_tgt&&_tgt.type==='bowel'){deleteBowelEntry(_tgt.date);return;}
   // try by id first, fallback to index
   const byId = S.symptoms.findIndex(e=>String(e.id)===String(entryId));
   if(byId>=0){
@@ -3626,12 +3691,37 @@ function renderSymHist(){
   if(!S.symptoms.length){el.innerHTML='<div class="empty"><span class="emoji">📊</span>No history yet</div>';return;}
   const lbs={nausea:'🤢 Nausea',fatigue:'😴 Fatigue',pain:'🩹 Pain',mood:'😊 Mood',appetite:'🍽️ Appetite'};
   el.innerHTML=S.symptoms.map((e,i)=>{
+    const entryId=e.id!=null?e.id:i;
+    // ── Bowel entry card ──────────────────────────────────────
+    if(e.type==='bowel'){
+      const bIcons=['💧','🌊','✅','🪨','🚫'];
+      const bIcon=bIcons[e.bowelType]||'🚽';
+      const bLbl=e.bowelLabel||bowelLabels[e.bowelType]||'Bowel';
+      const bCnt=e.bowelCount||0;
+      const bCol=bowelColors[e.bowelType]||'var(--primary)';
+      return `<div style="padding:12px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:.78rem;font-weight:700;color:var(--muted)">${fmtDate(e.date)}</span>
+            <span style="font-size:.7rem;font-weight:700;background:#f3e8ff;color:#7c3aed;padding:2px 8px;border-radius:8px">🚽 Bowel</span>
+          </div>
+          <button onclick="deleteBowelEntry('${esc(e.date)}')" style="background:#fff0f0;border:1.5px solid #ffcdd2;color:#e53935;border-radius:8px;padding:3px 10px;font-size:.72rem;font-weight:700;cursor:pointer">🗑 Delete</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;padding:6px 10px;background:var(--surface2);border-radius:10px">
+          <span style="font-size:1.4rem">${bIcon}</span>
+          <div>
+            <div style="font-weight:700;font-size:.88rem;color:${bCol}">${esc(bLbl)}</div>
+            <div style="font-size:.74rem;color:var(--muted)">${bCnt} time${bCnt!==1?'s':''} today</div>
+          </div>
+        </div>
+      </div>`;
+    }
+    // ── Regular symptom card ──────────────────────────────────
     const bars=['nausea','fatigue','pain','mood','appetite'].map(k=>{
-      const v=e[k],pct=v*20,col=v<=2?'var(--success)':v===3?'#f0b429':'var(--warn)';
+      const v=e[k]||0,pct=v*20,col=v<=2?'var(--success)':v===3?'#f0b429':'var(--warn)';
       return `<div style="margin-bottom:5px"><div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-bottom:2px"><span>${lbs[k]}</span><span style="font-weight:700;color:${col}">${v}/5</span></div><div style="background:var(--surface2);border-radius:4px;height:5px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${col};border-radius:4px"></div></div></div>`;
     }).join('');
     const cs=e.chemoId?S.chemoSessions.find(s=>s.id===e.chemoId):null;
-    const entryId=e.id!=null?e.id:i;
     return `<div style="padding:12px 0;border-bottom:1px solid var(--border)">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
         <div style="display:flex;align-items:center;gap:8px">
@@ -3647,17 +3737,7 @@ function renderSymHist(){
   }).join('');
 
   // Bowel summary
-  if(typeof bowelLog!=='undefined' && bowelLog.length){
-    const recent=bowelLog.slice(0,7);
-    el.innerHTML += '<div style="margin-top:16px;padding:12px 14px;background:var(--surface2);border-radius:12px;border:1.5px solid var(--border)">'
-      +'<div style="font-weight:700;font-size:.88rem;color:var(--primary);margin-bottom:8px">🚽 Bowel Log — Last 7 Days</div>'
-      +recent.map(b=>'<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:.82rem">'
-        +'<span>'+fmtDate(b.date)+'</span>'
-        +'<span style="color:'+(bowelColors[b.type]||'var(--text)')+';font-weight:600">'+(bowelLabels[b.type]||'—')+'</span>'
-        +'<span style="color:var(--muted)">'+(b.count||0)+' time'+((b.count||0)!==1?'s':'')+'</span>'
-        +'</div>').join('')
-      +'</div>';
-  }
+  /* bowelLog block removed v70 */
 }
 function updBowelSlider(v){
   selectedBowel=+v;
@@ -3671,16 +3751,24 @@ function updBowelSlider(v){
 
 function renderBowelHistory(){
   const el=document.getElementById('bowelHistory');if(!el)return;
-  // v63: read from S.notes
-  const bwNotes=(S.notes||[]).filter(function(n){return n.note&&n.note.startsWith('🚽');}).slice(0,5);
-  if(!bwNotes.length){el.innerHTML='';return;}
+  // Read from unified S.symptoms type:'bowel'
+  const bwEntries=(S.symptoms||[]).filter(function(e){return e.type==='bowel';})
+    .sort(function(a,b){return b.date.localeCompare(a.date);}).slice(0,7);
+  if(!bwEntries.length){el.innerHTML='';return;}
   el.innerHTML='<div style="font-size:.78rem;font-weight:700;color:var(--muted);margin-bottom:6px">Recent Logs</div>'+
-  bwNotes.map(function(n){
-    const parts=(n.note||'').replace('🚽 Bowel — ','').split(' · ');
-    const icon=parts[0]?parts[0].split(' ')[0]:'🚽';
-    const safeDate=String(n.date||'');
-    return `<div style="display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:1.3rem">${icon}</span><div style="flex:1"><div style="font-weight:700;font-size:.86rem">${parts[0]}</div><div style="font-size:.74rem;color:var(--muted)">${fmtDate(n.date)} · ${parts[1]||''}</div></div><button onclick="deleteBowelEntry('${safeDate}')" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:1rem;padding:2px 6px;">🗑️</button></div>`;
-  }).join('');
+    bwEntries.map(function(e){
+      const icon=bowelColors[e.bowelType]?'<span style="font-size:1.3rem">'+(['💧','🌊','✅','🪨','🚫'][e.bowelType]||'🚽')+'</span>':'<span>🚽</span>';
+      const lbl=e.bowelLabel||bowelLabels[e.bowelType]||'Bowel';
+      const cnt=e.bowelCount||0;
+      return '<div style="display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--border)">'+
+        icon+
+        '<div style="flex:1">'+
+          '<div style="font-weight:700;font-size:.86rem">'+lbl+'</div>'+
+          '<div style="font-size:.74rem;color:var(--muted)">'+fmtDate(e.date)+' &middot; '+cnt+' time'+(cnt!==1?'s':'')+'</div>'+
+        '</div>'+
+        '<button onclick="deleteBowelEntry(\'' + e.date + '\')" style="background:none;border:none;color:#e74c3c;cursor:pointer;font-size:1rem;padding:2px 6px">🗑</button>'+
+      '</div>';
+    }).join('');
 }
 
 
@@ -3818,7 +3906,7 @@ function saveNote(){
     var nd=new Date();
     var nDate=nd.getFullYear()+'-'+String(nd.getMonth()+1).padStart(2,'0')+'-'+String(nd.getDate()).padStart(2,'0');
     S.notes.unshift({id:Date.now(),date:nDate,email:'user@anbucare',note:txt});
-    try{localStorage.removeItem('anbucare_notes');}catch(ex){} // Sheets is source of truth
+    try{_LS.removeItem('anbucare_notes');}catch(ex){} // Sheets is source of truth
     renderNotes(); renderAllNotes(); updateTextNoteBanner();
   try{renderFlashCards();}catch(_re){} try{renderNext3Strip();}catch(_re){} try{renderOverdue();}catch(_re){}
     if(btn){btn.disabled=false; btn.textContent='💾 Save Note';}
@@ -3830,7 +3918,7 @@ function saveNote(){
 
 function deleteNote(id){
   S.notes=S.notes.filter(function(n){return n.id!==id;});
-  try{localStorage.setItem('anbucare_notes',JSON.stringify(S.notes));}catch(ex){}
+  try{_LS.setItem('anbucare_notes',JSON.stringify(S.notes));}catch(ex){}
   renderNotes();renderAllNotes();updateTextNoteBanner();saveNow();toast('🗑 Note deleted');
 }
 function deleteVoiceNote(id){
@@ -3846,7 +3934,7 @@ function deleteNoteByContent(noteText){
   if(!confirm('Delete this note?')) return;
   var idx=S.notes.findIndex(function(n){return (n.note||'')=== noteText;});
   if(idx!==-1) S.notes.splice(idx,1);
-  try{localStorage.setItem('anbucare_notes',JSON.stringify(S.notes));}catch(ex){}
+  try{_LS.setItem('anbucare_notes',JSON.stringify(S.notes));}catch(ex){}
   renderNotes();renderAllNotes();saveNow();toast('🗑 Note deleted');
 }
 function noteHTML(n){
@@ -4126,7 +4214,7 @@ function downloadVoice(){
 
 function uploadVoice(){
   if(!window._voiceBlob){toast('⚠️ No recording ready');return;}
-  const url = (localStorage.getItem('anbucare_url')||GAS_URL);
+  const url = (_LS.getItem('anbucare_url')||GAS_URL);
   if(!url){
     // MOCK SAVE — for testing without a real Drive endpoint
     S.voiceNotes.unshift({
@@ -4167,7 +4255,7 @@ function uploadVoice(){
       date:     today,
       note:     noteText,
       email:    'caregiver@anbucare',
-      sheetId:  localStorage.getItem('anbucare_sid')||''
+      sheetId:  _LS.getItem('anbucare_sid')||''
     });
 
     fetch(url, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:payload})
@@ -4207,9 +4295,9 @@ function uploadVoice(){
 }
 
 function callGAS(payload){
-  const url=(localStorage.getItem('anbucare_url')||GAS_URL);
+  const url=(_LS.getItem('anbucare_url')||GAS_URL);
   if(!url) return Promise.resolve({success:false,error:'No GAS URL configured'});
-  payload.sheetId = localStorage.getItem('anbucare_sid')||'';
+  payload.sheetId = _LS.getItem('anbucare_sid')||'';
   return fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(payload),redirect:'follow'}).then(r=>r.json()).catch(e=>({success:false,error:String(e)}));
 }
 
@@ -4649,8 +4737,8 @@ function syncToCalendar(btn){
     toast('⚠️ No upcoming events to sync'); btn.disabled=false; btn.textContent='📅 Sync to Calendar'; return;
   }
 
-  var url=(localStorage.getItem('anbucare_url')||GAS_URL);
-  var calId=localStorage.getItem('anbucare_cal_id')||'';
+  var url=(_LS.getItem('anbucare_url')||GAS_URL);
+  var calId=_LS.getItem('anbucare_cal_id')||'';
 
   if(url){
     fetch(url,{method:'POST',
@@ -5595,13 +5683,13 @@ function generatePDF(){ downloadPDFReport(); }
 
 
 function loadConn(){
-  const url=(localStorage.getItem('anbucare_url')||GAS_URL);
+  const url=(_LS.getItem('anbucare_url')||GAS_URL);
   const dot=document.getElementById('connDot'),mdot=document.getElementById('modalDot'),lbl=document.getElementById('connLabel'),st=document.getElementById('connStatusText');
-  if(url){dot?.classList.add('live');mdot?.classList.add('live');if(lbl)lbl.textContent='✅ Connected';if(st)st.textContent='✅ Connected';document.getElementById('scriptUrl').value=url;const sid=localStorage.getItem('anbucare_sid');if(sid)document.getElementById('sheetId').value=sid;}
+  if(url){dot?.classList.add('live');mdot?.classList.add('live');if(lbl)lbl.textContent='✅ Connected';if(st)st.textContent='✅ Connected';document.getElementById('scriptUrl').value=url;const sid=_LS.getItem('anbucare_sid');if(sid)document.getElementById('sheetId').value=sid;}
   else{dot?.classList.remove('live');mdot?.classList.remove('live');if(lbl)lbl.textContent='🔗 Connect to Google Apps Script';if(st)st.textContent='Not connected';}
 }
-function saveConn(){const url=document.getElementById('scriptUrl').value.trim();if(!url){toast('⚠️ Paste your Apps Script URL');return;}localStorage.setItem('anbucare_url',url);const sid=document.getElementById('sheetId').value.trim();if(sid)localStorage.setItem('anbucare_sid',sid);loadConn();closeModal('connectModal');toast('✅ Connected — loading data…');loadFromSheets();}
-function clearConn(){localStorage.removeItem('anbucare_url');localStorage.removeItem('anbucare_sid');document.getElementById('scriptUrl').value='';document.getElementById('sheetId').value='';loadConn();toast('🗑️ Cleared');}
+function saveConn(){const url=document.getElementById('scriptUrl').value.trim();if(!url){toast('⚠️ Paste your Apps Script URL');return;}_LS.setItem('anbucare_url',url);const sid=document.getElementById('sheetId').value.trim();if(sid)_LS.setItem('anbucare_sid',sid);loadConn();closeModal('connectModal');toast('✅ Connected — loading data…');loadFromSheets();}
+function clearConn(){_LS.removeItem('anbucare_url');_LS.removeItem('anbucare_sid');document.getElementById('scriptUrl').value='';document.getElementById('sheetId').value='';loadConn();toast('🗑️ Cleared');}
 
 // ═══════════════════════════════════════════
 // ADD MODAL
@@ -5671,7 +5759,7 @@ function fmtDate(s){if(!s)return'';const p=String(s).substring(0,10).split('-');
     _ch.onmessage=function(e){
       if(e.data&&e.data.type==='data_updated'){
         try{
-          var f=localStorage.getItem('anbucare_data');
+          var f=_LS.getItem('anbucare_data');
           if(f){var p=JSON.parse(f);
             if(p&&p.savedAt!==(S.savedAt||'')){
               Object.assign(S,p);
