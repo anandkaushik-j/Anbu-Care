@@ -573,6 +573,36 @@ input:checked+.tslider::before{transform:translateX(20px)}
 .sos-modal-note{font-size:.83rem;color:var(--text);margin-top:8px;background:#fffbeb;border-radius:8px;padding:7px 10px;border-left:3px solid #d97706}
 .fc-dot-done{background:rgba(255,255,255,.95)!important;box-shadow:0 0 0 2px #4ade80!important;}
 .fc-dot-skip{background:rgba(255,255,255,.4)!important;box-shadow:0 0 0 2px #fbbf24!important;}
+
+  /* ⚡ v73 Neuropathy Watch ───────────────────────────── */
+  .neuro-hdr{display:flex;align-items:center;justify-content:space-between;
+    padding:10px 0 8px;cursor:pointer;user-select:none;-webkit-user-select:none;}
+  .neuro-hdr-title{font-size:.92rem;font-weight:800;color:#5A4090;
+    display:flex;align-items:center;gap:7px;}
+  .neuro-badge{font-size:.62rem;background:#EDE7F6;color:#5A4090;
+    padding:2px 8px;border-radius:10px;font-weight:800;letter-spacing:.3px;}
+  .neuro-toggle{font-size:.76rem;color:#999;white-space:nowrap;}
+  .neuro-loc-box{background:#F3EEF9;border:1.5px solid #D1C4E9;
+    border-radius:12px;padding:10px 12px;margin-bottom:13px;}
+  .neuro-loc-title{font-size:.72rem;font-weight:800;color:#7B5EA7;
+    text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px;}
+  .neuro-loc-chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .neuro-lchip{padding:6px 14px;background:#fff;border-radius:20px;
+    font-size:.8rem;font-weight:700;color:#7B5EA7;cursor:pointer;
+    border:1.5px solid #D1C4E9;transition:all .15s;-webkit-tap-highlight-color:transparent;}
+  .neuro-lchip.sel{background:#7B5EA7;color:#fff;border-color:#5A4090;}
+  .neuro-sym-div{border:none;border-top:1px dashed #E8E0F4;margin:4px 0 11px;}
+  .neuro-signs-lbl{font-size:.72rem;font-weight:800;color:#7B5EA7;
+    text-transform:uppercase;letter-spacing:.7px;margin:8px 0 6px;}
+  #neuroBody .sym-btn.active{border-color:#5A4090!important;background:#EDE7F6!important;}
+  #neuroBody .sym-btn.active .sbl{color:#4A148C!important;}
+  .neuro-hist-row{display:flex;flex-wrap:wrap;align-items:center;gap:5px;
+    margin-top:6px;padding:5px 10px;background:#EDE7F6;border-radius:8px;font-size:.75rem;}
+  .neuro-hist-lbl{font-weight:800;color:#5A4090;}
+  .neuro-hist-val{color:#444;}
+  .neuro-hist-chip{background:#D1C4E9;color:#4A148C;border-radius:7px;
+    padding:1px 7px;font-size:.68rem;font-weight:700;}
+  /* ── end v73 neuro ────────────────────────────────────── */
 </style>
 </head>
 <body>
@@ -994,7 +1024,110 @@ input:checked+.tslider::before{transform:translateX(20px)}
               <button class="sym-btn" data-v="5" onclick="symTap('A',5)"><span class="sbe">🚫</span><span class="sbl">None</span></button>
             </div>
           </div>
-          <div class="divider"></div>
+          
+          <!-- ⚡ v73 NEUROPATHY WATCH ─────────────────────────── -->
+          <div class="neuro-hdr" onclick="toggleNeuroWatch()">
+            <div class="neuro-hdr-title">
+              ⚡ Neuropathy Watch
+              <span class="neuro-badge">NEW</span>
+            </div>
+            <span class="neuro-toggle" id="neuroToggle">▼ tap to expand</span>
+          </div>
+          <div id="neuroBody" style="display:none">
+
+            <!-- ① LOCATION on top -->
+            <div class="neuro-loc-box">
+              <div class="neuro-loc-title">📍 Where do you feel it?</div>
+              <div class="neuro-loc-chips" id="neuroLocChips">
+                <span class="neuro-lchip" onclick="this.classList.toggle('sel')">🖐 Hands</span>
+                <span class="neuro-lchip" onclick="this.classList.toggle('sel')">🦶 Feet</span>
+                <span class="neuro-lchip" onclick="this.classList.toggle('sel')">💪 Arms</span>
+                <span class="neuro-lchip" onclick="this.classList.toggle('sel')">🦵 Legs</span>
+                <span class="neuro-lchip" onclick="this.classList.toggle('sel')">🔄 All over</span>
+              </div>
+            </div>
+
+            <!-- ② TINGLING -->
+            <div class="sym-row">
+              <div class="sym-label">
+                <span>🤺 Tingling / Pins &amp; Needles</span>
+                <span class="sym-val v1" id="vNT"></span>
+              </div>
+              <input type="hidden" id="sNT" value="1">
+              <div class="sym-btn-grp" id="sgNT">
+                <button class="sym-btn active" data-v="1" onclick="symTap('NT',1)"><span class="sbe">✅</span><span class="sbl">None</span></button>
+                <button class="sym-btn" data-v="2" onclick="symTap('NT',2)"><span class="sbe">🟡</span><span class="sbl">Mild</span></button>
+                <button class="sym-btn" data-v="3" onclick="symTap('NT',3)"><span class="sbe">🟠</span><span class="sbl">Mod.</span></button>
+                <button class="sym-btn" data-v="4" onclick="symTap('NT',4)"><span class="sbe">🔴</span><span class="sbl">High</span></button>
+                <button class="sym-btn" data-v="5" onclick="symTap('NT',5)"><span class="sbe">🆘</span><span class="sbl">Severe</span></button>
+              </div>
+            </div>
+            <hr class="neuro-sym-div">
+
+            <!-- ③ NUMBNESS -->
+            <div class="sym-row">
+              <div class="sym-label">
+                <span>😶 Numbness</span>
+                <span class="sym-val v1" id="vNN"></span>
+              </div>
+              <input type="hidden" id="sNN" value="1">
+              <div class="sym-btn-grp" id="sgNN">
+                <button class="sym-btn active" data-v="1" onclick="symTap('NN',1)"><span class="sbe">✅</span><span class="sbl">None</span></button>
+                <button class="sym-btn" data-v="2" onclick="symTap('NN',2)"><span class="sbe">🟡</span><span class="sbl">Mild</span></button>
+                <button class="sym-btn" data-v="3" onclick="symTap('NN',3)"><span class="sbe">🟠</span><span class="sbl">Mod.</span></button>
+                <button class="sym-btn" data-v="4" onclick="symTap('NN',4)"><span class="sbe">🔴</span><span class="sbl">High</span></button>
+                <button class="sym-btn" data-v="5" onclick="symTap('NN',5)"><span class="sbe">🆘</span><span class="sbl">Severe</span></button>
+              </div>
+            </div>
+            <hr class="neuro-sym-div">
+
+            <!-- ④ BURNING -->
+            <div class="sym-row">
+              <div class="sym-label">
+                <span>🔥 Burning Sensation</span>
+                <span class="sym-val v1" id="vNB"></span>
+              </div>
+              <input type="hidden" id="sNB" value="1">
+              <div class="sym-btn-grp" id="sgNB">
+                <button class="sym-btn active" data-v="1" onclick="symTap('NB',1)"><span class="sbe">✅</span><span class="sbl">None</span></button>
+                <button class="sym-btn" data-v="2" onclick="symTap('NB',2)"><span class="sbe">🟡</span><span class="sbl">Mild</span></button>
+                <button class="sym-btn" data-v="3" onclick="symTap('NB',3)"><span class="sbe">🟠</span><span class="sbl">Mod.</span></button>
+                <button class="sym-btn" data-v="4" onclick="symTap('NB',4)"><span class="sbe">🔴</span><span class="sbl">High</span></button>
+                <button class="sym-btn" data-v="5" onclick="symTap('NB',5)"><span class="sbe">🆘</span><span class="sbl">Severe</span></button>
+              </div>
+            </div>
+            <hr class="neuro-sym-div">
+
+            <!-- ⑤ BALANCE / WEAKNESS -->
+            <div class="sym-row">
+              <div class="sym-label">
+                <span>🚶 Balance / Weakness</span>
+                <span class="sym-val v1" id="vNW"></span>
+              </div>
+              <input type="hidden" id="sNW" value="1">
+              <div class="sym-btn-grp" id="sgNW">
+                <button class="sym-btn active" data-v="1" onclick="symTap('NW',1)"><span class="sbe">🟢</span><span class="sbl">Normal</span></button>
+                <button class="sym-btn" data-v="2" onclick="symTap('NW',2)"><span class="sbe">🟡</span><span class="sbl">Slight</span></button>
+                <button class="sym-btn" data-v="3" onclick="symTap('NW',3)"><span class="sbe">🟠</span><span class="sbl">Mod.</span></button>
+                <button class="sym-btn" data-v="4" onclick="symTap('NW',4)"><span class="sbe">🔴</span><span class="sbl">Poor</span></button>
+                <button class="sym-btn" data-v="5" onclick="symTap('NW',5)"><span class="sbe">🆘</span><span class="sbl">Critical</span></button>
+              </div>
+            </div>
+            <hr class="neuro-sym-div">
+
+            <!-- ⑥ ADDITIONAL SIGNS chips -->
+            <div class="neuro-signs-lbl">Additional Signs</div>
+            <div class="chip-row" id="neuroSignChips">
+              <div class="chip" onclick="this.classList.toggle('sel')">⚡ Cramps</div>
+              <div class="chip" onclick="this.classList.toggle('sel')">🌡 Skin Sensitivity</div>
+              <div class="chip" onclick="this.classList.toggle('sel')">💪 Muscle Weakness</div>
+              <div class="chip" onclick="this.classList.toggle('sel')">🥵 Sweating / Chills</div>
+              <div class="chip" onclick="this.classList.toggle('sel')">🚻 Bladder Issues</div>
+            </div>
+
+          </div><!-- /neuroBody -->
+          <!-- ──────────────────────────────────────────────────── -->
+<div class="divider"></div>
           <div class="form-label" style="margin-bottom:8px">Also experiencing:</div>
           <div class="chip-row" id="extraChips">
             <div class="chip" onclick="this.classList.toggle('sel')">💧 Dry mouth</div>
@@ -3566,7 +3699,7 @@ function updSym(k,v){
   if(inp)inp.value=v;
 }
 function _saveSymInternal(){
-  const entry={id:S.nextId++,date:today,session:symSession,nausea:+document.getElementById('sN').value,fatigue:+document.getElementById('sF').value,pain:+document.getElementById('sP').value,mood:+document.getElementById('sM').value,appetite:+document.getElementById('sA').value,extras:chips('extraChips'),notes:document.getElementById('symNotes').value,chemoId:S.chemoSessions.length?S.chemoSessions[S.chemoSessions.length-1].id:null};
+  const entry={id:S.nextId++,date:today,session:symSession,nausea:+document.getElementById('sN').value,fatigue:+document.getElementById('sF').value,pain:+document.getElementById('sP').value,mood:+document.getElementById('sM').value,appetite:+document.getElementById('sA').value,extras:chips('extraChips'),notes:document.getElementById('symNotes').value,chemoId:S.chemoSessions.length?S.chemoSessions[S.chemoSessions.length-1].id:null,nTingling:+(document.getElementById('sNT')||{value:1}).value,nNumbness:+(document.getElementById('sNN')||{value:1}).value,nBurning:+(document.getElementById('sNB')||{value:1}).value,nBalance:+(document.getElementById('sNW')||{value:1}).value,nLocation:Array.from(document.querySelectorAll('#neuroLocChips .neuro-lchip.sel')).map(function(c){return c.textContent.trim();}),nSigns:chips('neuroSignChips')};
   S.symptoms.unshift(entry);
   const ex=entry.extras.length?' | Also: '+entry.extras.join(', '):'';
   S.notes.unshift({id:Date.now(),date:today,email:'patient@anbucare',type:'auto',note:`📊 Symptoms — Nausea:${entry.nausea} | Fatigue:${entry.fatigue} | Pain:${entry.pain} | Mood:${entry.mood} | Appetite:${entry.appetite}${ex}`});
@@ -3632,7 +3765,7 @@ function saveAllLog(){
     try{_saveSymInternal();}catch(e){toast('⚠️ Symptom save error: '+e.message);}
     try{_saveBowelInternal();}catch(e){toast('⚠️ Bowel save error: '+e.message);}
     btn.disabled=false;btn.textContent='💾 Save Daily Log';
-    toast('✅ Daily log saved!');saveNow();
+    toast('✅ Daily log saved!');saveNow();try{resetNeuroWatch();}catch(_e){}
   try{renderFlashCards();}catch(_re){} try{renderNext3Strip();}catch(_re){} try{renderOverdue();}catch(_re){}
   },500);
 }
@@ -3744,6 +3877,18 @@ function renderSymHist(){
       ${bars}
       ${e.extras&&e.extras.length?`<div style="font-size:.74rem;color:var(--warn);margin-top:3px">⚡ ${e.extras.join(' · ')}</div>`:''}
       ${e.notes?`<div style="font-size:.75rem;color:var(--muted);margin-top:2px">💬 ${esc(e.notes)}</div>`:''}
+${(()=>{
+  const nt=(e.nTingling||1),nn=(e.nNumbness||1),nb=(e.nBurning||1),nw=(e.nBalance||1);
+  if(nt+nn+nb+nw<=4) return '';
+  const parts=[];
+  if(nt>1)parts.push('Tingling '+nt+'/5');
+  if(nn>1)parts.push('Numbness '+nn+'/5');
+  if(nb>1)parts.push('Burning '+nb+'/5');
+  if(nw>1)parts.push('Balance '+nw+'/5');
+  const locs=(e.nLocation||[]).map(l=>'<span class="neuro-hist-chip">'+esc(l)+'</span>').join('');
+  const signs=(e.nSigns||[]).map(s=>'<span class="neuro-hist-chip">'+esc(s)+'</span>').join('');
+  return '<div class="neuro-hist-row"><span class="neuro-hist-lbl">⚡</span><span class="neuro-hist-val">'+parts.join(' · ')+'</span>'+locs+signs+'</div>';
+})()}
     </div>`;
   }).join('');
 
@@ -5799,6 +5944,36 @@ function fmtDate(s){if(!s)return'';const p=String(s).substring(0,10).split('-');
   } else { _startPoll(); }
 })();
 
+
+/* ⚡ v73 Neuropathy Watch JS ─────────────────────────────────── */
+function toggleNeuroWatch(){
+  var b=document.getElementById('neuroBody');
+  var t=document.getElementById('neuroToggle');
+  if(!b)return;
+  if(b.style.display==='none'){
+    b.style.display='';
+    t.textContent='▲ collapse';
+  } else {
+    b.style.display='none';
+    t.textContent='▼ tap to expand';
+  }
+}
+function resetNeuroWatch(){
+  ['sNT','sNN','sNB','sNW'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el) el.value=1;
+  });
+  ['sgNT','sgNN','sgNB','sgNW'].forEach(function(gid){
+    var g=document.getElementById(gid);
+    if(!g) return;
+    g.querySelectorAll('.sym-btn').forEach(function(b,i){
+      b.classList.toggle('active', i===0);
+    });
+  });
+  document.querySelectorAll('#neuroLocChips .neuro-lchip, #neuroSignChips .chip')
+    .forEach(function(c){ c.classList.remove('sel'); });
+}
+/* ── end v73 neuro JS ──────────────────────────────────────────── */
 </script>
 
 <!-- ═══ FLASHCARD NEXT POPUP ═══ -->
