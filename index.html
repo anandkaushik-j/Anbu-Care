@@ -1907,8 +1907,15 @@ window.onload = async () => {
   document.getElementById('calendarIdInput')?.addEventListener('input',function(){_LS.setItem('anbucare_cal_id',this.value);});
   try{var _pc=_LS.getItem('anbucare_treatprofile');if(_pc){var _pp=JSON.parse(_pc);if(_pp&&_pp.name)S.treatmentProfile=_pp;}}catch(_pe){}
   fetchAffirmation();
-  await loadFromSheets(); // loads data then calls renderAll()
-  fetchAffirmation(); // re-run after data load to ensure affirmation is visible
+  // v74: only load from Sheets if session exists
+  if(typeof isLoggedIn==='function'&&isLoggedIn()){
+    await loadFromSheets();
+    fetchAffirmation();
+  }else{
+    try{loadFcState();}catch(_e){}
+    try{renderAll();}catch(_e){}
+    fetchAffirmation();
+  }
   setInterval(renderNext3Strip, 60000);
   setInterval(function(){try{renderFlashCards();}catch(_e){}},15*60*1000);
   // v52: background live-sync every 45 s — keeps all family devices in sync
@@ -1937,8 +1944,16 @@ function normalizeDiet(d){
   return d;
 }
 function normalizeSym(s){
-  if(typeof s.extras === 'string'){try{s.extras=JSON.parse(s.extras);}catch(e){s.extras=[];}}
-  if(!Array.isArray(s.extras)) s.extras=[];
+  if(typeof s.extras==='string'){try{s.extras=JSON.parse(s.extras);}catch(e){s.extras=[];}}
+  if(!Array.isArray(s.extras))s.extras=[];
+  // v74: normalise neuropathy array & numeric fields from Sheets
+  if(typeof s.nLocation==='string'){try{s.nLocation=JSON.parse(s.nLocation);}catch(e){s.nLocation=[];}}
+  if(!Array.isArray(s.nLocation))s.nLocation=[];
+  if(typeof s.nSigns==='string'){try{s.nSigns=JSON.parse(s.nSigns);}catch(e){s.nSigns=[];}}
+  if(!Array.isArray(s.nSigns))s.nSigns=[];
+  ['nTingling','nNumbness','nBurning','nBalance'].forEach(function(k){
+    if(!s[k]||isNaN(+s[k]))s[k]=1;
+  });
   return s;
 }
 function fixSheetTime(t){
@@ -6030,6 +6045,9 @@ function resetNeuroWatch(){
   </div>
 </div>
 
+
+
+
 <!-- ═══════════════════════════════════════════════════════════
      AnbuCare — Auth Layer FINAL (clean inject before </body>)
      Fixes: click-blocking overlay, badge styling, login gate
@@ -6305,16 +6323,20 @@ window.fetch=async function(url,opts){
   return res;
 };
 // Guards
-(function(){var o=window.saveNow;window.saveNow=function(){if(!isLoggedIn()){if(typeof toast==='function')toast('⚠️ Login required to save');lcOpenLogin();return;}return o&&o.apply(this,arguments);};})();
-(function(){var o=window._bgSync;window._bgSync=async function(){if(!isLoggedIn())return;try{return await o.apply(this,arguments);}catch(e){if(String(e).indexOf('syncCooldownUntil')!==-1)return;throw e;}};})();
+(function(){var o=window.saveNow;window.saveNow=function(){if(!isLoggedIn()){return;}return o&&o.apply(this,arguments);};})();
+(function(){var o=window._bgSync;window._bgSync=async function(){if(!isLoggedIn())return;try{return await o.apply(this,arguments);}catch(e){return;}};})();
 // Init — always show login if not logged in
 document.addEventListener('DOMContentLoaded',function(){
   _lcInjectBadge();updateLoginBadge();
-  setTimeout(function(){if(!isLoggedIn())lcOpenLogin();},800);
+  // loginScreen starts open in HTML — close it only if already logged in
+  if(isLoggedIn()){lcCloseLogin();}
+  // Set date in header
+  var d=document.getElementById('lcDateStr');
+  if(d){var n=new Date();d.textContent=n.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'});}
 });
 window.addEventListener('load',function(){
   _lcInjectBadge();updateLoginBadge();
-  setTimeout(function(){var s=document.getElementById('loginScreen');if(!isLoggedIn()&&s&&!s.classList.contains('open'))lcOpenLogin();},1200);
+  if(isLoggedIn()){lcCloseLogin();}
 });
 })();
 </script>
