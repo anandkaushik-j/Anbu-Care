@@ -4990,7 +4990,583 @@ function previewReport(){
         border-radius:2px;padding:20px 22px 26px;page-break-after:always;
         font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#2c3e2d;}
     </style>
-  </head><body><div class="page-wrap">${pdfHtml}</div></body></html>`;
+  </head><body><div class="page-wrap">${pdfHtml}</div><!-- ═══════════════════════════════════════════════════════════
+     AnbuCare v73 — AUTH PATCH v3 (5 Members, Brand-Matched)
+     Paste this entire block just before </body>
+     No other HTML changes needed.
+     ═══════════════════════════════════════════════════════════ -->
+
+<style>
+/* ── Import fonts (same as app) ── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Libre+Baskerville:wght@400;700&display=swap');
+
+/* ── Login full-screen overlay ── */
+#loginScreen {
+  display: none;
+  position: fixed; inset: 0; z-index: 500;
+  background: #FAF9F6;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0);
+}
+#loginScreen.open { display: flex; }
+
+/* ── Login card ── */
+.lc-wrap {
+  width: 100%; max-width: 420px;
+  min-height: 100svh;
+  display: flex; flex-direction: column;
+  padding: 0 0 32px;
+}
+
+/* ── Brand header (mirrors app header exactly) ── */
+.lc-header {
+  background: #FFFFFF;
+  border-bottom: 2px solid #E8E4DE;
+  padding: calc(16px + env(safe-area-inset-top,0px)) 18px 14px;
+  display: flex; align-items: center; justify-content: space-between;
+  box-shadow: 0 6px 30px rgba(100,120,100,.16);
+  position: sticky; top: 0; z-index: 10;
+}
+.lc-brand { display: flex; align-items: center; gap: 9px; }
+.lc-logo  { font-size: 1.9rem; line-height: 1; }
+.lc-title {
+  font-family: 'Libre Baskerville', Georgia, serif;
+  font-size: 1.25rem; font-weight: 700;
+  color: #C0714F; letter-spacing: .01em;
+}
+.lc-date  { font-size: .72rem; color: #6B7C6E; margin-top: 1px; }
+.lc-badge {
+  background: #F0EDE8; border: 1.5px solid #D9D4CC;
+  color: #6B7C6E; border-radius: 22px;
+  padding: 0 12px; height: 38px;
+  font-size: .78rem; font-weight: 700;
+  display: flex; align-items: center; gap: 5px;
+}
+
+/* ── Body ── */
+.lc-body {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; padding: 28px 20px 16px;
+  gap: 0;
+}
+
+/* ── Greeting card ── */
+.lc-greet {
+  width: 100%;
+  background: linear-gradient(135deg, #A8C5A0 0%, #7A9E7E 60%, #5A8A60 100%);
+  border-radius: 20px;
+  padding: 24px 22px 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 6px 28px rgba(122,158,126,.30);
+  text-align: center;
+  position: relative; overflow: hidden;
+}
+.lc-greet::before {
+  content: '❝';
+  position: absolute; right: 14px; top: 6px;
+  font-size: 4.5rem; opacity: .10; color: #fff;
+  line-height: 1; pointer-events: none;
+}
+.lc-greet-icon { font-size: 2.6rem; display: block; margin-bottom: 8px; }
+.lc-greet-title {
+  font-family: 'Libre Baskerville', Georgia, serif;
+  font-size: 1.2rem; font-weight: 700;
+  color: #fff; margin-bottom: 4px;
+  text-shadow: 0 1px 4px rgba(0,0,0,.18);
+}
+.lc-greet-sub {
+  font-size: .82rem; color: rgba(255,255,255,.88);
+  font-weight: 500; line-height: 1.5;
+}
+
+/* ── Form card ── */
+.lc-form {
+  width: 100%;
+  background: #FFFFFF;
+  border-radius: 20px;
+  padding: 22px 20px 20px;
+  box-shadow: 0 2px 14px rgba(100,120,100,.10);
+  border: 1.5px solid #E8E4DE;
+}
+
+.lc-form-label {
+  display: block;
+  font-size: .82rem; font-weight: 700;
+  color: #6B7C6E; margin-bottom: 6px;
+  text-transform: uppercase; letter-spacing: .5px;
+}
+
+/* Dropdown */
+.lc-select-wrap { position: relative; margin-bottom: 16px; }
+.lc-select-wrap::after {
+  content: '▾';
+  position: absolute; right: 16px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 1rem; color: #99A98F;
+  pointer-events: none;
+}
+#loginMemberSelect {
+  width: 100%;
+  padding: 0 48px 0 16px;
+  height: 54px;
+  border: 1.5px solid #D9D4CC;
+  border-radius: 14px;
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem; font-weight: 700;
+  color: #333; background: #FAF9F6;
+  appearance: none; -webkit-appearance: none;
+  cursor: pointer; outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+#loginMemberSelect:focus {
+  border-color: #7A9E7E;
+  box-shadow: 0 0 0 3px rgba(122,158,126,.18);
+}
+#loginMemberSelect option { font-size: 1rem; padding: 12px; }
+
+/* PIN input */
+.lc-pin-wrap { position: relative; margin-bottom: 16px; }
+#loginPinInput {
+  width: 100%; height: 54px;
+  padding: 0 52px 0 16px;
+  border: 1.5px solid #D9D4CC; border-radius: 14px;
+  font-family: 'Inter', sans-serif;
+  font-size: 1.1rem; font-weight: 700;
+  color: #333; background: #FAF9F6;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+  -webkit-appearance: none; appearance: none;
+}
+#loginPinInput:focus {
+  border-color: #7A9E7E;
+  box-shadow: 0 0 0 3px rgba(122,158,126,.18);
+}
+.lc-eye {
+  position: absolute; right: 14px; top: 50%;
+  transform: translateY(-50%);
+  background: none; border: none;
+  font-size: 1.2rem; color: #99A98F;
+  cursor: pointer; padding: 6px;
+  -webkit-tap-highlight-color: transparent;
+  line-height: 1;
+}
+
+/* Error */
+.lc-err {
+  display: none;
+  background: #FDF2F2; color: #C0714F;
+  border: 1px solid #F2D9CF; border-radius: 12px;
+  padding: 10px 14px; font-size: .85rem;
+  font-weight: 700; margin-bottom: 14px;
+  text-align: center;
+}
+
+/* Login button — sage green, Libre Baskerville label */
+#loginSubmitBtn {
+  width: 100%; height: 54px;
+  background: linear-gradient(135deg, #7A9E7E, #5A8A60);
+  color: #fff; border: none; border-radius: 14px;
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem; font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(122,158,126,.38);
+  transition: all .18s;
+  -webkit-tap-highlight-color: transparent;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+#loginSubmitBtn:active   { transform: scale(.97); }
+#loginSubmitBtn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+/* Skip link */
+.lc-skip {
+  text-align: center; margin-top: 16px;
+  font-size: .8rem; color: #6B7C6E;
+  cursor: pointer; background: none; border: none;
+  width: 100%; padding: 6px;
+  font-family: 'Inter', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+.lc-skip:active { opacity: .6; }
+
+/* ── Logged-in header badge ── */
+#loginBadgeBtn {
+  background: #F0EDE8; border: 1.5px solid #D9D4CC;
+  color: #555; height: 42px; border-radius: 22px;
+  display: flex; align-items: center; gap: 6px;
+  padding: 0 14px; font-size: .82rem; font-weight: 700;
+  cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  font-family: 'Inter', sans-serif;
+  transition: all .18s;
+  -webkit-tap-highlight-color: transparent;
+}
+#loginBadgeBtn.logged-in {
+  background: #D8EDD9; border-color: #A8C5A0; color: #3A6B40;
+}
+
+/* ── Logout confirm ── */
+#logoutConfirm {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.48); z-index: 600;
+  align-items: flex-end; justify-content: center;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+#logoutConfirm.open { display: flex; }
+.lc-logout-box {
+  background: #FFFFFF; border-radius: 24px 24px 0 0;
+  padding: 24px 20px calc(28px + env(safe-area-inset-bottom,0));
+  width: 100%; max-width: 480px;
+  animation: slideUp .22s ease;
+  font-family: 'Inter', sans-serif;
+}
+.lc-logout-box h3 {
+  font-size: 1.05rem; font-weight: 800;
+  color: #333; margin-bottom: 6px; text-align: center;
+}
+.lc-logout-box p {
+  font-size: .88rem; color: #6B7C6E;
+  margin-bottom: 20px; text-align: center;
+}
+.lc-logout-btns { display: flex; gap: 10px; }
+.lc-logout-btns button {
+  flex: 1; height: 50px; border-radius: 14px;
+  font-size: .92rem; font-weight: 700; border: none; cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+.lc-lbtn-cancel  { background: #F0EDE8; color: #333; }
+.lc-lbtn-confirm { background: #C0714F; color: #fff; }
+</style>
+
+<!-- ── Full-screen login overlay ──────────────────────────── -->
+<div id="loginScreen">
+  <div class="lc-wrap">
+
+    <!-- Brand header — identical to app header -->
+    <div class="lc-header">
+      <div class="lc-brand">
+        <span class="lc-logo">🌸</span>
+        <div>
+          <div class="lc-title">AnbuCare</div>
+          <div class="lc-date" id="lcDateStr"></div>
+        </div>
+      </div>
+      <div class="lc-badge">🔒 Secure Login</div>
+    </div>
+
+    <div class="lc-body">
+
+      <!-- Greeting card -->
+      <div class="lc-greet">
+        <span class="lc-greet-icon">👨‍👩‍👧‍👦</span>
+        <div class="lc-greet-title">Welcome, Family</div>
+        <div class="lc-greet-sub">
+          Your care companion is ready.<br>
+          Please log in to view and update care data.
+        </div>
+      </div>
+
+      <!-- Form card -->
+      <div class="lc-form">
+
+        <label class="lc-form-label" for="loginMemberSelect">Who are you?</label>
+        <div class="lc-select-wrap">
+          <select id="loginMemberSelect" onchange="lcClearErr()">
+            <option value="">— Select your name —</option>
+            <option value="mom">👩&nbsp; Mom</option>
+            <option value="dad">👨&nbsp; Dad</option>
+            <option value="son">🧑&nbsp; Son</option>
+            <option value="daughter">👧&nbsp; Daughter</option>
+            <option value="soninlaw">🤵&nbsp; Son in Law</option>
+          </select>
+        </div>
+
+        <label class="lc-form-label" for="loginPinInput">Family PIN</label>
+        <div class="lc-pin-wrap">
+          <input type="password" id="loginPinInput"
+                 placeholder="Enter PIN"
+                 inputmode="numeric"
+                 autocomplete="current-password"
+                 onkeydown="if(event.key==='Enter')doLogin()"
+                 oninput="lcClearErr()">
+          <button class="lc-eye" onclick="lcToggleEye()" type="button"
+                  aria-label="Show or hide PIN">👁</button>
+        </div>
+
+        <div class="lc-err" id="loginErr"></div>
+
+        <button id="loginSubmitBtn" onclick="doLogin()" type="button">
+          🔓 Login
+        </button>
+
+        <button class="lc-skip" onclick="lcSkip()" type="button">
+          Continue without login (read‑only)
+        </button>
+
+      </div><!-- /lc-form -->
+    </div><!-- /lc-body -->
+  </div><!-- /lc-wrap -->
+</div><!-- /loginScreen -->
+
+<!-- ── Logout confirm sheet ───────────────────────────────── -->
+<div id="logoutConfirm">
+  <div class="lc-logout-box">
+    <h3>👋 Log out?</h3>
+    <p id="logoutConfirmText">Are you sure you want to log out?</p>
+    <div class="lc-logout-btns">
+      <button class="lc-lbtn-cancel"  onclick="lcCloseLogout()" type="button">Cancel</button>
+      <button class="lc-lbtn-confirm" onclick="lcConfirmLogout()" type="button">Log out</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  AnbuCare Auth Layer v3 — brand-matched, 5 members
+// ═══════════════════════════════════════════════════════════
+
+var ANBU_MEMBERS = [
+  { memberId:'mom',      name:'Mom',        emoji:'👩' },
+  { memberId:'dad',      name:'Dad',        emoji:'👨' },
+  { memberId:'son',      name:'Son',        emoji:'🧑' },
+  { memberId:'daughter', name:'Daughter',   emoji:'👧' },
+  { memberId:'soninlaw', name:'Son in Law', emoji:'🤵' }
+];
+
+// ── SHA-256 ───────────────────────────────────────────────
+async function sha256ForPin(pin) {
+  var buf = await crypto.subtle.digest('SHA-256',
+    new TextEncoder().encode(String(pin||'')));
+  return Array.from(new Uint8Array(buf))
+    .map(function(b){return('00'+b.toString(16)).slice(-2);}).join('');
+}
+
+// ── Session ───────────────────────────────────────────────
+var _AUTH_KEY = 'anbucare_session';
+function getAuthSession() {
+  try {
+    var s = JSON.parse(localStorage.getItem(_AUTH_KEY)||'null');
+    if(!s) return null;
+    if(Date.now() > Number(s.expiresAt||0)){localStorage.removeItem(_AUTH_KEY);return null;}
+    return s;
+  } catch(e){return null;}
+}
+function setAuthSession(s){try{localStorage.setItem(_AUTH_KEY,JSON.stringify(s));}catch(e){}}
+function clearAuthSession(){try{localStorage.removeItem(_AUTH_KEY);}catch(e){}}
+function getSessionToken(){var s=getAuthSession();return s?(s.sessionToken||''):'';}
+function isLoggedIn(){return !!getAuthSession();}
+
+// ── UI helpers ────────────────────────────────────────────
+function lcClearErr(){
+  var e=document.getElementById('loginErr');if(e)e.style.display='none';
+}
+function lcShowErr(msg){
+  var e=document.getElementById('loginErr');
+  if(e){e.textContent=msg;e.style.display='block';}
+}
+function lcToggleEye(){
+  var i=document.getElementById('loginPinInput');
+  if(i) i.type=(i.type==='password')?'text':'password';
+}
+function lcSkip(){
+  document.getElementById('loginScreen').classList.remove('open');
+}
+function lcOpenLogin(){
+  var s=document.getElementById('loginScreen');
+  if(s) s.classList.add('open');
+  // set date in header
+  var d=document.getElementById('lcDateStr');
+  if(d){
+    var now=new Date();
+    d.textContent=now.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'});
+  }
+}
+function lcCloseLogin(){
+  document.getElementById('loginScreen').classList.remove('open');
+}
+
+// ── Logout confirm ────────────────────────────────────────
+function lcShowLogout(){
+  var sess=getAuthSession();
+  var t=document.getElementById('logoutConfirmText');
+  if(t&&sess) t.textContent='Log out as '+(sess.memberName||sess.memberId)+'?';
+  var el=document.getElementById('logoutConfirm');
+  if(el) el.classList.add('open');
+}
+function lcCloseLogout(){
+  var el=document.getElementById('logoutConfirm');
+  if(el) el.classList.remove('open');
+}
+async function lcConfirmLogout(){
+  var tok=getSessionToken();
+  if(tok){
+    try{
+      var url=localStorage.getItem('anbucare_url')||(typeof GAS_URL!=='undefined'?GAS_URL:'');
+      if(url) await fetch(url,{
+        method:'POST',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body:JSON.stringify({action:'logout',sessionToken:tok}),
+        redirect:'follow'
+      });
+    }catch(_e){}
+  }
+  clearAuthSession();
+  lcCloseLogout();
+  updateLoginBadge();
+  setTimeout(lcOpenLogin, 320);
+}
+
+// ── doLogin ───────────────────────────────────────────────
+async function doLogin(){
+  var sel=document.getElementById('loginMemberSelect');
+  var pin=document.getElementById('loginPinInput');
+  var btn=document.getElementById('loginSubmitBtn');
+  var memberId=sel?sel.value:'';
+  var pinVal=pin?pin.value:'';
+
+  if(!memberId){lcShowErr('Please select your name first ☝️');return;}
+  if(!pinVal)  {lcShowErr('Please enter the family PIN 🔑');return;}
+
+  btn.disabled=true;
+  btn.innerHTML='⏳ Logging in…';
+  lcClearErr();
+
+  try{
+    var url=localStorage.getItem('anbucare_url')||(typeof GAS_URL!=='undefined'?GAS_URL:'');
+    if(!url) throw new Error('GAS URL not set. Open ⚙️ Settings first and connect your sheet.');
+
+    var resp=await fetch(url,{
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({action:'login',memberId:memberId,pin:pinVal}),
+      redirect:'follow'
+    });
+    var d=await resp.json();
+
+    if(d.success&&d.sessionToken){
+      setAuthSession({
+        memberId:d.memberId, memberName:d.memberName,
+        sessionToken:d.sessionToken,
+        expiresAt:d.expiresAt||(Date.now()+6*60*60*1000)
+      });
+      if(pin)  pin.value='';
+      if(sel)  sel.value='';
+      lcCloseLogin();
+      updateLoginBadge();
+      if(typeof loadFromSheets==='function'){
+        try{await loadFromSheets();}catch(_e){}
+      }
+    } else {
+      lcShowErr(d.error||'Incorrect PIN. Please try again. 🙏');
+    }
+  } catch(e){
+    lcShowErr(e.message||'Login failed. Check your internet connection.');
+  } finally{
+    btn.disabled=false;
+    btn.innerHTML='🔓 Login';
+  }
+}
+
+// ── Header badge ──────────────────────────────────────────
+function updateLoginBadge(){
+  var btn=document.getElementById('loginBadgeBtn');
+  if(!btn) return;
+  var sess=getAuthSession();
+  if(sess){
+    var m=ANBU_MEMBERS.find(function(x){return x.memberId===sess.memberId;});
+    var emoji=(m&&m.emoji)?m.emoji:'👤';
+    btn.classList.add('logged-in');
+    btn.innerHTML=emoji+' '+(sess.memberName||sess.memberId)
+      +' <span style="font-size:.7rem;opacity:.7">▾</span>';
+    btn.onclick=lcShowLogout;
+  } else {
+    btn.classList.remove('logged-in');
+    btn.innerHTML='🔒 Login';
+    btn.onclick=lcOpenLogin;
+  }
+}
+
+// ── Inject login badge into app header ────────────────────
+function _lcInjectBadge(){
+  if(document.getElementById('loginBadgeBtn')) return;
+  var hright=document.querySelector('.hright');
+  if(!hright) return;
+  var btn=document.createElement('button');
+  btn.id='loginBadgeBtn'; btn.className='hbtn';
+  btn.innerHTML='🔒 Login';
+  btn.onclick=lcOpenLogin;
+  btn.style.cssText='font-family:Inter,sans-serif';
+  hright.insertBefore(btn,hright.firstChild);
+}
+
+// ── Patch fetch → inject sessionToken + catch Unauthorized ─
+var _lcOrigFetch=window.fetch;
+var _LC_PROTECTED=['loadAll','saveAll','saveVoiceNote','getVoiceNote',
+                   'saveTreatmentProfile','loadTreatmentProfile','uploadVoice'];
+window.fetch=async function(url,opts){
+  try{
+    if(opts&&opts.body&&typeof opts.body==='string'){
+      var p=JSON.parse(opts.body);
+      var tok=getSessionToken();
+      if(tok&&!p.sessionToken&&p.action&&_LC_PROTECTED.indexOf(p.action)!==-1){
+        p.sessionToken=tok;
+        opts=Object.assign({},opts,{body:JSON.stringify(p)});
+      }
+    }
+  }catch(_e){}
+  var resp=await _lcOrigFetch.apply(this,[url,opts]);
+  var clone=resp.clone();
+  try{
+    var txt=await clone.text();
+    var d=JSON.parse(txt);
+    if(d&&d.error==='Unauthorized'){
+      clearAuthSession();updateLoginBadge();
+      if(typeof toast==='function') toast('⚠️ Session expired — please login again');
+      setTimeout(lcOpenLogin,600);
+      return new Response(JSON.stringify({success:false,error:'Unauthorized'}),
+        {status:200,headers:{'Content-Type':'application/json'}});
+    }
+  }catch(_e){}
+  return resp;
+};
+
+// ── Guard saves ───────────────────────────────────────────
+(function(){var o=window.saveNow;window.saveNow=function(){
+  if(!isLoggedIn()){if(typeof toast==='function')toast('⚠️ Login required to save');lcOpenLogin();return;}
+  return o&&o.apply(this,arguments);};})();
+
+(function(){var o=window.uploadVoice;window.uploadVoice=function(){
+  if(!isLoggedIn()){if(typeof toast==='function')toast('⚠️ Login required to upload');lcOpenLogin();return;}
+  return o&&o.apply(this,arguments);};})();
+
+// ── Fix _syncCooldownUntil ReferenceError ─────────────────
+(function(){var o=window._bgSync;window._bgSync=async function(){
+  if(!isLoggedIn()) return;
+  try{return await o.apply(this,arguments);}
+  catch(e){if(e&&e.message&&e.message.includes('syncCooldownUntil'))return;throw e;}
+};})();
+
+// ── Init ─────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',function(){
+  _lcInjectBadge();
+  updateLoginBadge();
+  setTimeout(function(){
+    if(!isLoggedIn()){
+      var url=localStorage.getItem('anbucare_url')||(typeof GAS_URL!=='undefined'?GAS_URL:'');
+      if(url) lcOpenLogin();
+    }
+  },900);
+});
+window.addEventListener('load',function(){
+  _lcInjectBadge();
+  updateLoginBadge();
+});
+</script>
+<!-- ═══ END AUTH PATCH v3 ═══ -->
+</body></html>`;
 
   /* Inject into iframe inside #reportPreview */
   const wrap=document.getElementById('reportPreview');
