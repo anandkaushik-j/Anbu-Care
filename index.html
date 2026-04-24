@@ -2,10 +2,8 @@
 <!DOCTYPE html>
 <html lang="en-IN">
 <head>
-<!-- .nojekyll -->
-<meta name="generator" content="AnbuCare-v78-static">
 <meta charset="UTF-8"/>
-<meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate"/><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"/>
+<meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate"/><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#1a237e"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
@@ -16,7 +14,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Libre+Baskerville:wght@400;700&display=swap" rel="stylesheet">
 <style>
-:root{
+:root{touch-action:manipulation;
   /* ── Ivory Healing Palette ── */
   --bg:#FAF9F6;--surface:#FFFFFF;--surface2:#F0EDE8;--surface3:#F7F5F2;
   --primary:#7A9E7E;--primary-l:#A8C5A0;--accent:#B5C9A4;
@@ -26,9 +24,13 @@
   --sage:#99A98F;--terracotta:#D68E70;--ochre:#E1AD01;--sand:#F4D03F;
   --radius:14px;--shadow:0 2px 14px rgba(100,120,100,.10);--shadow-lg:0 6px 30px rgba(100,120,100,.16);
 }
+
+/* v79 TOUCH FIX: ensure all interactive elements respond immediately */
+button,a,[onclick]{touch-action:manipulation;cursor:pointer;}
+.tab-btn,.hbtn,.btn,.red-cross-btn,.fab-btn,.fab-item{touch-action:manipulation !important;-webkit-tap-highlight-color:rgba(0,0,0,0.1) !important;}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:16px;-webkit-text-size-adjust:100%}
-body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.55;-webkit-tap-highlight-color:transparent;overflow-x:hidden}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.55;-webkit-tap-highlight-color:transparent;overflow-x:clip}
 button{cursor:pointer;border:none;font-family:inherit;font-size:16px;-webkit-tap-highlight-color:transparent}
 input,textarea,select{font-family:inherit;font-size:16px;-webkit-appearance:none}
 .app{max-width:100vw;margin:0 auto;padding:0 0 calc(100px + env(safe-area-inset-bottom))}
@@ -608,7 +610,6 @@ input:checked+.tslider::before{transform:translateX(20px)}
 </style>
 </head>
 <body>
-<noscript><div style="position:fixed;inset:0;z-index:99999;background:#fff;display:flex;align-items:center;justify-content:center;font-family:sans-serif;font-size:1.2rem;text-align:center;padding:20px;color:#C0714F;font-weight:700;">⚠️ JavaScript is disabled in your browser.<br>AnbuCare requires JavaScript.<br><br>Please enable JavaScript and reload.</div></noscript>
 <div id="anbu-ec-ov" style="display:none" onclick="if(event.target===this)anbuEcNo()">
   <div class="anbu-ec-box">
     <div class="anbu-ec-ico">&#x23F0;</div>
@@ -619,13 +620,13 @@ input:checked+.tslider::before{transform:translateX(20px)}
     <button class="anbu-ec-n" onclick="anbuEcNo()">&#8592;&nbsp; Wait, Go Back</button>
   </div>
 </div>
-<div id="errBanner" style="display:none;background:#c0392b;color:#fff;padding:14px;font-size:.9rem;font-weight:700;position:fixed;top:0;left:0;right:0;z-index:99999;text-align:center;cursor:pointer" onclick="this.style.display='none'"></div>
+<div id="errBanner" style="display:none;background:#c0392b;color:#fff;padding:10px 14px;font-size:.85rem;font-weight:700;position:fixed;top:0;left:0;right:0;z-index:9999;text-align:center"></div>
 <div class="app">
 
 <!-- HEADER -->
 <div class="header">
   <div class="hbrand">
-    <div><div class="htitle">AnbuCare</div><div style="font-size:10px;color:#999;line-height:1">v77</div><div class="hdate" id="hDate"></div><span id="syncBadge" title="Last synced from Sheets"></span></div>
+    <div><div class="htitle">AnbuCare</div><div class="hdate" id="hDate"></div><span id="syncBadge" title="Last synced from Sheets"></span></div>
     <button class="red-cross-btn" onclick="openModal('helplineModal')" title="Emergency">✚</button>
   </div>
   <div class="hright">
@@ -1657,23 +1658,6 @@ input:checked+.tslider::before{transform:translateX(20px)}
 <div id="printReport"></div>
 
 <script>
-// ═══ AnbuCare v78 SELF-TEST (fires immediately on script parse) ═══
-(function(){
-  try{
-    // 1. Mark that JS is running - visible proof
-    var v=document.createElement('div');
-    v.id='jsRunning';
-    v.style.cssText='position:fixed;bottom:8px;right:8px;background:#2e7d32;color:#fff;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;z-index:99998;pointer-events:none;';
-    v.textContent='JS ✓ v78';
-    document.addEventListener('DOMContentLoaded',function(){
-      document.body.appendChild(v);
-      // Remove after 5 seconds
-      setTimeout(function(){if(v.parentNode)v.parentNode.removeChild(v);},5000);
-    });
-  }catch(e){}
-})();
-
-
 // Safe _LS shim — tests window.localStorage (never self-references) v75
 var _LS = (function(){
   try{
@@ -1692,10 +1676,19 @@ var _LS = (function(){
 })();
 window._LS = _LS; // expose globally so auth IIFE block can access same store
 
+// v79: Eliminate 300ms touch delay without FastClick library
+document.addEventListener('touchstart', function(){}, {passive: true});
+// Polyfill: make all buttons respond to touchend immediately
+document.addEventListener('DOMContentLoaded', function(){
+  document.querySelectorAll('button, a, [onclick]').forEach(function(el){
+    el.style.touchAction = 'manipulation';
+  });
+});
+
 
 // ── Baked-in Google Apps Script URL (v44) ──────────────────────
 const GAS_URL='https://script.google.com/macros/s/AKfycbzTI47hg9Ljp5nvayGasEuyR9Sx1q7FZqHYkue5YFXrxaLhednLPcz-mKlbmSQdDvhiWw/exec';
-window.onerror=function(m,s,l,c,e){var b=document.getElementById('errBanner');if(b){b.textContent='⚠️ JS Error: '+m+' (line '+l+')';b.style.display='block';}return false;};if(b){b.textContent='JS Error: '+m+' (line '+l+')';b.style.display='block';}return false;};
+window.onerror=function(m,s,l){var b=document.getElementById('errBanner');if(b){b.textContent='JS Error: '+m+' (line '+l+')';b.style.display='block';}return false;};
 // ═══════════════════════════════════════════
 // DATA
 // ═══════════════════════════════════════════
