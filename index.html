@@ -6074,6 +6074,7 @@ function resetNeuroWatch(){
   padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0);
 }
 #loginScreen.open{ display:flex; pointer-events:auto; }
+@keyframes lcBadgePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.18);box-shadow:0 0 0 4px rgba(192,113,79,.4);}}
 .lc-wrap{ width:100%; max-width:420px; min-height:100svh; display:flex; flex-direction:column; padding:0 0 40px; }
 .lc-header{
   background:#FFFFFF; border-bottom:2px solid #E8E4DE;
@@ -6335,20 +6336,28 @@ window.fetch=async function(url,opts){
   return res;
 };
 // Guards
-(function(){var o=window.saveNow;window.saveNow=function(){if(!isLoggedIn()){return;}return o&&o.apply(this,arguments);};})();
+(function(){var o=window.saveNow;window.saveNow=function(){
+  if(!isLoggedIn()){
+    if(typeof toast==='function')toast('🔒 Tap Login to save your data');
+    var b=document.getElementById('loginBadgeBtn');
+    if(b){b.style.animation='none';b.offsetHeight;b.style.animation='lcBadgePulse 0.6s ease 3';}
+    return;
+  }
+  return o&&o.apply(this,arguments);
+};})();
 (function(){var o=window._bgSync;window._bgSync=async function(){if(!isLoggedIn())return;try{return await o.apply(this,arguments);}catch(e){return;}};})();
 // Init — always show login if not logged in
 document.addEventListener('DOMContentLoaded',function(){
   _lcInjectBadge();updateLoginBadge();
-  // loginScreen starts CLOSED — open it only if NOT logged in (v76 fix)
-  if(!isLoggedIn()){lcOpenLogin();}else{lcCloseLogin();}
-  // Set date in header
+  // v77: NEVER block the app — login is always optional tap on badge
+  // App is fully usable without login (read-only / offline mode)
+  lcCloseLogin();
   var d=document.getElementById('lcDateStr');
   if(d){var n=new Date();d.textContent=n.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'});}
 });
 window.addEventListener('load',function(){
   _lcInjectBadge();updateLoginBadge();
-  if(!isLoggedIn()){lcOpenLogin();}else{lcCloseLogin();}
+  lcCloseLogin(); // v77: never auto-block
 });
 })();
 </script>
