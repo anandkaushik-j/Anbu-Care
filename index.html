@@ -2,6 +2,8 @@
 <!DOCTYPE html>
 <html lang="en-IN">
 <head>
+<!-- .nojekyll -->
+<meta name="generator" content="AnbuCare-v78-static">
 <meta charset="UTF-8"/>
 <meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate"/><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"/>
 <meta name="theme-color" content="#1a237e"/>
@@ -606,6 +608,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
 </style>
 </head>
 <body>
+<noscript><div style="position:fixed;inset:0;z-index:99999;background:#fff;display:flex;align-items:center;justify-content:center;font-family:sans-serif;font-size:1.2rem;text-align:center;padding:20px;color:#C0714F;font-weight:700;">⚠️ JavaScript is disabled in your browser.<br>AnbuCare requires JavaScript.<br><br>Please enable JavaScript and reload.</div></noscript>
 <div id="anbu-ec-ov" style="display:none" onclick="if(event.target===this)anbuEcNo()">
   <div class="anbu-ec-box">
     <div class="anbu-ec-ico">&#x23F0;</div>
@@ -616,16 +619,17 @@ input:checked+.tslider::before{transform:translateX(20px)}
     <button class="anbu-ec-n" onclick="anbuEcNo()">&#8592;&nbsp; Wait, Go Back</button>
   </div>
 </div>
-<div id="errBanner" style="display:none;background:#c0392b;color:#fff;padding:10px 14px;font-size:.85rem;font-weight:700;position:fixed;top:0;left:0;right:0;z-index:9999;text-align:center"></div>
+<div id="errBanner" style="display:none;background:#c0392b;color:#fff;padding:14px;font-size:.9rem;font-weight:700;position:fixed;top:0;left:0;right:0;z-index:99999;text-align:center;cursor:pointer" onclick="this.style.display='none'"></div>
 <div class="app">
 
 <!-- HEADER -->
 <div class="header">
   <div class="hbrand">
-    <div><div class="htitle">AnbuCare</div><div class="hdate" id="hDate"></div><span id="syncBadge" title="Last synced from Sheets"></span></div>
+    <div><div class="htitle">AnbuCare</div><div style="font-size:10px;color:#999;line-height:1">v77</div><div class="hdate" id="hDate"></div><span id="syncBadge" title="Last synced from Sheets"></span></div>
     <button class="red-cross-btn" onclick="openModal('helplineModal')" title="Emergency">✚</button>
   </div>
   <div class="hright">
+    <button id="loginBadgeBtn" type="button" class="hbtn" onclick="if(typeof lcOpenLogin==='function')lcOpenLogin();else document.getElementById('loginScreen').classList.add('open');">🔒 Login</button>
     <button class="hbtn" onclick="openModal('connectModal')">⚙️</button>
     <!-- PK1: Pavithra Kolam — Sacred 8-petal lotus -->
 <div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;cursor:default" title="AnbuCare — Healing Kolam">
@@ -1653,6 +1657,23 @@ input:checked+.tslider::before{transform:translateX(20px)}
 <div id="printReport"></div>
 
 <script>
+// ═══ AnbuCare v78 SELF-TEST (fires immediately on script parse) ═══
+(function(){
+  try{
+    // 1. Mark that JS is running - visible proof
+    var v=document.createElement('div');
+    v.id='jsRunning';
+    v.style.cssText='position:fixed;bottom:8px;right:8px;background:#2e7d32;color:#fff;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;z-index:99998;pointer-events:none;';
+    v.textContent='JS ✓ v78';
+    document.addEventListener('DOMContentLoaded',function(){
+      document.body.appendChild(v);
+      // Remove after 5 seconds
+      setTimeout(function(){if(v.parentNode)v.parentNode.removeChild(v);},5000);
+    });
+  }catch(e){}
+})();
+
+
 // Safe _LS shim — tests window.localStorage (never self-references) v75
 var _LS = (function(){
   try{
@@ -1674,7 +1695,7 @@ window._LS = _LS; // expose globally so auth IIFE block can access same store
 
 // ── Baked-in Google Apps Script URL (v44) ──────────────────────
 const GAS_URL='https://script.google.com/macros/s/AKfycbzTI47hg9Ljp5nvayGasEuyR9Sx1q7FZqHYkue5YFXrxaLhednLPcz-mKlbmSQdDvhiWw/exec';
-window.onerror=function(m,s,l){var b=document.getElementById('errBanner');if(b){b.textContent='JS Error: '+m+' (line '+l+')';b.style.display='block';}return false;};
+window.onerror=function(m,s,l,c,e){var b=document.getElementById('errBanner');if(b){b.textContent='⚠️ JS Error: '+m+' (line '+l+')';b.style.display='block';}return false;};if(b){b.textContent='JS Error: '+m+' (line '+l+')';b.style.display='block';}return false;};
 // ═══════════════════════════════════════════
 // DATA
 // ═══════════════════════════════════════════
