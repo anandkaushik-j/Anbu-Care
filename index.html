@@ -1656,7 +1656,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
 <script>
 // Safe _LS shim (handles sandboxed preview iframes)
 var _LS = (function(){
-  try{ _LS.setItem('__t','1'); _LS.removeItem('__t'); return _LS; }
+   try{ window.localStorage.setItem('__lsT','1'); window.localStorage.removeItem('__lsT'); return window.localStorage; _LS.removeItem('__t'); return _LS; }
   catch(e){ var _m={}; return {getItem:function(k){return _m[k]||null;},setItem:function(k,v){_m[k]=String(v);},removeItem:function(k){delete _m[k];}}; }
 })();
 
