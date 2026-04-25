@@ -610,6 +610,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
 </style>
 </head>
 <body>
+<noscript><div style="position:fixed;inset:0;z-index:99999;background:#fff;display:flex;align-items:center;justify-content:center;font-family:sans-serif;font-size:1.1rem;text-align:center;padding:20px;color:#C0714F;font-weight:700;">⚠️ JavaScript is required for AnbuCare.<br>Please enable JavaScript and reload.</div></noscript>
 <div id="anbu-ec-ov" style="display:none" onclick="if(event.target===this)anbuEcNo()">
   <div class="anbu-ec-box">
     <div class="anbu-ec-ico">&#x23F0;</div>
@@ -1675,6 +1676,7 @@ var _LS = (function(){
   }
 })();
 window._LS = _LS; // expose globally so auth IIFE block can access same store
+(function(){document.addEventListener('DOMContentLoaded',function(){var v=document.createElement('div');v.style.cssText='position:fixed;bottom:8px;right:8px;background:#2e7d32;color:#fff;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;z-index:99998;pointer-events:none;';v.textContent='JS ✓ v79';document.body.appendChild(v);setTimeout(function(){if(v.parentNode)v.parentNode.removeChild(v);},6000);});})();
 
 // v79: Eliminate 300ms touch delay without FastClick library
 document.addEventListener('touchstart', function(){}, {passive: true});
