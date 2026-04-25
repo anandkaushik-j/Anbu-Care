@@ -1,4 +1,4 @@
-<!-- AnbuCare v82 | Built: 2026-04-25 | All bugs fixed | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
+<!-- AnbuCare v83 | Built: 2026-04-25 | All bugs fixed | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
 <!DOCTYPE html>
 <html lang="en-IN">
 <head>
@@ -604,8 +604,17 @@ input:checked+.tslider::before{transform:translateX(20px)}
     padding:1px 7px;font-size:.68rem;font-weight:700;}
   /* ── end v73 neuro ────────────────────────────────────── */
 </style>
+<script>
+// v83 early diagnostic - runs BEFORE main script
+(function(){
+  var b=document.getElementById('v83-banner');
+  if(b){b.style.background='#1b5e20';b.textContent='v83 ✓ JS RUNNING — tap to dismiss';b.onclick=function(){this.style.display='none'};}
+})();
+</script>
 </head>
-<body>
+<body><div id="v83-banner" style="position:fixed;top:0;left:0;right:0;background:#1a237e;color:#fff;z-index:999999;padding:6px;text-align:center;font-size:11px;font-weight:700;font-family:monospace;letter-spacing:.5px">v83 ✓ FILE LOADED — tap to dismiss</div>
+<script>document.getElementById("v83-banner").onclick=function(){this.style.display="none"}</script>
+
 <div id="anbu-ec-ov" style="display:none" onclick="if(event.target===this)anbuEcNo()">
   <div class="anbu-ec-box">
     <div class="anbu-ec-ico">&#x23F0;</div>
@@ -622,7 +631,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
 <!-- HEADER -->
 <div class="header">
   <div class="hbrand">
-    <div><div class="htitle">AnbuCare</div><div style="font-size:10px;color:#aaa;line-height:1;font-family:monospace">v82</div><div class="hdate" id="hDate"></div><span id="syncBadge" title="Last synced from Sheets"></span></div>
+    <div><div class="htitle">AnbuCare</div><div style="font-size:10px;color:#aaa;line-height:1;font-family:monospace">v83</div><div class="hdate" id="hDate"></div><span id="syncBadge" title="Last synced from Sheets"></span></div>
     <button class="red-cross-btn" onclick="openModal('helplineModal')" title="Emergency">✚</button>
   </div>
   <div class="hright">
@@ -6049,8 +6058,9 @@ function resetNeuroWatch(){
      AnbuCare — Auth Layer FINAL (clean inject before </body>)
      Fixes: click-blocking overlay, badge styling, login gate
      ═══════════════════════════════════════════════════════════ -->
-<style>
-</style>
+
+<style>#lcLogoutSheet{display:none!important}</style>
+
 
 
 <!-- Logout sheet -->
@@ -6070,7 +6080,7 @@ function resetNeuroWatch(){
 <script>
 (function(){
   var p=document.createElement('div');
-  p.textContent='JS ✓ v82';
+  p.textContent='JS ✓ v83';
   p.style.cssText='position:fixed;bottom:90px;right:12px;background:#2e7d32;color:#fff;font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px;z-index:99999;pointer-events:none;font-family:monospace;box-shadow:0 2px 8px rgba(0,0,0,.3)';
   document.body.appendChild(p);
   setTimeout(function(){p.remove();},8000);
@@ -6110,7 +6120,7 @@ function resetNeuroWatch(){
 </div>
 <script>
 (function(){
-  var SK='anbucare_sess_v82';
+  var SK='anbucare_sess_v83';
   function _ls(){try{return window.localStorage;}catch(e){return{getItem:function(){return null},setItem:function(){},removeItem:function(){}};}}
   function getS(){try{var s=JSON.parse(_ls().getItem(SK)||'null');return(s&&Date.now()<Number(s.x||0))?s:null;}catch(e){return null;}}
   function setS(s){try{_ls().setItem(SK,JSON.stringify(s));}catch(e){}}
