@@ -1,4 +1,4 @@
-<!-- AnbuCare v80 | Built: 2026-04-25 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
+<!-- AnbuCare v82 | Built: 2026-04-25 | All bugs fixed | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
 <!DOCTYPE html>
 <html lang="en-IN">
 <head>
@@ -605,7 +605,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
   /* ── end v73 neuro ────────────────────────────────────── */
 </style>
 </head>
-<body><noscript><div style="position:fixed;inset:0;background:#fff;z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center"><div><div style="font-size:3rem">⚠️</div><h2 style="color:#c62828;margin:12px 0 8px">JavaScript Required</h2><p style="color:#555">AnbuCare needs JavaScript.<br>Please enable it in your browser settings.</p></div></div></noscript>
+<body>
 <div id="anbu-ec-ov" style="display:none" onclick="if(event.target===this)anbuEcNo()">
   <div class="anbu-ec-box">
     <div class="anbu-ec-ico">&#x23F0;</div>
@@ -622,11 +622,11 @@ input:checked+.tslider::before{transform:translateX(20px)}
 <!-- HEADER -->
 <div class="header">
   <div class="hbrand">
-    <div><div class="htitle">AnbuCare</div><div style="font-size:10px;color:#aaa;line-height:1;font-family:monospace">v80</div><div class="hdate" id="hDate"></div><span id="syncBadge" title="Last synced from Sheets"></span></div>
+    <div><div class="htitle">AnbuCare</div><div style="font-size:10px;color:#aaa;line-height:1;font-family:monospace">v82</div><div class="hdate" id="hDate"></div><span id="syncBadge" title="Last synced from Sheets"></span></div>
     <button class="red-cross-btn" onclick="openModal('helplineModal')" title="Emergency">✚</button>
   </div>
   <div class="hright">
-    <button id="lc-badge" type="button" style="height:36px;padding:0 12px;border-radius:20px;border:1.5px solid #D9D4CC;background:#F0EDE8;font-size:.8rem;font-weight:700;color:#555;cursor:pointer;display:flex;align-items:center;gap:4px;touch-action:manipulation;-webkit-tap-highlight-color:transparent" onclick="document.getElementById('lc-modal').classList.add('open')">🔒 Login</button>
+    <button id="lc-badge" type="button" style="height:36px;padding:0 12px;border-radius:20px;border:1.5px solid #D9D4CC;background:#F0EDE8;font-size:.8rem;font-weight:700;color:#555;cursor:pointer;display:flex;align-items:center;gap:4px;touch-action:manipulation" onclick="document.getElementById('lc-modal').classList.add('open')">🔒 Login</button>
     <button class="hbtn" onclick="openModal('connectModal')">⚙️</button>
     <!-- PK1: Pavithra Kolam — Sacred 8-petal lotus -->
 <div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;cursor:default" title="AnbuCare — Healing Kolam">
@@ -1656,7 +1656,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
 <script>
 // Safe _LS shim (handles sandboxed preview iframes)
 var _LS = (function(){
-   try{ window.localStorage.setItem('__lsT','1'); window.localStorage.removeItem('__lsT'); return window.localStorage; _LS.removeItem('__t'); return _LS; }
+  try{ window.localStorage.setItem('__lsT','1'); window.localStorage.removeItem('__lsT'); return window.localStorage; }
   catch(e){ var _m={}; return {getItem:function(k){return _m[k]||null;},setItem:function(k,v){_m[k]=String(v);},removeItem:function(k){delete _m[k];}}; }
 })();
 
@@ -1908,15 +1908,11 @@ window.onload = async () => {
   document.getElementById('calendarIdInput')?.addEventListener('input',function(){_LS.setItem('anbucare_cal_id',this.value);});
   try{var _pc=_LS.getItem('anbucare_treatprofile');if(_pc){var _pp=JSON.parse(_pc);if(_pp&&_pp.name)S.treatmentProfile=_pp;}}catch(_pe){}
   fetchAffirmation();
-  // v74: only load from Sheets if session exists
-  {
-    await loadFromSheets();
-    fetchAffirmation();
-  }else{
-    try{loadFcState();}catch(_e){}
-    try{renderAll();}catch(_e){}
-    fetchAffirmation();
-  }
+  // v82: always load on startup
+  try{loadFcState();}catch(_e){}
+  try{renderAll();}catch(_e){}
+  await loadFromSheets();
+  fetchAffirmation();
   setInterval(renderNext3Strip, 60000);
   setInterval(function(){try{renderFlashCards();}catch(_e){}},15*60*1000);
   // v52: background live-sync every 45 s — keeps all family devices in sync
@@ -5006,92 +5002,7 @@ function previewReport(){
         border-radius:2px;padding:20px 22px 26px;page-break-after:always;
         font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#2c3e2d;}
     </style>
-  </head><body><div class="page-wrap">${pdfHtml}</div>
-<script>
-// v80 diagnostic pill — confirms JS running
-(function(){
-  var p=document.createElement('div');
-  p.textContent='JS ✓ v80';
-  p.style.cssText='position:fixed;bottom:90px;right:12px;background:#2e7d32;color:#fff;font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;z-index:9999;pointer-events:none;font-family:monospace';
-  document.body.appendChild(p);
-  setTimeout(function(){p.style.display='none';},6000);
-  // passive touchstart
-  document.addEventListener('touchstart',function(){},true);
-})();
-</script>
-
-<!-- ── v80 Login Modal ── -->
-<div id="lc-modal" class="modal-overlay" onclick="if(event.target===this)this.classList.remove('open')">
-  <div class="modal" style="border-radius:20px 20px 0 0">
-    <div class="modal-header">
-      <div class="modal-title">🔒 Family Login</div>
-      <button class="modal-close" onclick="document.getElementById('lc-modal').classList.remove('open')">✕</button>
-    </div>
-    <div style="text-align:center;padding:8px 0 14px">
-      <div style="font-size:2.2rem">🌸</div>
-      <div style="font-size:.82rem;color:#6B7C6E;margin-top:4px">AnbuCare — Family Access</div>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Who are you?</label>
-      <select id="lc-member" class="form-select">
-        <option value="">Select your name…</option>
-        <option value="mom">👩 Mom</option>
-        <option value="dad">👨 Dad</option>
-        <option value="son">🧑 Son</option>
-        <option value="daughter">👧 Daughter</option>
-        <option value="soninlaw">🤵 Son in Law</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Family PIN</label>
-      <input type="password" id="lc-pin" class="form-input" placeholder="Enter family PIN" inputmode="numeric" autocomplete="current-password">
-    </div>
-    <div id="lc-err" style="display:none;color:#c62828;font-size:.85rem;font-weight:700;padding:8px 12px;background:#fdecea;border-radius:8px;margin-bottom:10px"></div>
-    <button class="btn btn-primary btn-block" id="lc-btn" onclick="lcDoLogin()" style="touch-action:manipulation">🔓 Login</button>
-    <button style="width:100%;margin-top:10px;padding:14px;background:transparent;border:none;color:#999;font-size:.85rem;cursor:pointer;touch-action:manipulation" onclick="document.getElementById('lc-modal').classList.remove('open')">Continue without login</button>
-  </div>
-</div>
-<script>
-// v80 Auth — minimal, never blocks app startup
-(function(){
-  var SK='anbucare_sess_v80';
-  function _ls(){try{return window.localStorage;}catch(e){return{getItem:function(){return null},setItem:function(){},removeItem:function(){}}}}
-  function getS(){try{var s=JSON.parse(_ls().getItem(SK)||'null');return(s&&Date.now()<Number(s.x||0))?s:null;}catch(e){return null;}}
-  function setS(s){try{_ls().setItem(SK,JSON.stringify(s));}catch(e){}}
-  function clrS(){try{_ls().removeItem(SK);}catch(e){}}
-  var NAMES={mom:'👩 Mom',dad:'👨 Dad',son:'🧑 Son',daughter:'👧 Daughter',soninlaw:'🤵 Son in Law'};
-  function updBadge(){
-    var btn=document.getElementById('lc-badge'); if(!btn)return;
-    var s=getS();
-    if(s){btn.innerHTML=(NAMES[s.id]||('👤 '+s.id));btn.style.background='#D8EDD9';btn.style.borderColor='#7A9E7E';btn.style.color='#2e7d32';btn.onclick=function(){if(confirm('Log out?')){clrS();updBadge();if(typeof toast==='function')toast('Logged out');}};}
-    else{btn.innerHTML='🔒 Login';btn.style.background='#F0EDE8';btn.style.borderColor='#D9D4CC';btn.style.color='#555';btn.onclick=function(){document.getElementById('lc-modal').classList.add('open');};}
-  }
-  window.lcDoLogin=async function(){
-    var sel=document.getElementById('lc-member'),pin=document.getElementById('lc-pin'),err=document.getElementById('lc-err'),btn=document.getElementById('lc-btn');
-    err.style.display='none';
-    if(!sel.value){err.textContent='Please select your name';err.style.display='block';return;}
-    if(!pin.value){err.textContent='Please enter the PIN';err.style.display='block';return;}
-    btn.disabled=true;btn.textContent='⏳ Logging in…';
-    try{
-      var u=_ls().getItem('anbucare_url')||(typeof GAS_URL!=='undefined'?GAS_URL:'');
-      if(!u){err.textContent='Connect Sheets first (⚙️)';err.style.display='block';btn.disabled=false;btn.textContent='🔓 Login';return;}
-      var r=await fetch(u,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'login',memberId:sel.value,pin:pin.value}),redirect:'follow'});
-      var d=await r.json();
-      if(d.success&&d.sessionToken){
-        setS({id:d.memberId,n:d.memberName||d.memberId,t:d.sessionToken,x:d.expiresAt||(Date.now()+6*3600*1000)});
-        document.getElementById('lc-modal').classList.remove('open');
-        updBadge();
-        if(typeof toast==='function')toast('✅ Welcome, '+(d.memberName||d.memberId)+'!');
-      }else{err.textContent=d.error||'Wrong PIN';err.style.display='block';}
-    }catch(e){err.textContent=e.message||'Login failed';err.style.display='block';}
-    btn.disabled=false;btn.textContent='🔓 Login';
-  };
-  window.isLoggedIn=function(){return !!getS();};
-  window.getSessionToken=function(){var s=getS();return s?s.t:'';};
-  document.addEventListener('DOMContentLoaded',updBadge);
-})();
-</script>
-</body>
+  </head><body><div class="page-wrap">${pdfHtml}</div></body>
 </html>
 ;
 
@@ -6141,7 +6052,6 @@ function resetNeuroWatch(){
 <style>
 </style>
 
-<!-- Login overlay -->
 
 <!-- Logout sheet -->
 <div id="lcLogoutSheet">
@@ -6157,5 +6067,94 @@ function resetNeuroWatch(){
 
 <!-- ═══ END AUTH PATCH FINAL ═══ -->
 
+<script>
+(function(){
+  var p=document.createElement('div');
+  p.textContent='JS ✓ v82';
+  p.style.cssText='position:fixed;bottom:90px;right:12px;background:#2e7d32;color:#fff;font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px;z-index:99999;pointer-events:none;font-family:monospace;box-shadow:0 2px 8px rgba(0,0,0,.3)';
+  document.body.appendChild(p);
+  setTimeout(function(){p.remove();},8000);
+  document.addEventListener('touchstart',function(){},true);
+})();
+</script>
+
+<div id="lc-modal" class="modal-overlay" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" style="border-radius:20px 20px 0 0">
+    <div class="modal-header">
+      <div class="modal-title">🔒 Family Login</div>
+      <button class="modal-close" onclick="document.getElementById('lc-modal').classList.remove('open')">✕</button>
+    </div>
+    <div style="text-align:center;padding:8px 0 14px">
+      <div style="font-size:2.2rem">🌸</div>
+      <div style="font-size:.82rem;color:#6B7C6E;margin-top:4px">AnbuCare — Family</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Who are you?</label>
+      <select id="lc-member" class="form-select">
+        <option value="">Select name…</option>
+        <option value="mom">👩 Mom</option>
+        <option value="dad">👨 Dad</option>
+        <option value="son">🧑 Son</option>
+        <option value="daughter">👧 Daughter</option>
+        <option value="soninlaw">🤵 Son in Law</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Family PIN</label>
+      <input type="password" id="lc-pin" class="form-input" placeholder="Enter PIN" inputmode="numeric" autocomplete="current-password">
+    </div>
+    <div id="lc-err" style="display:none;color:#c62828;font-size:.85rem;font-weight:700;padding:8px 12px;background:#fdecea;border-radius:8px;margin-bottom:10px"></div>
+    <button class="btn btn-primary btn-block" id="lc-btn" onclick="lcDoLogin()" style="touch-action:manipulation">🔓 Login</button>
+    <button style="width:100%;margin-top:10px;padding:14px;background:transparent;border:none;color:#999;font-size:.85rem;cursor:pointer;touch-action:manipulation" onclick="document.getElementById('lc-modal').classList.remove('open')">Continue without login</button>
+  </div>
+</div>
+<script>
+(function(){
+  var SK='anbucare_sess_v82';
+  function _ls(){try{return window.localStorage;}catch(e){return{getItem:function(){return null},setItem:function(){},removeItem:function(){}};}}
+  function getS(){try{var s=JSON.parse(_ls().getItem(SK)||'null');return(s&&Date.now()<Number(s.x||0))?s:null;}catch(e){return null;}}
+  function setS(s){try{_ls().setItem(SK,JSON.stringify(s));}catch(e){}}
+  function clrS(){try{_ls().removeItem(SK);}catch(e){}}
+  var NAMES={mom:'👩 Mom',dad:'👨 Dad',son:'🧑 Son',daughter:'👧 Daughter',soninlaw:'🤵 Son in Law'};
+  function updBadge(){
+    var btn=document.getElementById('lc-badge'); if(!btn)return;
+    var s=getS();
+    if(s){
+      btn.innerHTML=NAMES[s.id]||('👤 '+s.id);
+      btn.style.cssText='height:36px;padding:0 12px;border-radius:20px;border:1.5px solid #7A9E7E;background:#D8EDD9;font-size:.8rem;font-weight:700;color:#2e7d32;cursor:pointer;display:flex;align-items:center;gap:4px;touch-action:manipulation';
+      btn.onclick=function(){if(confirm('Log out as '+(s.n||s.id)+'?')){clrS();updBadge();if(typeof toast==='function')toast('Logged out');}};
+    } else {
+      btn.innerHTML='🔒 Login';
+      btn.style.cssText='height:36px;padding:0 12px;border-radius:20px;border:1.5px solid #D9D4CC;background:#F0EDE8;font-size:.8rem;font-weight:700;color:#555;cursor:pointer;display:flex;align-items:center;gap:4px;touch-action:manipulation';
+      btn.onclick=function(){document.getElementById('lc-modal').classList.add('open');};
+    }
+  }
+  window.lcDoLogin=async function(){
+    var sel=document.getElementById('lc-member'),pin=document.getElementById('lc-pin'),
+        err=document.getElementById('lc-err'),btn=document.getElementById('lc-btn');
+    err.style.display='none';
+    if(!sel.value){err.textContent='Please select your name';err.style.display='block';return;}
+    if(!pin.value){err.textContent='Please enter the PIN';err.style.display='block';return;}
+    btn.disabled=true;btn.textContent='⏳ Logging in…';
+    try{
+      var u=_ls().getItem('anbucare_url')||(typeof GAS_URL!=='undefined'?GAS_URL:'');
+      if(!u){err.textContent='Connect Sheets first — tap ⚙️';err.style.display='block';btn.disabled=false;btn.textContent='🔓 Login';return;}
+      var r=await fetch(u,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body:JSON.stringify({action:'login',memberId:sel.value,pin:pin.value}),redirect:'follow'});
+      var d=await r.json();
+      if(d.success&&d.sessionToken){
+        setS({id:d.memberId,n:d.memberName||d.memberId,t:d.sessionToken,x:d.expiresAt||(Date.now()+6*3600*1000)});
+        document.getElementById('lc-modal').classList.remove('open');
+        updBadge();
+        if(typeof toast==='function')toast('✅ Welcome, '+(d.memberName||d.memberId)+'!');
+      } else {err.textContent=d.error||'Wrong PIN';err.style.display='block';}
+    } catch(e){err.textContent=e.message||'Login failed';err.style.display='block';}
+    btn.disabled=false;btn.textContent='🔓 Login';
+  };
+  window.isLoggedIn=function(){return !!getS();};
+  window.getSessionToken=function(){var s=getS();return s?s.t:'';};
+  document.addEventListener('DOMContentLoaded',updBadge);
+})();
+</script>
 </body>
 </html>
