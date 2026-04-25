@@ -604,16 +604,18 @@ input:checked+.tslider::before{transform:translateX(20px)}
     padding:1px 7px;font-size:.68rem;font-weight:700;}
   /* ── end v73 neuro ────────────────────────────────────── */
 </style>
-<script>
-// v83 early diagnostic - runs BEFORE main script
-(function(){
-  var b=document.getElementById('v83-banner');
-  if(b){b.style.background='#1b5e20';b.textContent='v83 ✓ JS RUNNING — tap to dismiss';b.onclick=function(){this.style.display='none'};}
-})();
-</script>
 </head>
 <body><div id="v83-banner" style="position:fixed;top:0;left:0;right:0;background:#1a237e;color:#fff;z-index:999999;padding:6px;text-align:center;font-size:11px;font-weight:700;font-family:monospace;letter-spacing:.5px">v83 ✓ FILE LOADED — tap to dismiss</div>
-<script>document.getElementById("v83-banner").onclick=function(){this.style.display="none"}</script>
+<script>
+// Runs BEFORE main script — turns banner green the moment any JS executes
+(function(){
+  var b=document.getElementById('v83-banner');
+  if(!b)return;
+  b.style.background='#1b5e20';
+  b.textContent='v83 ✓ JS RUNNING — tap to dismiss';
+  b.onclick=function(){this.style.display='none'};
+})();
+</script>
 
 <div id="anbu-ec-ov" style="display:none" onclick="if(event.target===this)anbuEcNo()">
   <div class="anbu-ec-box">
