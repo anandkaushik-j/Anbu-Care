@@ -1,9 +1,9 @@
-<!-- AnbuCare v83 | Built: 2026-04-25 | All bugs fixed | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
+<!-- AnbuCare v90 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
 <!DOCTYPE html>
 <html lang="en-IN">
 <head>
 <meta charset="UTF-8"/>
-<meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate"/><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"/>
+<meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate"/><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover"/>
 <meta name="theme-color" content="#1a237e"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
@@ -24,10 +24,10 @@
   --sage:#99A98F;--terracotta:#D68E70;--ochre:#E1AD01;--sand:#F4D03F;
   --radius:14px;--shadow:0 2px 14px rgba(100,120,100,.10);--shadow-lg:0 6px 30px rgba(100,120,100,.16);
 }
-:root{touch-action:manipulation}*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:16px;-webkit-text-size-adjust:100%}
-body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.55;-webkit-tap-highlight-color:transparent;overflow-x:clip}
-button,a,[onclick]{touch-action:manipulation}button{cursor:pointer;border:none;font-family:inherit;font-size:16px;-webkit-tap-highlight-color:transparent}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.55;-webkit-tap-highlight-color:transparent;overflow-x:hidden}
+button{cursor:pointer;border:none;font-family:inherit;font-size:16px;-webkit-tap-highlight-color:transparent}
 input,textarea,select{font-family:inherit;font-size:16px;-webkit-appearance:none}
 .app{max-width:100vw;margin:0 auto;padding:0 0 calc(100px + env(safe-area-inset-bottom))}
 
@@ -573,50 +573,9 @@ input:checked+.tslider::before{transform:translateX(20px)}
 .sos-modal-note{font-size:.83rem;color:var(--text);margin-top:8px;background:#fffbeb;border-radius:8px;padding:7px 10px;border-left:3px solid #d97706}
 .fc-dot-done{background:rgba(255,255,255,.95)!important;box-shadow:0 0 0 2px #4ade80!important;}
 .fc-dot-skip{background:rgba(255,255,255,.4)!important;box-shadow:0 0 0 2px #fbbf24!important;}
-
-  /* ⚡ v73 Neuropathy Watch ───────────────────────────── */
-  .neuro-hdr{display:flex;align-items:center;justify-content:space-between;
-    padding:10px 0 8px;cursor:pointer;user-select:none;-webkit-user-select:none;}
-  .neuro-hdr-title{font-size:.92rem;font-weight:800;color:#5A4090;
-    display:flex;align-items:center;gap:7px;}
-  .neuro-badge{font-size:.62rem;background:#EDE7F6;color:#5A4090;
-    padding:2px 8px;border-radius:10px;font-weight:800;letter-spacing:.3px;}
-  .neuro-toggle{font-size:.76rem;color:#999;white-space:nowrap;}
-  .neuro-loc-box{background:#F3EEF9;border:1.5px solid #D1C4E9;
-    border-radius:12px;padding:10px 12px;margin-bottom:13px;}
-  .neuro-loc-title{font-size:.72rem;font-weight:800;color:#7B5EA7;
-    text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px;}
-  .neuro-loc-chips{display:flex;flex-wrap:wrap;gap:6px;}
-  .neuro-lchip{padding:6px 14px;background:#fff;border-radius:20px;
-    font-size:.8rem;font-weight:700;color:#7B5EA7;cursor:pointer;
-    border:1.5px solid #D1C4E9;transition:all .15s;-webkit-tap-highlight-color:transparent;}
-  .neuro-lchip.sel{background:#7B5EA7;color:#fff;border-color:#5A4090;}
-  .neuro-sym-div{border:none;border-top:1px dashed #E8E0F4;margin:4px 0 11px;}
-  .neuro-signs-lbl{font-size:.72rem;font-weight:800;color:#7B5EA7;
-    text-transform:uppercase;letter-spacing:.7px;margin:8px 0 6px;}
-  #neuroBody .sym-btn.active{border-color:#5A4090!important;background:#EDE7F6!important;}
-  #neuroBody .sym-btn.active .sbl{color:#4A148C!important;}
-  .neuro-hist-row{display:flex;flex-wrap:wrap;align-items:center;gap:5px;
-    margin-top:6px;padding:5px 10px;background:#EDE7F6;border-radius:8px;font-size:.75rem;}
-  .neuro-hist-lbl{font-weight:800;color:#5A4090;}
-  .neuro-hist-val{color:#444;}
-  .neuro-hist-chip{background:#D1C4E9;color:#4A148C;border-radius:7px;
-    padding:1px 7px;font-size:.68rem;font-weight:700;}
-  /* ── end v73 neuro ────────────────────────────────────── */
 </style>
 </head>
-<body><div id="v83-banner" style="position:fixed;top:0;left:0;right:0;background:#1a237e;color:#fff;z-index:999999;padding:6px;text-align:center;font-size:11px;font-weight:700;font-family:monospace;letter-spacing:.5px">v83 ✓ FILE LOADED — tap to dismiss</div>
-<script>
-// Runs BEFORE main script — turns banner green the moment any JS executes
-(function(){
-  var b=document.getElementById('v83-banner');
-  if(!b)return;
-  b.style.background='#1b5e20';
-  b.textContent='v83 ✓ JS RUNNING — tap to dismiss';
-  b.onclick=function(){this.style.display='none'};
-})();
-</script>
-
+<body>
 <div id="anbu-ec-ov" style="display:none" onclick="if(event.target===this)anbuEcNo()">
   <div class="anbu-ec-box">
     <div class="anbu-ec-ico">&#x23F0;</div>
@@ -633,11 +592,16 @@ input:checked+.tslider::before{transform:translateX(20px)}
 <!-- HEADER -->
 <div class="header">
   <div class="hbrand">
-    <div><div class="htitle">AnbuCare</div><div style="font-size:10px;color:#aaa;line-height:1;font-family:monospace">v83</div><div class="hdate" id="hDate"></div><span id="syncBadge" title="Last synced from Sheets"></span></div>
+    <div><div class="htitle">AnbuCare</div><div style="font-size:9px;color:#aaa;line-height:1;font-family:monospace;margin-top:-2px">v90</div><div class="hdate" id="hDate"></div><span id="syncBadge" title="Last synced from Sheets"></span></div>
     <button class="red-cross-btn" onclick="openModal('helplineModal')" title="Emergency">✚</button>
   </div>
   <div class="hright">
-    <button id="lc-badge" type="button" style="height:36px;padding:0 12px;border-radius:20px;border:1.5px solid #D9D4CC;background:#F0EDE8;font-size:.8rem;font-weight:700;color:#555;cursor:pointer;display:flex;align-items:center;gap:4px;touch-action:manipulation" onclick="document.getElementById('lc-modal').classList.add('open')">🔒 Login</button>
+    <button id="lc-badge"
+      onclick="openModal('lc-overlay')"
+      style="display:flex;align-items:center;gap:7px;height:36px;padding:0 14px 0 10px;border-radius:18px;border:1.5px solid #7A9E7E;background:#F0EDE8;color:#3a3a3a;font-size:.82rem;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.07)">
+      <span id="lc-icon" style="font-size:1rem;color:#5c3d8f">👤</span>
+      <span id="lc-label">Login</span>
+    </button>
     <button class="hbtn" onclick="openModal('connectModal')">⚙️</button>
     <!-- PK1: Pavithra Kolam — Sacred 8-petal lotus -->
 <div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;cursor:default" title="AnbuCare — Healing Kolam">
@@ -1036,110 +1000,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
               <button class="sym-btn" data-v="5" onclick="symTap('A',5)"><span class="sbe">🚫</span><span class="sbl">None</span></button>
             </div>
           </div>
-          
-          <!-- ⚡ v73 NEUROPATHY WATCH ─────────────────────────── -->
-          <div class="neuro-hdr" onclick="toggleNeuroWatch()">
-            <div class="neuro-hdr-title">
-              ⚡ Neuropathy Watch
-              <span class="neuro-badge">NEW</span>
-            </div>
-            <span class="neuro-toggle" id="neuroToggle">▼ tap to expand</span>
-          </div>
-          <div id="neuroBody" style="display:none">
-
-            <!-- ① LOCATION on top -->
-            <div class="neuro-loc-box">
-              <div class="neuro-loc-title">📍 Where do you feel it?</div>
-              <div class="neuro-loc-chips" id="neuroLocChips">
-                <span class="neuro-lchip" onclick="this.classList.toggle('sel')">🖐 Hands</span>
-                <span class="neuro-lchip" onclick="this.classList.toggle('sel')">🦶 Feet</span>
-                <span class="neuro-lchip" onclick="this.classList.toggle('sel')">💪 Arms</span>
-                <span class="neuro-lchip" onclick="this.classList.toggle('sel')">🦵 Legs</span>
-                <span class="neuro-lchip" onclick="this.classList.toggle('sel')">🔄 All over</span>
-              </div>
-            </div>
-
-            <!-- ② TINGLING -->
-            <div class="sym-row">
-              <div class="sym-label">
-                <span>🤺 Tingling / Pins &amp; Needles</span>
-                <span class="sym-val v1" id="vNT"></span>
-              </div>
-              <input type="hidden" id="sNT" value="1">
-              <div class="sym-btn-grp" id="sgNT">
-                <button class="sym-btn active" data-v="1" onclick="symTap('NT',1)"><span class="sbe">✅</span><span class="sbl">None</span></button>
-                <button class="sym-btn" data-v="2" onclick="symTap('NT',2)"><span class="sbe">🟡</span><span class="sbl">Mild</span></button>
-                <button class="sym-btn" data-v="3" onclick="symTap('NT',3)"><span class="sbe">🟠</span><span class="sbl">Mod.</span></button>
-                <button class="sym-btn" data-v="4" onclick="symTap('NT',4)"><span class="sbe">🔴</span><span class="sbl">High</span></button>
-                <button class="sym-btn" data-v="5" onclick="symTap('NT',5)"><span class="sbe">🆘</span><span class="sbl">Severe</span></button>
-              </div>
-            </div>
-            <hr class="neuro-sym-div">
-
-            <!-- ③ NUMBNESS -->
-            <div class="sym-row">
-              <div class="sym-label">
-                <span>😶 Numbness</span>
-                <span class="sym-val v1" id="vNN"></span>
-              </div>
-              <input type="hidden" id="sNN" value="1">
-              <div class="sym-btn-grp" id="sgNN">
-                <button class="sym-btn active" data-v="1" onclick="symTap('NN',1)"><span class="sbe">✅</span><span class="sbl">None</span></button>
-                <button class="sym-btn" data-v="2" onclick="symTap('NN',2)"><span class="sbe">🟡</span><span class="sbl">Mild</span></button>
-                <button class="sym-btn" data-v="3" onclick="symTap('NN',3)"><span class="sbe">🟠</span><span class="sbl">Mod.</span></button>
-                <button class="sym-btn" data-v="4" onclick="symTap('NN',4)"><span class="sbe">🔴</span><span class="sbl">High</span></button>
-                <button class="sym-btn" data-v="5" onclick="symTap('NN',5)"><span class="sbe">🆘</span><span class="sbl">Severe</span></button>
-              </div>
-            </div>
-            <hr class="neuro-sym-div">
-
-            <!-- ④ BURNING -->
-            <div class="sym-row">
-              <div class="sym-label">
-                <span>🔥 Burning Sensation</span>
-                <span class="sym-val v1" id="vNB"></span>
-              </div>
-              <input type="hidden" id="sNB" value="1">
-              <div class="sym-btn-grp" id="sgNB">
-                <button class="sym-btn active" data-v="1" onclick="symTap('NB',1)"><span class="sbe">✅</span><span class="sbl">None</span></button>
-                <button class="sym-btn" data-v="2" onclick="symTap('NB',2)"><span class="sbe">🟡</span><span class="sbl">Mild</span></button>
-                <button class="sym-btn" data-v="3" onclick="symTap('NB',3)"><span class="sbe">🟠</span><span class="sbl">Mod.</span></button>
-                <button class="sym-btn" data-v="4" onclick="symTap('NB',4)"><span class="sbe">🔴</span><span class="sbl">High</span></button>
-                <button class="sym-btn" data-v="5" onclick="symTap('NB',5)"><span class="sbe">🆘</span><span class="sbl">Severe</span></button>
-              </div>
-            </div>
-            <hr class="neuro-sym-div">
-
-            <!-- ⑤ BALANCE / WEAKNESS -->
-            <div class="sym-row">
-              <div class="sym-label">
-                <span>🚶 Balance / Weakness</span>
-                <span class="sym-val v1" id="vNW"></span>
-              </div>
-              <input type="hidden" id="sNW" value="1">
-              <div class="sym-btn-grp" id="sgNW">
-                <button class="sym-btn active" data-v="1" onclick="symTap('NW',1)"><span class="sbe">🟢</span><span class="sbl">Normal</span></button>
-                <button class="sym-btn" data-v="2" onclick="symTap('NW',2)"><span class="sbe">🟡</span><span class="sbl">Slight</span></button>
-                <button class="sym-btn" data-v="3" onclick="symTap('NW',3)"><span class="sbe">🟠</span><span class="sbl">Mod.</span></button>
-                <button class="sym-btn" data-v="4" onclick="symTap('NW',4)"><span class="sbe">🔴</span><span class="sbl">Poor</span></button>
-                <button class="sym-btn" data-v="5" onclick="symTap('NW',5)"><span class="sbe">🆘</span><span class="sbl">Critical</span></button>
-              </div>
-            </div>
-            <hr class="neuro-sym-div">
-
-            <!-- ⑥ ADDITIONAL SIGNS chips -->
-            <div class="neuro-signs-lbl">Additional Signs</div>
-            <div class="chip-row" id="neuroSignChips">
-              <div class="chip" onclick="this.classList.toggle('sel')">⚡ Cramps</div>
-              <div class="chip" onclick="this.classList.toggle('sel')">🌡 Skin Sensitivity</div>
-              <div class="chip" onclick="this.classList.toggle('sel')">💪 Muscle Weakness</div>
-              <div class="chip" onclick="this.classList.toggle('sel')">🥵 Sweating / Chills</div>
-              <div class="chip" onclick="this.classList.toggle('sel')">🚻 Bladder Issues</div>
-            </div>
-
-          </div><!-- /neuroBody -->
-          <!-- ──────────────────────────────────────────────────── -->
-<div class="divider"></div>
+          <div class="divider"></div>
           <div class="form-label" style="margin-bottom:8px">Also experiencing:</div>
           <div class="chip-row" id="extraChips">
             <div class="chip" onclick="this.classList.toggle('sel')">💧 Dry mouth</div>
@@ -1919,11 +1780,8 @@ window.onload = async () => {
   document.getElementById('calendarIdInput')?.addEventListener('input',function(){_LS.setItem('anbucare_cal_id',this.value);});
   try{var _pc=_LS.getItem('anbucare_treatprofile');if(_pc){var _pp=JSON.parse(_pc);if(_pp&&_pp.name)S.treatmentProfile=_pp;}}catch(_pe){}
   fetchAffirmation();
-  // v82: always load on startup
-  try{loadFcState();}catch(_e){}
-  try{renderAll();}catch(_e){}
-  await loadFromSheets();
-  fetchAffirmation();
+  await loadFromSheets(); // loads data then calls renderAll()
+  fetchAffirmation(); // re-run after data load to ensure affirmation is visible
   setInterval(renderNext3Strip, 60000);
   setInterval(function(){try{renderFlashCards();}catch(_e){}},15*60*1000);
   // v52: background live-sync every 45 s — keeps all family devices in sync
@@ -1952,16 +1810,8 @@ function normalizeDiet(d){
   return d;
 }
 function normalizeSym(s){
-  if(typeof s.extras==='string'){try{s.extras=JSON.parse(s.extras);}catch(e){s.extras=[];}}
-  if(!Array.isArray(s.extras))s.extras=[];
-  // v74: normalise neuropathy array & numeric fields from Sheets
-  if(typeof s.nLocation==='string'){try{s.nLocation=JSON.parse(s.nLocation);}catch(e){s.nLocation=[];}}
-  if(!Array.isArray(s.nLocation))s.nLocation=[];
-  if(typeof s.nSigns==='string'){try{s.nSigns=JSON.parse(s.nSigns);}catch(e){s.nSigns=[];}}
-  if(!Array.isArray(s.nSigns))s.nSigns=[];
-  ['nTingling','nNumbness','nBurning','nBalance'].forEach(function(k){
-    if(!s[k]||isNaN(+s[k]))s[k]=1;
-  });
+  if(typeof s.extras === 'string'){try{s.extras=JSON.parse(s.extras);}catch(e){s.extras=[];}}
+  if(!Array.isArray(s.extras)) s.extras=[];
   return s;
 }
 function fixSheetTime(t){
@@ -3722,7 +3572,7 @@ function updSym(k,v){
   if(inp)inp.value=v;
 }
 function _saveSymInternal(){
-  const entry={id:S.nextId++,date:today,session:symSession,nausea:+document.getElementById('sN').value,fatigue:+document.getElementById('sF').value,pain:+document.getElementById('sP').value,mood:+document.getElementById('sM').value,appetite:+document.getElementById('sA').value,extras:chips('extraChips'),notes:document.getElementById('symNotes').value,chemoId:S.chemoSessions.length?S.chemoSessions[S.chemoSessions.length-1].id:null,nTingling:+(document.getElementById('sNT')||{value:1}).value,nNumbness:+(document.getElementById('sNN')||{value:1}).value,nBurning:+(document.getElementById('sNB')||{value:1}).value,nBalance:+(document.getElementById('sNW')||{value:1}).value,nLocation:Array.from(document.querySelectorAll('#neuroLocChips .neuro-lchip.sel')).map(function(c){return c.textContent.trim();}),nSigns:chips('neuroSignChips')};
+  const entry={id:S.nextId++,date:today,session:symSession,nausea:+document.getElementById('sN').value,fatigue:+document.getElementById('sF').value,pain:+document.getElementById('sP').value,mood:+document.getElementById('sM').value,appetite:+document.getElementById('sA').value,extras:chips('extraChips'),notes:document.getElementById('symNotes').value,chemoId:S.chemoSessions.length?S.chemoSessions[S.chemoSessions.length-1].id:null};
   S.symptoms.unshift(entry);
   const ex=entry.extras.length?' | Also: '+entry.extras.join(', '):'';
   S.notes.unshift({id:Date.now(),date:today,email:'patient@anbucare',type:'auto',note:`📊 Symptoms — Nausea:${entry.nausea} | Fatigue:${entry.fatigue} | Pain:${entry.pain} | Mood:${entry.mood} | Appetite:${entry.appetite}${ex}`});
@@ -3788,7 +3638,7 @@ function saveAllLog(){
     try{_saveSymInternal();}catch(e){toast('⚠️ Symptom save error: '+e.message);}
     try{_saveBowelInternal();}catch(e){toast('⚠️ Bowel save error: '+e.message);}
     btn.disabled=false;btn.textContent='💾 Save Daily Log';
-    toast('✅ Daily log saved!');saveNow();try{resetNeuroWatch();}catch(_e){}
+    toast('✅ Daily log saved!');saveNow();
   try{renderFlashCards();}catch(_re){} try{renderNext3Strip();}catch(_re){} try{renderOverdue();}catch(_re){}
   },500);
 }
@@ -3900,18 +3750,6 @@ function renderSymHist(){
       ${bars}
       ${e.extras&&e.extras.length?`<div style="font-size:.74rem;color:var(--warn);margin-top:3px">⚡ ${e.extras.join(' · ')}</div>`:''}
       ${e.notes?`<div style="font-size:.75rem;color:var(--muted);margin-top:2px">💬 ${esc(e.notes)}</div>`:''}
-${(()=>{
-  const nt=(e.nTingling||1),nn=(e.nNumbness||1),nb=(e.nBurning||1),nw=(e.nBalance||1);
-  if(nt+nn+nb+nw<=4) return '';
-  const parts=[];
-  if(nt>1)parts.push('Tingling '+nt+'/5');
-  if(nn>1)parts.push('Numbness '+nn+'/5');
-  if(nb>1)parts.push('Burning '+nb+'/5');
-  if(nw>1)parts.push('Balance '+nw+'/5');
-  const locs=(e.nLocation||[]).map(l=>'<span class="neuro-hist-chip">'+esc(l)+'</span>').join('');
-  const signs=(e.nSigns||[]).map(s=>'<span class="neuro-hist-chip">'+esc(s)+'</span>').join('');
-  return '<div class="neuro-hist-row"><span class="neuro-hist-lbl">⚡</span><span class="neuro-hist-val">'+parts.join(' · ')+'</span>'+locs+signs+'</div>';
-})()}
     </div>`;
   }).join('');
 
@@ -5013,9 +4851,7 @@ function previewReport(){
         border-radius:2px;padding:20px 22px 26px;page-break-after:always;
         font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#2c3e2d;}
     </style>
-  </head><body><div class="page-wrap">${pdfHtml}</div></body>
-</html>
-;
+  </head><body><div class="page-wrap">${pdfHtml}</div></body></html>`;
 
   /* Inject into iframe inside #reportPreview */
   const wrap=document.getElementById('reportPreview');
@@ -5882,7 +5718,11 @@ function switchAdd(tab,btn){['medicine','diet','test'].forEach(t=>document.getEl
 // ═══════════════════════════════════════════
 // MODALS / UTILS
 // ═══════════════════════════════════════════
-function openModal(id){document.getElementById(id).classList.add('open');}
+function openModal(id){
+  var lc=document.getElementById('lc-overlay');
+  if(lc&&id!=='lc-overlay')lc.classList.remove('open');
+  document.getElementById(id).classList.add('open');
+}
 function closeModal(id){
   // Reset any pending edit states so next Add is a fresh create
   if(id==='addModal'){
@@ -5946,6 +5786,8 @@ function fmtDate(s){if(!s)return'';const p=String(s).substring(0,10).split('-');
               Object.assign(S,p);
               try{normalizeAll();}catch(_e){}
               try{renderAll();}catch(_e){}
+  try{lcUpdBadge();}catch(_lcE){}
+  try{lcUpdBadge();}catch(_e){}
               _updSyncBadge('ok','Live');
             }
           }
@@ -5970,35 +5812,54 @@ function fmtDate(s){if(!s)return'';const p=String(s).substring(0,10).split('-');
 })();
 
 
-/* ⚡ v73 Neuropathy Watch JS ─────────────────────────────────── */
-function toggleNeuroWatch(){
-  var b=document.getElementById('neuroBody');
-  var t=document.getElementById('neuroToggle');
-  if(!b)return;
-  if(b.style.display==='none'){
-    b.style.display='';
-    t.textContent='▲ collapse';
-  } else {
-    b.style.display='none';
-    t.textContent='▼ tap to expand';
-  }
+/* ── v90 Login (uses openModal/closeModal = proven working system) ── */
+async function lcSubmit(){
+  var sel=document.getElementById('lc-sel'),pin=document.getElementById('lc-pin'),
+      btn=document.getElementById('lc-btn');
+  var m=document.getElementById('lc-msg');
+  if(m)m.style.display='none';
+  if(!sel||!sel.value){if(m){m.textContent='Please select your name';m.style.background='#fdecea';m.style.color='#c62828';m.style.display='block';}return;}
+  if(!pin||!pin.value.trim()){if(m){m.textContent='Please enter your PIN';m.style.background='#fdecea';m.style.color='#c62828';m.style.display='block';}return;}
+  btn.disabled=true;btn.textContent='⏳ Verifying…';
+  var NM={mom:'👩 Mom',dad:'👨 Dad',son:'🧑 Son',daughter:'👧 Daughter',soninlaw:'🤵 Son in Law'};
+  try{
+    var url=_LS.getItem('anbucare_url')||GAS_URL||'';
+    if(!url){if(m){m.textContent='No Sheets URL — tap ⚙️ first';m.style.background='#fdecea';m.style.color='#c62828';m.style.display='block';}btn.disabled=false;btn.textContent='🔓 Login';return;}
+    var ctrl=new AbortController(),t=setTimeout(function(){ctrl.abort();},12000);
+    var res=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({action:'login',memberId:sel.value,pin:pin.value.trim()}),redirect:'follow',signal:ctrl.signal});
+    clearTimeout(t);
+    var d=JSON.parse(await res.text());
+    if(d.success&&d.sessionToken){
+      var nm=d.memberName||NM[d.memberId]||d.memberId;
+      _LS.setItem('lc_sess_v90',JSON.stringify({id:d.memberId,n:nm,t:d.sessionToken,x:d.expiresAt||(Date.now()+8*3600*1000)}));
+      closeModal('lc-overlay');lcUpdBadge();
+      if(typeof toast==='function')toast('✅ Welcome, '+nm+'!');
+    }else{if(m){m.textContent=d.error||'Wrong PIN';m.style.background='#fdecea';m.style.color='#c62828';m.style.display='block';}}
+  }catch(e){if(m){m.textContent=e.name==='AbortError'?'Timeout':'Error: '+e.message;m.style.background='#fdecea';m.style.color='#c62828';m.style.display='block';}}
+  btn.disabled=false;btn.textContent='🔓 Login';
 }
-function resetNeuroWatch(){
-  ['sNT','sNN','sNB','sNW'].forEach(function(id){
-    var el=document.getElementById(id);
-    if(el) el.value=1;
-  });
-  ['sgNT','sgNN','sgNB','sgNW'].forEach(function(gid){
-    var g=document.getElementById(gid);
-    if(!g) return;
-    g.querySelectorAll('.sym-btn').forEach(function(b,i){
-      b.classList.toggle('active', i===0);
-    });
-  });
-  document.querySelectorAll('#neuroLocChips .neuro-lchip, #neuroSignChips .chip')
-    .forEach(function(c){ c.classList.remove('sel'); });
+function lcUpdBadge(){
+  var icon=document.getElementById('lc-icon'),lbl=document.getElementById('lc-label'),
+      btn=document.getElementById('lc-badge');
+  if(!btn)return;
+  var NM={mom:'👩 Mom',dad:'👨 Dad',son:'🧑 Son',daughter:'👧 Daughter',soninlaw:'🤵 Son in Law'};
+  try{
+    var s=JSON.parse(_LS.getItem('lc_sess_v90')||'null');
+    if(s&&Date.now()<(s.x||0)){
+      if(icon)icon.textContent=NM[s.id]?NM[s.id].split(' ')[0]:'✅';
+      if(lbl)lbl.textContent=s.n||s.id;
+      btn.style.background='#D8EDD9';btn.style.borderColor='#7A9E7E';btn.style.color='#1b5e20';
+      btn.onclick=function(){if(confirm('Log out as '+(s.n||s.id)+'?')){_LS.removeItem('lc_sess_v90');lcUpdBadge();if(typeof toast==='function')toast('👋 Logged out');}};
+      return;
+    }
+  }catch(e){}
+  if(icon){icon.textContent='👤';icon.style.color='#5c3d8f';}
+  if(lbl)lbl.textContent='Login';
+  btn.style.background='#F0EDE8';btn.style.borderColor='#7A9E7E';btn.style.color='#3a3a3a';
+  btn.onclick=function(){openModal('lc-overlay');};
 }
-/* ── end v73 neuro JS ──────────────────────────────────────────── */
+
 </script>
 
 <!-- ═══ FLASHCARD NEXT POPUP ═══ -->
@@ -6052,121 +5913,37 @@ function resetNeuroWatch(){
     <div id="sosModalList"></div>
   </div>
 </div>
-
-
-
-
-<!-- ═══════════════════════════════════════════════════════════
-     AnbuCare — Auth Layer FINAL (clean inject before </body>)
-     Fixes: click-blocking overlay, badge styling, login gate
-     ═══════════════════════════════════════════════════════════ -->
-
-<style>#lcLogoutSheet{display:none!important}</style>
-
-
-
-<!-- Logout sheet -->
-<div id="lcLogoutSheet">
-  <div class="lc-lo-box">
-    <h3>👋 Log out?</h3>
-    <p id="lcLogoutTxt">Are you sure you want to log out?</p>
-    <div class="lc-lo-btns">
-      <button class="lc-lo-cancel" onclick="lcCloseLogout()" type="button">Cancel</button>
-      <button class="lc-lo-confirm" onclick="lcDoLogout()" type="button">Log out</button>
-    </div>
-  </div>
-</div>
-
-<!-- ═══ END AUTH PATCH FINAL ═══ -->
-
 <script>
-(function(){
-  var p=document.createElement('div');
-  p.textContent='JS ✓ v83';
-  p.style.cssText='position:fixed;bottom:90px;right:12px;background:#2e7d32;color:#fff;font-size:11px;font-weight:700;padding:5px 12px;border-radius:20px;z-index:99999;pointer-events:none;font-family:monospace;box-shadow:0 2px 8px rgba(0,0,0,.3)';
-  document.body.appendChild(p);
-  setTimeout(function(){p.remove();},8000);
-  document.addEventListener('touchstart',function(){},true);
-})();
+(function(){var p=document.createElement('div');p.textContent='JS ✓ v90';
+p.style.cssText='position:fixed;bottom:16px;right:12px;background:#2e7d32;color:#fff;font-size:10px;font-weight:700;padding:4px 10px;border-radius:10px;z-index:99999;pointer-events:none;font-family:monospace;opacity:.85';
+document.body.appendChild(p);setTimeout(function(){if(p.parentNode)p.parentNode.removeChild(p);},8000);})();
 </script>
-
-<div id="lc-modal" class="modal-overlay" onclick="if(event.target===this)this.classList.remove('open')">
-  <div class="modal" style="border-radius:20px 20px 0 0">
+<div id="lc-overlay" class="modal-overlay" style="z-index:9500"
+  onclick="if(event.target===this)closeModal('lc-overlay')">
+  <div class="modal" style="border-radius:20px 20px 0 0;max-width:480px">
     <div class="modal-header">
-      <div class="modal-title">🔒 Family Login</div>
-      <button class="modal-close" onclick="document.getElementById('lc-modal').classList.remove('open')">✕</button>
+      <div class="modal-title">🌸 Family Login</div>
+      <button class="modal-close" onclick="closeModal('lc-overlay')">✕</button>
     </div>
-    <div style="text-align:center;padding:8px 0 14px">
-      <div style="font-size:2.2rem">🌸</div>
-      <div style="font-size:.82rem;color:#6B7C6E;margin-top:4px">AnbuCare — Family</div>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Who are you?</label>
-      <select id="lc-member" class="form-select">
-        <option value="">Select name…</option>
+    <div style="padding:8px 16px 20px">
+      <div id="lc-msg" style="display:none;padding:9px 12px;border-radius:10px;font-size:.82rem;font-weight:700;text-align:center;margin-bottom:12px;background:#fdecea;color:#c62828"></div>
+      <label style="font-size:.8rem;font-weight:600;color:#555;display:block;margin-bottom:6px">Who are you?</label>
+      <select id="lc-sel" class="form-select" style="margin-bottom:14px">
+        <option value="">— Select your name —</option>
         <option value="mom">👩 Mom</option>
         <option value="dad">👨 Dad</option>
         <option value="son">🧑 Son</option>
         <option value="daughter">👧 Daughter</option>
         <option value="soninlaw">🤵 Son in Law</option>
       </select>
+      <label style="font-size:.8rem;font-weight:600;color:#555;display:block;margin-bottom:6px">Family PIN</label>
+      <input type="password" id="lc-pin" class="form-input" inputmode="numeric" maxlength="8"
+        placeholder="Enter PIN" style="text-align:center;letter-spacing:.3em;font-size:1.1rem;margin-bottom:16px">
+      <button id="lc-btn" class="btn btn-primary btn-block" onclick="lcSubmit()">🔓 Login</button>
+      <button style="width:100%;margin-top:10px;padding:12px;background:transparent;border:none;color:#999;font-size:.83rem;cursor:pointer"
+        onclick="closeModal('lc-overlay')">Continue without login</button>
     </div>
-    <div class="form-group">
-      <label class="form-label">Family PIN</label>
-      <input type="password" id="lc-pin" class="form-input" placeholder="Enter PIN" inputmode="numeric" autocomplete="current-password">
-    </div>
-    <div id="lc-err" style="display:none;color:#c62828;font-size:.85rem;font-weight:700;padding:8px 12px;background:#fdecea;border-radius:8px;margin-bottom:10px"></div>
-    <button class="btn btn-primary btn-block" id="lc-btn" onclick="lcDoLogin()" style="touch-action:manipulation">🔓 Login</button>
-    <button style="width:100%;margin-top:10px;padding:14px;background:transparent;border:none;color:#999;font-size:.85rem;cursor:pointer;touch-action:manipulation" onclick="document.getElementById('lc-modal').classList.remove('open')">Continue without login</button>
   </div>
 </div>
-<script>
-(function(){
-  var SK='anbucare_sess_v83';
-  function _ls(){try{return window.localStorage;}catch(e){return{getItem:function(){return null},setItem:function(){},removeItem:function(){}};}}
-  function getS(){try{var s=JSON.parse(_ls().getItem(SK)||'null');return(s&&Date.now()<Number(s.x||0))?s:null;}catch(e){return null;}}
-  function setS(s){try{_ls().setItem(SK,JSON.stringify(s));}catch(e){}}
-  function clrS(){try{_ls().removeItem(SK);}catch(e){}}
-  var NAMES={mom:'👩 Mom',dad:'👨 Dad',son:'🧑 Son',daughter:'👧 Daughter',soninlaw:'🤵 Son in Law'};
-  function updBadge(){
-    var btn=document.getElementById('lc-badge'); if(!btn)return;
-    var s=getS();
-    if(s){
-      btn.innerHTML=NAMES[s.id]||('👤 '+s.id);
-      btn.style.cssText='height:36px;padding:0 12px;border-radius:20px;border:1.5px solid #7A9E7E;background:#D8EDD9;font-size:.8rem;font-weight:700;color:#2e7d32;cursor:pointer;display:flex;align-items:center;gap:4px;touch-action:manipulation';
-      btn.onclick=function(){if(confirm('Log out as '+(s.n||s.id)+'?')){clrS();updBadge();if(typeof toast==='function')toast('Logged out');}};
-    } else {
-      btn.innerHTML='🔒 Login';
-      btn.style.cssText='height:36px;padding:0 12px;border-radius:20px;border:1.5px solid #D9D4CC;background:#F0EDE8;font-size:.8rem;font-weight:700;color:#555;cursor:pointer;display:flex;align-items:center;gap:4px;touch-action:manipulation';
-      btn.onclick=function(){document.getElementById('lc-modal').classList.add('open');};
-    }
-  }
-  window.lcDoLogin=async function(){
-    var sel=document.getElementById('lc-member'),pin=document.getElementById('lc-pin'),
-        err=document.getElementById('lc-err'),btn=document.getElementById('lc-btn');
-    err.style.display='none';
-    if(!sel.value){err.textContent='Please select your name';err.style.display='block';return;}
-    if(!pin.value){err.textContent='Please enter the PIN';err.style.display='block';return;}
-    btn.disabled=true;btn.textContent='⏳ Logging in…';
-    try{
-      var u=_ls().getItem('anbucare_url')||(typeof GAS_URL!=='undefined'?GAS_URL:'');
-      if(!u){err.textContent='Connect Sheets first — tap ⚙️';err.style.display='block';btn.disabled=false;btn.textContent='🔓 Login';return;}
-      var r=await fetch(u,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
-        body:JSON.stringify({action:'login',memberId:sel.value,pin:pin.value}),redirect:'follow'});
-      var d=await r.json();
-      if(d.success&&d.sessionToken){
-        setS({id:d.memberId,n:d.memberName||d.memberId,t:d.sessionToken,x:d.expiresAt||(Date.now()+6*3600*1000)});
-        document.getElementById('lc-modal').classList.remove('open');
-        updBadge();
-        if(typeof toast==='function')toast('✅ Welcome, '+(d.memberName||d.memberId)+'!');
-      } else {err.textContent=d.error||'Wrong PIN';err.style.display='block';}
-    } catch(e){err.textContent=e.message||'Login failed';err.style.display='block';}
-    btn.disabled=false;btn.textContent='🔓 Login';
-  };
-  window.isLoggedIn=function(){return !!getS();};
-  window.getSessionToken=function(){var s=getS();return s?s.t:'';};
-  document.addEventListener('DOMContentLoaded',updBadge);
-})();
-</script>
 </body>
 </html>
