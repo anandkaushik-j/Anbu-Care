@@ -1,4 +1,4 @@
-<!-- AnbuCare v94 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
+<!-- AnbuCare v97 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
 <!DOCTYPE html>
 <html lang="en-IN">
 <head>
@@ -576,6 +576,116 @@ input:checked+.tslider::before{transform:translateX(20px)}
 </style>
 </head>
 <body>
+<div id="loginScreen"
+  style="position:fixed;top:0;left:0;right:0;bottom:0;
+         background:linear-gradient(160deg,#f5f0ea 0%,#e8f5e9 100%);
+         z-index:9999;display:flex;flex-direction:column;
+         align-items:center;justify-content:center;padding:20px;
+         font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+
+  <button onclick="document.getElementById('loginScreen').style.display='none'"
+    style="position:absolute;top:14px;right:14px;width:38px;height:38px;
+           border-radius:50%;background:rgba(0,0,0,.08);border:none;
+           font-size:1.1rem;cursor:pointer;color:#555">&#x2715;</button>
+
+  <div style="text-align:center;margin-bottom:24px">
+    <div style="font-size:40px">&#x1F338;</div>
+    <div style="font-size:1.6rem;font-weight:800;color:#3a3a3a;margin-top:4px">AnbuCare</div>
+    <div style="font-size:.8rem;color:#888">Family Cancer Care</div>
+  </div>
+
+  <div style="background:#fff;border-radius:18px;padding:22px 18px;
+              width:100%;max-width:340px;box-shadow:0 4px 20px rgba(0,0,0,.10)">
+    <div id="lc-msg" style="display:none;padding:9px 12px;border-radius:9px;
+         font-size:.83rem;font-weight:700;text-align:center;margin-bottom:12px;
+         background:#fdecea;color:#c62828"></div>
+    <label style="display:block;font-size:.8rem;font-weight:700;color:#6B7C6E;margin-bottom:6px">Who are you?</label>
+    <select id="lc-sel" style="width:100%;padding:11px 12px;border:1.5px solid #d4d0cc;
+      border-radius:11px;font-size:.95rem;background:#fafaf8;margin-bottom:13px;
+      font-family:inherit;outline:none;-webkit-appearance:none;box-sizing:border-box">
+      <option value="">&#x2014; Select your name &#x2014;</option>
+      <option value="mom">&#x1F469; Mom</option>
+      <option value="dad">&#x1F468; Dad</option>
+      <option value="son">&#x1F9D1; Son</option>
+      <option value="daughter">&#x1F467; Daughter</option>
+      <option value="soninlaw">&#x1F935; Son in Law</option>
+    </select>
+    <label style="display:block;font-size:.8rem;font-weight:700;color:#6B7C6E;margin-bottom:6px">Family Password</label>
+    <input id="lc-pw" type="password" placeholder="Enter family password"
+      style="width:100%;padding:11px 12px;border:1.5px solid #d4d0cc;
+             border-radius:11px;font-size:1rem;background:#fafaf8;
+             margin-bottom:16px;outline:none;box-sizing:border-box;font-family:inherit">
+    <button onclick="lcLogin()"
+      style="width:100%;padding:13px;background:#4a7c59;border:none;
+             border-radius:11px;color:#fff;font-size:1rem;font-weight:700;
+             cursor:pointer;font-family:inherit">
+      &#x1F513; Login
+    </button>
+    <button onclick="document.getElementById('loginScreen').style.display='none'"
+      style="width:100%;padding:10px;margin-top:8px;background:transparent;
+             border:none;color:#aaa;font-size:.81rem;cursor:pointer">
+      Continue without login
+    </button>
+  </div>
+  <div style="margin-top:14px;font-size:.7rem;color:#bbb">6-hour session &#x2022; Default: AnbuCare2026</div>
+</div>
+
+<script>
+function lcLogin() {
+  var s = document.getElementById('lc-sel').value;
+  var p = document.getElementById('lc-pw').value;
+  var m = document.getElementById('lc-msg');
+  m.style.display = 'none';
+  if (!s) { m.textContent = 'Please select your name'; m.style.display = 'block'; return; }
+  if (!p) { m.textContent = 'Please enter the family password'; m.style.display = 'block'; return; }
+  var pwd = localStorage.getItem('ac_family_pwd') || 'AnbuCare2026';
+  if (p.trim() !== pwd.trim()) {
+    m.style.background = '#fdecea'; m.style.color = '#c62828';
+    m.textContent = 'Wrong password — please try again';
+    m.style.display = 'block';
+    return;
+  }
+  var NAMES = {mom:'Mom',dad:'Dad',son:'Son',daughter:'Daughter',soninlaw:'Son in Law'};
+  var name = NAMES[s] || s;
+  try { localStorage.setItem('ac_sess_v97', JSON.stringify({id:s, name:name, exp:Date.now()+6*3600*1000})); } catch(e) {}
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('lc-pw').value = '';
+  var badge = document.getElementById('lc-badge');
+  if (badge) {
+    badge.textContent = name;
+    badge.onclick = function() {
+      if (confirm('Log out as ' + name + '?')) {
+        try { localStorage.removeItem('ac_sess_v97'); } catch(e) {}
+        badge.textContent = String.fromCodePoint(0x1F464);
+        badge.onclick = function(){ document.getElementById('loginScreen').style.display='flex'; };
+        document.getElementById('loginScreen').style.display = 'flex';
+      }
+    };
+  }
+  if (typeof toast === 'function') toast('Welcome, ' + name + '!');
+}
+(function() {
+  try {
+    var sess = JSON.parse(localStorage.getItem('ac_sess_v97') || 'null');
+    if (sess && Date.now() < sess.exp) {
+      document.getElementById('loginScreen').style.display = 'none';
+      var b = document.getElementById('lc-badge');
+      if (b) {
+        b.textContent = sess.name;
+        b.onclick = function() {
+          if (confirm('Log out as ' + sess.name + '?')) {
+            localStorage.removeItem('ac_sess_v97');
+            b.textContent = String.fromCodePoint(0x1F464);
+            b.onclick = function(){ document.getElementById('loginScreen').style.display='flex'; };
+            document.getElementById('loginScreen').style.display = 'flex';
+          }
+        };
+      }
+    }
+  } catch(e) {}
+})();
+</script>
+
 <div id="anbu-ec-ov" style="display:none" onclick="if(event.target===this)anbuEcNo()">
   <div class="anbu-ec-box">
     <div class="anbu-ec-ico">&#x23F0;</div>
@@ -592,19 +702,13 @@ input:checked+.tslider::before{transform:translateX(20px)}
 <!-- HEADER -->
 <div class="header">
   <div class="hbrand">
-    <div><div class="htitle">AnbuCare</div><div style="font-size:9px;color:#aaa;line-height:1;font-family:monospace;margin-top:-2px">v95</div><div class="hdate" id="hDate"></div><span id="syncBadge" title="Last synced from Sheets"></span></div>
+    <div><div class="htitle">AnbuCare</div><div style="font-size:9px;color:#aaa;line-height:1;font-family:monospace;margin-top:-2px">v97</div><div class="hdate" id="hDate"></div><span id="syncBadge" title="Last synced from Sheets"></span></div>
     <button class="red-cross-btn" onclick="openModal('helplineModal')" title="Emergency">✚</button>
   </div>
   <div class="hright">
-    <button id="lc-badge"
-      onclick="document.getElementById('loginScreen').style.display='flex'"
-      style="display:flex;align-items:center;gap:6px;height:36px;padding:0 14px 0 10px;
-             border-radius:18px;border:1.5px solid #7A9E7E;background:#F0EDE8;
-             color:#3a3a3a;font-size:.82rem;font-weight:700;cursor:pointer;
-             font-family:inherit;white-space:nowrap">
-      <span style="color:#5c3d8f">👤</span><span id="lc-lbl">Login</span>
-    </button>
-    <button class="hbtn" onclick="openModal('connectModal')">⚙️</button>
+    <button id="lc-badge" class="hbtn"
+      onclick="document.getElementById('loginScreen').style.display='flex'">&#x1F464;</button>
+    <button class="hbtn" onclick="openModal('connectModal')">&#x2699;&#xFE0F;</button>
     <!-- PK1: Pavithra Kolam — Sacred 8-petal lotus -->
 <div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;cursor:default" title="AnbuCare — Healing Kolam">
 <svg width="44" height="44" viewBox="0 0 100 100" style="overflow:visible">
@@ -1520,7 +1624,26 @@ input:checked+.tslider::before{transform:translateX(20px)}
     <div class="form-group"><label class="form-label">Apps Script URL</label><input type="url" class="form-input" id="scriptUrl" placeholder="https://script.google.com/macros/s/AKfycbzTI47hg9Ljp5nvayGasEuyR9Sx1q7FZqHYkue5YFXrxaLhednLPcz-mKlbmSQdDvhiWw/exec" value="https://script.google.com/macros/s/AKfycbzTI47hg9Ljp5nvayGasEuyR9Sx1q7FZqHYkue5YFXrxaLhednLPcz-mKlbmSQdDvhiWw/exec"></div>
     <div class="form-group"><label class="form-label">Google Sheet ID (optional)</label><input type="text" class="form-input" id="sheetId" placeholder="From your Sheet URL"></div>
     <div style="display:flex;align-items:center;gap:9px;margin-top:10px;font-size:1.05rem;font-weight:600;color:var(--muted)"><span class="cdot" id="modalDot"></span><span id="connStatusText">Not connected</span></div>
-    <button class="btn btn-primary btn-block mt-8" onclick="saveConn()">🔗 Save &amp; Connect</button>
+    <button class="btn btn-primary btn-block mt-8"     <div class="form-group" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+      <label class="form-label">&#x1F512; Family Login Password</label>
+      <div style="display:flex;gap:8px">
+        <input type="password" class="form-input" id="familyPwdSet" placeholder="Set family password" style="flex:1">
+        <button class="btn btn-primary" style="padding:0 16px;white-space:nowrap"
+          onclick="var v=document.getElementById('familyPwdSet').value.trim();if(v){localStorage.setItem('ac_family_pwd',v);document.getElementById('familyPwdSet').value='';alert('Password saved: '+v);}else{alert('Enter a password first');}">Save</button>
+      </div>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:4px">Default: <strong>AnbuCare2026</strong></div>
+    </div>
+    <div class="form-group" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
+      <label class="form-label">&#x1F512; Family Login Password</label>
+      <div style="display:flex;gap:8px">
+        <input type="password" class="form-input" id="familyPwdSet"
+          placeholder="Set new family password" style="flex:1">
+        <button class="btn btn-primary" style="padding:0 16px;white-space:nowrap"
+          onclick="var v=document.getElementById('familyPwdSet').value.trim();if(v){localStorage.setItem('ac_family_pwd',v);document.getElementById('familyPwdSet').value='';alert('Password saved!');}else{alert('Enter a password first');}">Save</button>
+      </div>
+      <div style="font-size:.75rem;color:var(--muted);margin-top:4px">Default: <strong>AnbuCare2026</strong></div>
+    </div>
+onclick="saveConn()">🔗 Save &amp; Connect</button>
     <button class="btn btn-block mt-8" style="background:var(--surface2);color:var(--muted);padding:11px;border-radius:30px;font-weight:700;font-size:.88rem" onclick="clearConn()">🗑️ Clear Connection</button>
   </div>
 
@@ -5720,10 +5843,7 @@ function switchAdd(tab,btn){['medicine','diet','test'].forEach(t=>document.getEl
 // ═══════════════════════════════════════════
 // MODALS / UTILS
 // ═══════════════════════════════════════════
-function openModal(id){
-  document.querySelectorAll('.modal-overlay.open').forEach(function(el){el.classList.remove('open');});
-  document.getElementById(id).classList.add('open');
-}
+function openModal(id){document.querySelectorAll('.modal-overlay.open').forEach(function(el){el.classList.remove('open');});document.getElementById(id).classList.add('open');}
 function closeModal(id){
   // Reset any pending edit states so next Add is a fresh create
   if(id==='addModal'){
@@ -5863,219 +5983,5 @@ function fmtDate(s){if(!s)return'';const p=String(s).substring(0,10).split('-');
     <div id="sosModalList"></div>
   </div>
 </div>
-
-<div id="loginScreen"
-  style="position:fixed;top:0;left:0;right:0;bottom:0;
-         background:linear-gradient(160deg,#f5f0ea 0%,#e8f5e9 100%);
-         z-index:9999;display:flex;flex-direction:column;
-         align-items:center;justify-content:center;padding:24px;
-         font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
-
-  <!-- Logo / Title -->
-  <div style="text-align:center;margin-bottom:32px">
-    <div style="font-size:48px;margin-bottom:8px">🌸</div>
-    <div style="font-size:1.8rem;font-weight:800;color:#3a3a3a;letter-spacing:-0.5px">AnbuCare</div>
-    <div style="font-size:.85rem;color:#888;margin-top:4px">Family Cancer Care Dashboard</div>
-  </div>
-
-  <!-- Login Card -->
-  <div style="background:white;border-radius:20px;padding:28px 24px;
-              width:100%;max-width:380px;
-              box-shadow:0 4px 24px rgba(0,0,0,.10)">
-
-    <div id="lc-msg"
-      style="display:none;padding:10px 14px;border-radius:10px;
-             font-size:.84rem;font-weight:700;text-align:center;
-             margin-bottom:16px;background:#fdecea;color:#c62828"></div>
-
-    <label style="display:block;font-size:.82rem;font-weight:700;
-                  color:#6B7C6E;margin-bottom:8px">Who are you?</label>
-    <select id="lc-sel"
-      style="width:100%;padding:12px 14px;border:1.5px solid #d4d0cc;
-             border-radius:12px;font-size:.95rem;background:#fafaf8;
-             color:#3a3a3a;margin-bottom:16px;outline:none;
-             font-family:inherit;-webkit-appearance:none">
-      <option value="">— Select your name —</option>
-      <option value="mom">👩 Mom</option>
-      <option value="dad">👨 Dad</option>
-      <option value="son">🧑 Son</option>
-      <option value="daughter">👧 Daughter</option>
-      <option value="soninlaw">🤵 Son in Law</option>
-    </select>
-
-    <label style="display:block;font-size:.82rem;font-weight:700;
-                  color:#6B7C6E;margin-bottom:8px">Family Password</label>
-    <input id="lc-pw" type="password"
-      placeholder="Enter family password"
-      style="width:100%;padding:12px 14px;border:1.5px solid #d4d0cc;
-             border-radius:12px;font-size:1rem;background:#fafaf8;
-             color:#3a3a3a;margin-bottom:20px;outline:none;
-             font-family:inherit;box-sizing:border-box;
-             -webkit-text-security:disc">
-
-    <button id="lc-btn"
-      onclick="lcDoLogin()"
-      style="width:100%;padding:14px;background:#4a7c59;border:none;
-             border-radius:12px;color:white;font-size:1rem;font-weight:700;
-             cursor:pointer;font-family:inherit;letter-spacing:.3px">
-      🔓 Login
-    </button>
-
-    <button onclick="lcSkip()"
-      style="width:100%;padding:12px;margin-top:10px;background:transparent;
-             border:none;color:#aaa;font-size:.83rem;cursor:pointer;
-             font-family:inherit">
-      Continue without login
-    </button>
-  </div>
-
-  <div style="margin-top:20px;font-size:.75rem;color:#bbb;text-align:center">
-    Session stays active for 6 hours
-  </div>
-</div>
-<script>
-/* AnbuCare v94 — Login (full-screen, visible by default) */
-var LC_SESSION_KEY = 'anbucare_v94_sess';
-var LC_HOURS = 6;
-
-function lcGetSess() {
-  try {
-    var s = JSON.parse(localStorage.getItem(LC_SESSION_KEY) || 'null');
-    return (s && Date.now() < s.exp) ? s : null;
-  } catch(e) { return null; }
-}
-
-function lcMsg(txt, ok) {
-  var el = document.getElementById('lc-msg');
-  if (!el) return;
-  el.textContent = txt;
-  el.style.background = ok ? '#D8EDD9' : '#fdecea';
-  el.style.color = ok ? '#1b5e20' : '#c62828';
-  el.style.display = txt ? 'block' : 'none';
-}
-
-function lcShowScreen() {
-  var s = document.getElementById('loginScreen');
-  if (s) s.style.display = 'flex';
-}
-
-function lcHideScreen() {
-  var s = document.getElementById('loginScreen');
-  if (s) s.style.display = 'none';
-}
-
-function lcSkip() {
-  lcHideScreen();
-}
-
-function lcUpdateBadge() {
-  var badge = document.getElementById('lc-badge');
-  var label = document.getElementById('lc-lbl');
-  if (!badge || !label) return;
-  var sess = lcGetSess();
-  if (sess) {
-    label.textContent = sess.name;
-    badge.style.background = '#D8EDD9';
-    badge.style.color = '#1b5e20';
-    badge.onclick = function() {
-      if (confirm('Log out as ' + sess.name + '?')) {
-        localStorage.removeItem(LC_SESSION_KEY);
-        lcUpdateBadge();
-        lcShowScreen();
-      }
-    };
-  } else {
-    label.textContent = 'Login';
-    badge.style.background = '#F0EDE8';
-    badge.style.color = '#3a3a3a';
-    badge.onclick = function() { lcShowScreen(); };
-  }
-}
-
-async function lcDoLogin() {
-  var sel = document.getElementById('lc-sel');
-  var pw  = document.getElementById('lc-pw');
-  var btn = document.getElementById('lc-btn');
-  lcMsg('');
-
-  if (!sel || !sel.value) { lcMsg('Please select your name'); return; }
-  if (!pw  || !pw.value.trim()) { lcMsg('Please enter the family password'); return; }
-
-  btn.disabled = true;
-  btn.textContent = '⏳ Verifying…';
-
-  try {
-    var url = localStorage.getItem('anbucare_url') ||
-              (typeof GAS_URL !== 'undefined' ? GAS_URL : '');
-
-    if (!url) {
-      lcMsg('No Sheets URL — tap ✕ then tap ⚙️ to connect first');
-      btn.disabled = false;
-      btn.textContent = '🔓 Login';
-      return;
-    }
-
-    var ctrl  = new AbortController();
-    var timer = setTimeout(function() { ctrl.abort(); }, 12000);
-
-    var res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        action: 'login',
-        memberId: sel.value,
-        password: pw.value.trim()
-      }),
-      redirect: 'follow',
-      signal: ctrl.signal
-    });
-    clearTimeout(timer);
-
-    var data = JSON.parse(await res.text());
-
-    if (data.success) {
-      var name = data.memberName || sel.options[sel.selectedIndex].text.replace(/^\S+\s/, '');
-      localStorage.setItem(LC_SESSION_KEY, JSON.stringify({
-        id:   data.memberId,
-        name: name,
-        tok:  data.sessionToken || '',
-        exp:  Date.now() + LC_HOURS * 3600 * 1000
-      }));
-      lcHideScreen();
-      lcUpdateBadge();
-      if (typeof toast === 'function') toast('✅ Welcome, ' + name + '!');
-      /* Load fresh data from Sheets */
-      try { if (typeof loadFcState === 'function') loadFcState(); } catch(e) {}
-      try { if (typeof renderAll  === 'function') await renderAll(); }  catch(e) {}
-    } else {
-      lcMsg(data.error || 'Wrong password — please try again');
-    }
-
-  } catch(err) {
-    lcMsg(err.name === 'AbortError' ? 'Timeout — check internet' : 'Error: ' + err.message);
-  }
-
-  btn.disabled = false;
-  btn.textContent = '🔓 Login';
-}
-
-/* On page load: hide login if valid session exists, else show it */
-window.addEventListener('load', function() {
-  lcUpdateBadge();
-  if (lcGetSess()) {
-    lcHideScreen();  /* valid session → go straight to app */
-  }
-  /* else loginScreen is already visible (display:flex by default) */
-});
-
-/* Re-check session every 5 min */
-setInterval(function() {
-  if (!lcGetSess()) {
-    lcUpdateBadge();
-    lcShowScreen();
-  }
-}, 5 * 60 * 1000);
-
-</script>
 </body>
 </html>
