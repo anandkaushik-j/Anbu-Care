@@ -1,4 +1,4 @@
-<!-- AnbuCare v97 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
+<!-- AnbuCare v98 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
 <!DOCTYPE html>
 <html lang="en-IN">
 <head>
@@ -577,105 +577,265 @@ input:checked+.tslider::before{transform:translateX(20px)}
 </head>
 <body>
 <div id="loginScreen"
-  style="position:fixed;top:0;left:0;right:0;bottom:0;
-         background:linear-gradient(160deg,#f5f0ea 0%,#e8f5e9 100%);
-         z-index:9999;display:flex;flex-direction:column;
-         align-items:center;justify-content:center;padding:20px;
+  style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;
+         display:flex;flex-direction:column;align-items:center;justify-content:center;
+         background:linear-gradient(160deg,#f5f0ea 0%,#e8f5e9 100%);padding:20px;
          font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
 
-  <button onclick="document.getElementById('loginScreen').style.display='none'"
-    style="position:absolute;top:14px;right:14px;width:38px;height:38px;
-           border-radius:50%;background:rgba(0,0,0,.08);border:none;
-           font-size:1.1rem;cursor:pointer;color:#555">&#x2715;</button>
-
   <div style="text-align:center;margin-bottom:24px">
-    <div style="font-size:40px">&#x1F338;</div>
-    <div style="font-size:1.6rem;font-weight:800;color:#3a3a3a;margin-top:4px">AnbuCare</div>
-    <div style="font-size:.8rem;color:#888">Family Cancer Care</div>
+    <div style="width:80px;height:80px;display:flex;align-items:center;
+     justify-content:center;margin:0 auto 8px auto">
+  <svg width="80" height="80" viewBox="0 0 100 100" style="overflow:visible">
+  <defs>
+    <radialGradient id="g1c" cx="50%" cy="50%" r="50%">
+      <stop offset="0%"   stop-color="#E1AD01"/>
+      <stop offset="100%" stop-color="#C9920A"/>
+    </radialGradient>
+    <radialGradient id="g1p1" cx="50%" cy="20%" r="60%">
+      <stop offset="0%"   stop-color="#D68E70"/>
+      <stop offset="100%" stop-color="#A0534A"/>
+    </radialGradient>
+    <radialGradient id="g1p2" cx="50%" cy="20%" r="60%">
+      <stop offset="0%"   stop-color="#99A98F"/>
+      <stop offset="100%" stop-color="#4A7A50"/>
+    </radialGradient>
+    <radialGradient id="g1p3" cx="50%" cy="20%" r="60%">
+      <stop offset="0%"   stop-color="#A0789A"/>
+      <stop offset="100%" stop-color="#6A3A68"/>
+    </radialGradient>
+  </defs>
+  <style>
+    .pk1w{animation:pk1breathe 4s ease-in-out infinite,pk1glow 4s ease-in-out infinite;transform-origin:50px 50px}
+    .pk1o{animation:pk1spinout 16s linear infinite;transform-origin:50px 50px}
+    .pk1m{animation:pk1spinin 10s linear infinite;transform-origin:50px 50px}
+    .pk1ct{animation:pk1pulse 2s ease-in-out infinite;transform-origin:50px 50px}
+    @keyframes pk1breathe{0%,100%{transform:scale(.92)}50%{transform:scale(1.06)}}
+    @keyframes pk1spinout{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+    @keyframes pk1spinin{from{transform:rotate(0)}to{transform:rotate(-360deg)}}
+    @keyframes pk1pulse{0%,100%{opacity:.8;transform:scale(.9)}50%{opacity:1;transform:scale(1.1)}}
+    @keyframes pk1glow{0%,100%{filter:drop-shadow(0 0 4px rgba(225,173,1,.5))}50%{filter:drop-shadow(0 0 12px rgba(225,173,1,.95))}}
+  
+/* ── DAILY SUMMARY STRIP (Medicines & Diet) ── */
+.day-sum-wrap{margin-bottom:16px;}
+.day-sum-title{font-size:.72rem;font-weight:800;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.9px;margin-bottom:9px;display:flex;align-items:center;gap:5px;}
+.day-sum-strip{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;
+  -webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory;scrollbar-width:none;}
+.day-sum-strip::-webkit-scrollbar{display:none;}
+.dsc{min-width:152px;max-width:172px;border-radius:14px;padding:12px 12px 11px;
+  flex-shrink:0;scroll-snap-align:start;box-shadow:0 2px 10px rgba(0,0,0,.09);}
+.dsc-morning {background:linear-gradient(135deg,#FFFDE7,#FFF9C4);border:1.5px solid #FFD54F;}
+.dsc-afternoon{background:linear-gradient(135deg,#E3F2FD,#BBDEFB);border:1.5px solid #90CAF9;}
+.dsc-evening  {background:linear-gradient(135deg,#FBE9E7,#FFCCBC);border:1.5px solid #FFAB91;}
+.dsc-night    {background:linear-gradient(135deg,#EDE7F6,#D1C4E9);border:1.5px solid #B39DDB;}
+.dsc-sos      {background:linear-gradient(135deg,#FFEBEE,#FFCDD2);border:1.5px solid #EF9A9A;}
+.dsc-head{display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap;}
+.dsc-emoji{font-size:1.2rem;line-height:1;flex-shrink:0;}
+.dsc-label{font-size:.84rem;font-weight:800;color:#2a2a2a;}
+.dsc-sub{font-size:.66rem;color:var(--muted);font-weight:600;width:100%;margin-top:-4px;padding-left:2px;}
+.dsc-items{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:5px;}
+.dsc-item{font-size:.78rem;color:#3a3a3a;line-height:1.38;padding:5px 8px;
+  background:rgba(255,255,255,.72);border-radius:8px;}
+.dsc-item b{display:block;font-size:.8rem;margin-bottom:1px;}
+.dsc-item-sub{font-size:.7rem;color:#666;line-height:1.3;}
+
+/* ── AnbuCare FC Early-Done Confirm v48 ────────────────── */
+#anbu-ec-ov{display:none;position:fixed;inset:0;z-index:99999;
+  background:rgba(0,0,0,.55);align-items:center;justify-content:center;
+  padding:20px;box-sizing:border-box;}
+#anbu-ec-ov.on{display:flex!important;}
+.anbu-ec-box{background:#fff;border-radius:22px;padding:28px 22px 22px;
+  max-width:340px;width:100%;box-shadow:0 12px 48px rgba(0,0,0,.28);
+  text-align:center;animation:anbuIn .22s cubic-bezier(.16,1,.3,1);}
+@keyframes anbuIn{from{transform:scale(.88);opacity:0}to{transform:scale(1);opacity:1}}
+.anbu-ec-ico{font-size:2.6rem;line-height:1;margin-bottom:10px}
+.anbu-ec-ttl{font-size:1.2rem;font-weight:800;color:#1f3320;margin-bottom:6px}
+.anbu-ec-msg{font-size:.95rem;color:#555;line-height:1.5;margin-bottom:12px}
+.anbu-ec-card{background:#FFFBEE;border:2px solid #E1AD01;border-radius:12px;
+  padding:10px 14px;margin-bottom:18px;font-size:1rem;font-weight:700;color:#6B4C00}
+.anbu-ec-card small{display:block;font-size:.82rem;font-weight:500;color:#8C6600;margin-top:3px}
+.anbu-ec-y{display:block;width:100%;padding:17px;margin-bottom:10px;
+  background:#3d6b43;color:#fff;border:none;border-radius:13px;
+  font-size:1.1rem;font-weight:800;cursor:pointer;}
+.anbu-ec-y:active{background:#2e5233}
+.anbu-ec-n{display:block;width:100%;padding:16px;background:#F0EDE8;color:#333;
+  border:2px solid #D4D0CA;border-radius:13px;font-size:1.1rem;font-weight:700;cursor:pointer;}
+.anbu-ec-n:active{background:#E0DDD8}
+/* ── v51 Symptom Tap-Buttons ───────────────────────────── */
+.sym-btn-grp{display:flex;gap:5px;width:100%;margin:8px 0 4px;
+  position:relative;z-index:1;
+  transition:transform .22s cubic-bezier(.16,1,.3,1),box-shadow .22s ease;
+  transform-origin:center center;border-radius:16px;}
+.sym-btn-grp.sym-grp-zoom{transform:scale(1.09);z-index:200;
+  box-shadow:0 8px 32px rgba(61,107,67,.28);}
+.sym-btn{flex:1;min-width:0;padding:9px 2px 7px;border:2px solid #ddd;
+  border-radius:13px;background:#f5f7f5;cursor:pointer;text-align:center;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;
+  transition:border-color .15s,background .15s,transform .12s;-webkit-user-select:none;}
+.sym-btn:active{transform:scale(.9);}
+.sym-btn.active{border-color:#3d6b43;background:#e8f5e9;box-shadow:0 0 0 1px #3d6b43;}
+.sym-btn-grp.sym-grp-zoom .sbe{font-size:1.75rem;}
+.sym-btn-grp.sym-grp-zoom .sbl{font-size:.72rem;}
+.sym-btn-grp.sym-grp-zoom .sym-btn{padding:11px 3px 9px;border-radius:15px;}
+.sym-btn-grp.sym-grp-zoom .sym-btn.active{border-color:#3d6b43;background:#d0f0d8;box-shadow:0 0 0 2px #3d6b43;}
+.sbe{font-size:1.5rem;line-height:1.1;}
+.sbl{font-size:.62rem;font-weight:700;color:#444;line-height:1.15;word-break:break-word;text-align:center;}
+.sym-btn.active .sbl{color:#2e5233;}
+.sym-row{overflow:visible!important;}
+/* ── v52 Live Sync badge ────────────────────────────────── */
+#syncBadge{display:inline-flex;align-items:center;gap:5px;
+  font-size:.72rem;color:var(--muted);padding:3px 8px;
+  background:var(--surface2,#f0f4f0);border-radius:20px;
+  margin-left:8px;vertical-align:middle;transition:opacity .4s;}
+#syncBadge.syncing{color:#3d6b43;}
+#syncBadge.updated{color:#1a7a1a;font-weight:700;}
+
+
+/* ── v53 Custom Date Text Input ──────────────────────────── */
+.date-text-input{
+  letter-spacing:.08em;
+  font-variant-numeric:tabular-nums;
+}
+.date-text-input::placeholder{
+  letter-spacing:.04em;
+  opacity:.55;
+  font-size:.88rem;
+}
+
+</style>
+  <g class="pk1w">
+    <g class="pk1o">
+      <ellipse cx="50" cy="22" rx="8" ry="18" fill="url(#g1p1)" transform="rotate(0,50,50)"/>
+      <ellipse cx="50" cy="22" rx="8" ry="18" fill="url(#g1p2)" transform="rotate(45,50,50)"/>
+      <ellipse cx="50" cy="22" rx="8" ry="18" fill="url(#g1p1)" transform="rotate(90,50,50)"/>
+      <ellipse cx="50" cy="22" rx="8" ry="18" fill="url(#g1p3)" transform="rotate(135,50,50)"/>
+      <ellipse cx="50" cy="22" rx="8" ry="18" fill="url(#g1p1)" transform="rotate(180,50,50)"/>
+      <ellipse cx="50" cy="22" rx="8" ry="18" fill="url(#g1p2)" transform="rotate(225,50,50)"/>
+      <ellipse cx="50" cy="22" rx="8" ry="18" fill="url(#g1p1)" transform="rotate(270,50,50)"/>
+      <ellipse cx="50" cy="22" rx="8" ry="18" fill="url(#g1p3)" transform="rotate(315,50,50)"/>
+    </g>
+    <g class="pk1m">
+      <ellipse cx="50" cy="32" rx="5" ry="12" fill="#FEF9ED" opacity=".7" transform="rotate(22.5,50,50)"/>
+      <ellipse cx="50" cy="32" rx="5" ry="12" fill="#FEF9ED" opacity=".7" transform="rotate(112.5,50,50)"/>
+      <ellipse cx="50" cy="32" rx="5" ry="12" fill="#FEF9ED" opacity=".7" transform="rotate(202.5,50,50)"/>
+      <ellipse cx="50" cy="32" rx="5" ry="12" fill="#FEF9ED" opacity=".7" transform="rotate(292.5,50,50)"/>
+    </g>
+    <g class="pk1o" style="animation-duration:20s">
+      <circle cx="50" cy="14" r="2.5" fill="#E1AD01" transform="rotate(0,50,50)"/>
+      <circle cx="50" cy="14" r="2.5" fill="#E1AD01" transform="rotate(45,50,50)"/>
+      <circle cx="50" cy="14" r="2.5" fill="#E1AD01" transform="rotate(90,50,50)"/>
+      <circle cx="50" cy="14" r="2.5" fill="#E1AD01" transform="rotate(135,50,50)"/>
+      <circle cx="50" cy="14" r="2.5" fill="#E1AD01" transform="rotate(180,50,50)"/>
+      <circle cx="50" cy="14" r="2.5" fill="#E1AD01" transform="rotate(225,50,50)"/>
+      <circle cx="50" cy="14" r="2.5" fill="#E1AD01" transform="rotate(270,50,50)"/>
+      <circle cx="50" cy="14" r="2.5" fill="#E1AD01" transform="rotate(315,50,50)"/>
+    </g>
+    <g class="pk1ct">
+      <circle cx="50" cy="50" r="12" fill="url(#g1c)"/>
+      <circle cx="50" cy="50" r="7"  fill="#FEF9ED"/>
+      <circle cx="50" cy="50" r="3.5" fill="#C9920A"/>
+    </g>
+  </g>
+</svg>
+</div>
+    <div style="font-size:1.7rem;font-weight:800;color:#3a3a3a;margin-top:4px">AnbuCare</div>
+    <div style="font-size:.82rem;color:#888">Family Cancer Care Dashboard</div>
   </div>
 
-  <div style="background:#fff;border-radius:18px;padding:22px 18px;
-              width:100%;max-width:340px;box-shadow:0 4px 20px rgba(0,0,0,.10)">
-    <div id="lc-msg" style="display:none;padding:9px 12px;border-radius:9px;
-         font-size:.83rem;font-weight:700;text-align:center;margin-bottom:12px;
+  <div style="background:#fff;border-radius:20px;padding:24px 20px;
+              width:100%;max-width:340px;box-shadow:0 4px 24px rgba(0,0,0,.10)">
+
+    <div id="lc-msg" style="display:none;padding:10px 12px;border-radius:10px;
+         font-size:.84rem;font-weight:700;text-align:center;margin-bottom:14px;
          background:#fdecea;color:#c62828"></div>
-    <label style="display:block;font-size:.8rem;font-weight:700;color:#6B7C6E;margin-bottom:6px">Who are you?</label>
-    <select id="lc-sel" style="width:100%;padding:11px 12px;border:1.5px solid #d4d0cc;
-      border-radius:11px;font-size:.95rem;background:#fafaf8;margin-bottom:13px;
-      font-family:inherit;outline:none;-webkit-appearance:none;box-sizing:border-box">
-      <option value="">&#x2014; Select your name &#x2014;</option>
-      <option value="mom">&#x1F469; Mom</option>
-      <option value="dad">&#x1F468; Dad</option>
-      <option value="son">&#x1F9D1; Son</option>
-      <option value="daughter">&#x1F467; Daughter</option>
-      <option value="soninlaw">&#x1F935; Son in Law</option>
-    </select>
-    <label style="display:block;font-size:.8rem;font-weight:700;color:#6B7C6E;margin-bottom:6px">Family Password</label>
-    <input id="lc-pw" type="password" placeholder="Enter family password"
-      style="width:100%;padding:11px 12px;border:1.5px solid #d4d0cc;
-             border-radius:11px;font-size:1rem;background:#fafaf8;
-             margin-bottom:16px;outline:none;box-sizing:border-box;font-family:inherit">
-    <button onclick="lcLogin()"
-      style="width:100%;padding:13px;background:#4a7c59;border:none;
-             border-radius:11px;color:#fff;font-size:1rem;font-weight:700;
-             cursor:pointer;font-family:inherit">
+
+    <div style="text-align:center;margin-bottom:18px">
+      <div style="font-size:2rem">&#x1F469;&#x200D;&#x2695;&#xFE0F;</div>
+      <div style="font-size:1rem;font-weight:700;color:#3a3a3a;margin-top:4px">Caregiver Login</div>
+    </div>
+
+    <label style="display:block;font-size:.82rem;font-weight:700;color:#6B7C6E;margin-bottom:6px">Password</label>
+    <input id="lc-pw" type="password" placeholder="Enter password"
+      autocomplete="current-password"
+      style="width:100%;padding:12px 14px;border:1.5px solid #d4d0cc;border-radius:12px;
+             font-size:1rem;background:#fafaf8;margin-bottom:18px;outline:none;
+             box-sizing:border-box;font-family:inherit"
+      onkeydown="if(event.key==='Enter')lcLogin()">
+
+    <button id="lc-btn" onclick="lcLogin()"
+      style="width:100%;padding:14px;background:#4a7c59;border:none;border-radius:12px;
+             color:#fff;font-size:1rem;font-weight:700;cursor:pointer;font-family:inherit">
       &#x1F513; Login
     </button>
-    <button onclick="document.getElementById('loginScreen').style.display='none'"
-      style="width:100%;padding:10px;margin-top:8px;background:transparent;
-             border:none;color:#aaa;font-size:.81rem;cursor:pointer">
-      Continue without login
-    </button>
   </div>
-  <div style="margin-top:14px;font-size:.7rem;color:#bbb">6-hour session &#x2022; Default: AnbuCare2026</div>
 </div>
 
 <script>
-function lcLogin() {
-  var s = document.getElementById('lc-sel').value;
+/* AnbuCare v98 — Secure Login
+   Password hash: SHA-256(salt+password)  — plain text never stored
+   To change password: update HASH in Code.gs, recompute and update _H here */
+var _S = 'AnbuCare_Caregiver_2026';
+var _H = '292bb53ae07602641ca82e96de6ef44496c33bf4cd116deee62839d27bdaccfa';
+
+async function lcLogin() {
   var p = document.getElementById('lc-pw').value;
   var m = document.getElementById('lc-msg');
+  var btn = document.getElementById('lc-btn');
   m.style.display = 'none';
-  if (!s) { m.textContent = 'Please select your name'; m.style.display = 'block'; return; }
-  if (!p) { m.textContent = 'Please enter the family password'; m.style.display = 'block'; return; }
-  var pwd = localStorage.getItem('ac_family_pwd') || 'AnbuCare2026';
-  if (p.trim() !== pwd.trim()) {
-    m.style.background = '#fdecea'; m.style.color = '#c62828';
-    m.textContent = 'Wrong password — please try again';
-    m.style.display = 'block';
-    return;
-  }
-  var NAMES = {mom:'Mom',dad:'Dad',son:'Son',daughter:'Daughter',soninlaw:'Son in Law'};
-  var name = NAMES[s] || s;
-  try { localStorage.setItem('ac_sess_v97', JSON.stringify({id:s, name:name, exp:Date.now()+6*3600*1000})); } catch(e) {}
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('lc-pw').value = '';
-  var badge = document.getElementById('lc-badge');
-  if (badge) {
-    badge.textContent = name;
-    badge.onclick = function() {
-      if (confirm('Log out as ' + name + '?')) {
-        try { localStorage.removeItem('ac_sess_v97'); } catch(e) {}
-        badge.textContent = String.fromCodePoint(0x1F464);
-        badge.onclick = function(){ document.getElementById('loginScreen').style.display='flex'; };
-        document.getElementById('loginScreen').style.display = 'flex';
+  if (!p) { m.textContent = 'Please enter the password'; m.style.display = 'block'; return; }
+  btn.disabled = true; btn.textContent = 'Verifying\u2026';
+  try {
+    var enc = new TextEncoder().encode(_S + p);
+    var buf = await crypto.subtle.digest('SHA-256', enc);
+    var hex = Array.from(new Uint8Array(buf)).map(function(b){ return ('0'+b.toString(16)).slice(-2); }).join('');
+    if (hex === _H) {
+      try { localStorage.setItem('ac_sess_v98', JSON.stringify({name:'Caregiver', exp: Date.now()+6*3600*1000})); } catch(e) {}
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('lc-pw').value = '';
+      var badge = document.getElementById('lc-badge');
+      if (badge) {
+        badge.textContent = 'CG';
+        badge.title = 'Logged in as Caregiver';
+        badge.style.background = '#D8EDD9';
+        badge.style.color = '#1b5e20';
+        badge.onclick = function() {
+          if (confirm('Log out as Caregiver?')) {
+            try { localStorage.removeItem('ac_sess_v98'); } catch(e) {}
+            badge.textContent = String.fromCodePoint(0x1F464);
+            badge.style.background = ''; badge.style.color = '';
+            badge.onclick = function(){ document.getElementById('loginScreen').style.display='flex'; };
+            document.getElementById('loginScreen').style.display = 'flex';
+          }
+        };
       }
-    };
+      if (typeof toast === 'function') toast('\u2705 Welcome, Caregiver!');
+    } else {
+      m.style.background = '#fdecea'; m.style.color = '#c62828';
+      m.textContent = 'Wrong password \u2014 please try again';
+      m.style.display = 'block';
+    }
+  } catch(e) {
+    m.textContent = 'Error: ' + e.message; m.style.display = 'block';
   }
-  if (typeof toast === 'function') toast('Welcome, ' + name + '!');
+  btn.disabled = false; btn.textContent = '\uD83D\uDD13 Login';
 }
+
+/* Check session on load — hide login if valid session exists */
 (function() {
   try {
-    var sess = JSON.parse(localStorage.getItem('ac_sess_v97') || 'null');
+    var sess = JSON.parse(localStorage.getItem('ac_sess_v98') || 'null');
     if (sess && Date.now() < sess.exp) {
       document.getElementById('loginScreen').style.display = 'none';
       var b = document.getElementById('lc-badge');
       if (b) {
-        b.textContent = sess.name;
+        b.textContent = 'CG'; b.title = 'Logged in as Caregiver';
+        b.style.background = '#D8EDD9'; b.style.color = '#1b5e20';
         b.onclick = function() {
-          if (confirm('Log out as ' + sess.name + '?')) {
-            localStorage.removeItem('ac_sess_v97');
+          if (confirm('Log out as Caregiver?')) {
+            localStorage.removeItem('ac_sess_v98');
             b.textContent = String.fromCodePoint(0x1F464);
+            b.style.background = ''; b.style.color = '';
             b.onclick = function(){ document.getElementById('loginScreen').style.display='flex'; };
             document.getElementById('loginScreen').style.display = 'flex';
           }
@@ -702,7 +862,7 @@ function lcLogin() {
 <!-- HEADER -->
 <div class="header">
   <div class="hbrand">
-    <div><div class="htitle">AnbuCare</div><div style="font-size:9px;color:#aaa;line-height:1;font-family:monospace;margin-top:-2px">v97</div><div class="hdate" id="hDate"></div><span id="syncBadge" title="Last synced from Sheets"></span></div>
+    <div><div class="htitle">AnbuCare</div><div style="font-size:9px;color:#aaa;line-height:1;font-family:monospace;margin-top:-2px">v98</div><div class="hdate" id="hDate"></div><span id="syncBadge" title="Last synced from Sheets"></span></div>
     <button class="red-cross-btn" onclick="openModal('helplineModal')" title="Emergency">✚</button>
   </div>
   <div class="hright">
@@ -1624,26 +1784,7 @@ function lcLogin() {
     <div class="form-group"><label class="form-label">Apps Script URL</label><input type="url" class="form-input" id="scriptUrl" placeholder="https://script.google.com/macros/s/AKfycbzTI47hg9Ljp5nvayGasEuyR9Sx1q7FZqHYkue5YFXrxaLhednLPcz-mKlbmSQdDvhiWw/exec" value="https://script.google.com/macros/s/AKfycbzTI47hg9Ljp5nvayGasEuyR9Sx1q7FZqHYkue5YFXrxaLhednLPcz-mKlbmSQdDvhiWw/exec"></div>
     <div class="form-group"><label class="form-label">Google Sheet ID (optional)</label><input type="text" class="form-input" id="sheetId" placeholder="From your Sheet URL"></div>
     <div style="display:flex;align-items:center;gap:9px;margin-top:10px;font-size:1.05rem;font-weight:600;color:var(--muted)"><span class="cdot" id="modalDot"></span><span id="connStatusText">Not connected</span></div>
-    <button class="btn btn-primary btn-block mt-8"     <div class="form-group" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
-      <label class="form-label">&#x1F512; Family Login Password</label>
-      <div style="display:flex;gap:8px">
-        <input type="password" class="form-input" id="familyPwdSet" placeholder="Set family password" style="flex:1">
-        <button class="btn btn-primary" style="padding:0 16px;white-space:nowrap"
-          onclick="var v=document.getElementById('familyPwdSet').value.trim();if(v){localStorage.setItem('ac_family_pwd',v);document.getElementById('familyPwdSet').value='';alert('Password saved: '+v);}else{alert('Enter a password first');}">Save</button>
-      </div>
-      <div style="font-size:.75rem;color:var(--muted);margin-top:4px">Default: <strong>AnbuCare2026</strong></div>
-    </div>
-    <div class="form-group" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border)">
-      <label class="form-label">&#x1F512; Family Login Password</label>
-      <div style="display:flex;gap:8px">
-        <input type="password" class="form-input" id="familyPwdSet"
-          placeholder="Set new family password" style="flex:1">
-        <button class="btn btn-primary" style="padding:0 16px;white-space:nowrap"
-          onclick="var v=document.getElementById('familyPwdSet').value.trim();if(v){localStorage.setItem('ac_family_pwd',v);document.getElementById('familyPwdSet').value='';alert('Password saved!');}else{alert('Enter a password first');}">Save</button>
-      </div>
-      <div style="font-size:.75rem;color:var(--muted);margin-top:4px">Default: <strong>AnbuCare2026</strong></div>
-    </div>
-onclick="saveConn()">🔗 Save &amp; Connect</button>
+    <button class="btn btn-primary btn-block mt-8" onclick="saveConn()">🔗 Save &amp; Connect</button>
     <button class="btn btn-block mt-8" style="background:var(--surface2);color:var(--muted);padding:11px;border-radius:30px;font-weight:700;font-size:.88rem" onclick="clearConn()">🗑️ Clear Connection</button>
   </div>
 
@@ -1651,6 +1792,10 @@ onclick="saveConn()">🔗 Save &amp; Connect</button>
 <div id="printReport"></div>
 
 <script>
+/* ── AnbuCare v98: Hardbaked Apps Script URL ── */
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbzTI47hg9Ljp5nvayGasEuyR9Sx1q7FZqHYkue5YFXrxaLhednLPcz-mKlbmSQdDvhiWw/exec';
+try { localStorage.setItem('anbucare_url', GAS_URL); } catch(e) {}
+
 // Safe _LS shim (handles sandboxed preview iframes)
 var _LS = (function(){
   try{ window.localStorage.setItem('__lsT','1'); window.localStorage.removeItem('__lsT'); return window.localStorage; }
