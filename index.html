@@ -1,4 +1,4 @@
-<!-- AnbuCare v90 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
+<!-- AnbuCare v94 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
 <!DOCTYPE html>
 <html lang="en-IN">
 <head>
@@ -592,15 +592,17 @@ input:checked+.tslider::before{transform:translateX(20px)}
 <!-- HEADER -->
 <div class="header">
   <div class="hbrand">
-    <div><div class="htitle">AnbuCare</div><div style="font-size:9px;color:#aaa;line-height:1;font-family:monospace;margin-top:-2px">v90</div><div class="hdate" id="hDate"></div><span id="syncBadge" title="Last synced from Sheets"></span></div>
+    <div><div class="htitle">AnbuCare</div><div style="font-size:9px;color:#aaa;line-height:1;font-family:monospace;margin-top:-2px">v95</div><div class="hdate" id="hDate"></div><span id="syncBadge" title="Last synced from Sheets"></span></div>
     <button class="red-cross-btn" onclick="openModal('helplineModal')" title="Emergency">✚</button>
   </div>
   <div class="hright">
     <button id="lc-badge"
-      onclick="openModal('lc-overlay')"
-      style="display:flex;align-items:center;gap:7px;height:36px;padding:0 14px 0 10px;border-radius:18px;border:1.5px solid #7A9E7E;background:#F0EDE8;color:#3a3a3a;font-size:.82rem;font-weight:700;font-family:inherit;cursor:pointer;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.07)">
-      <span id="lc-icon" style="font-size:1rem;color:#5c3d8f">👤</span>
-      <span id="lc-label">Login</span>
+      onclick="document.getElementById('loginScreen').style.display='flex'"
+      style="display:flex;align-items:center;gap:6px;height:36px;padding:0 14px 0 10px;
+             border-radius:18px;border:1.5px solid #7A9E7E;background:#F0EDE8;
+             color:#3a3a3a;font-size:.82rem;font-weight:700;cursor:pointer;
+             font-family:inherit;white-space:nowrap">
+      <span style="color:#5c3d8f">👤</span><span id="lc-lbl">Login</span>
     </button>
     <button class="hbtn" onclick="openModal('connectModal')">⚙️</button>
     <!-- PK1: Pavithra Kolam — Sacred 8-petal lotus -->
@@ -5719,8 +5721,7 @@ function switchAdd(tab,btn){['medicine','diet','test'].forEach(t=>document.getEl
 // MODALS / UTILS
 // ═══════════════════════════════════════════
 function openModal(id){
-  var lc=document.getElementById('lc-overlay');
-  if(lc&&id!=='lc-overlay')lc.classList.remove('open');
+  document.querySelectorAll('.modal-overlay.open').forEach(function(el){el.classList.remove('open');});
   document.getElementById(id).classList.add('open');
 }
 function closeModal(id){
@@ -5786,8 +5787,6 @@ function fmtDate(s){if(!s)return'';const p=String(s).substring(0,10).split('-');
               Object.assign(S,p);
               try{normalizeAll();}catch(_e){}
               try{renderAll();}catch(_e){}
-  try{lcUpdBadge();}catch(_lcE){}
-  try{lcUpdBadge();}catch(_e){}
               _updSyncBadge('ok','Live');
             }
           }
@@ -5810,55 +5809,6 @@ function fmtDate(s){if(!s)return'';const p=String(s).substring(0,10).split('-');
     document.addEventListener('DOMContentLoaded',_startPoll);
   } else { _startPoll(); }
 })();
-
-
-/* ── v90 Login (uses openModal/closeModal = proven working system) ── */
-async function lcSubmit(){
-  var sel=document.getElementById('lc-sel'),pin=document.getElementById('lc-pin'),
-      btn=document.getElementById('lc-btn');
-  var m=document.getElementById('lc-msg');
-  if(m)m.style.display='none';
-  if(!sel||!sel.value){if(m){m.textContent='Please select your name';m.style.background='#fdecea';m.style.color='#c62828';m.style.display='block';}return;}
-  if(!pin||!pin.value.trim()){if(m){m.textContent='Please enter your PIN';m.style.background='#fdecea';m.style.color='#c62828';m.style.display='block';}return;}
-  btn.disabled=true;btn.textContent='⏳ Verifying…';
-  var NM={mom:'👩 Mom',dad:'👨 Dad',son:'🧑 Son',daughter:'👧 Daughter',soninlaw:'🤵 Son in Law'};
-  try{
-    var url=_LS.getItem('anbucare_url')||GAS_URL||'';
-    if(!url){if(m){m.textContent='No Sheets URL — tap ⚙️ first';m.style.background='#fdecea';m.style.color='#c62828';m.style.display='block';}btn.disabled=false;btn.textContent='🔓 Login';return;}
-    var ctrl=new AbortController(),t=setTimeout(function(){ctrl.abort();},12000);
-    var res=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body:JSON.stringify({action:'login',memberId:sel.value,pin:pin.value.trim()}),redirect:'follow',signal:ctrl.signal});
-    clearTimeout(t);
-    var d=JSON.parse(await res.text());
-    if(d.success&&d.sessionToken){
-      var nm=d.memberName||NM[d.memberId]||d.memberId;
-      _LS.setItem('lc_sess_v90',JSON.stringify({id:d.memberId,n:nm,t:d.sessionToken,x:d.expiresAt||(Date.now()+8*3600*1000)}));
-      closeModal('lc-overlay');lcUpdBadge();
-      if(typeof toast==='function')toast('✅ Welcome, '+nm+'!');
-    }else{if(m){m.textContent=d.error||'Wrong PIN';m.style.background='#fdecea';m.style.color='#c62828';m.style.display='block';}}
-  }catch(e){if(m){m.textContent=e.name==='AbortError'?'Timeout':'Error: '+e.message;m.style.background='#fdecea';m.style.color='#c62828';m.style.display='block';}}
-  btn.disabled=false;btn.textContent='🔓 Login';
-}
-function lcUpdBadge(){
-  var icon=document.getElementById('lc-icon'),lbl=document.getElementById('lc-label'),
-      btn=document.getElementById('lc-badge');
-  if(!btn)return;
-  var NM={mom:'👩 Mom',dad:'👨 Dad',son:'🧑 Son',daughter:'👧 Daughter',soninlaw:'🤵 Son in Law'};
-  try{
-    var s=JSON.parse(_LS.getItem('lc_sess_v90')||'null');
-    if(s&&Date.now()<(s.x||0)){
-      if(icon)icon.textContent=NM[s.id]?NM[s.id].split(' ')[0]:'✅';
-      if(lbl)lbl.textContent=s.n||s.id;
-      btn.style.background='#D8EDD9';btn.style.borderColor='#7A9E7E';btn.style.color='#1b5e20';
-      btn.onclick=function(){if(confirm('Log out as '+(s.n||s.id)+'?')){_LS.removeItem('lc_sess_v90');lcUpdBadge();if(typeof toast==='function')toast('👋 Logged out');}};
-      return;
-    }
-  }catch(e){}
-  if(icon){icon.textContent='👤';icon.style.color='#5c3d8f';}
-  if(lbl)lbl.textContent='Login';
-  btn.style.background='#F0EDE8';btn.style.borderColor='#7A9E7E';btn.style.color='#3a3a3a';
-  btn.onclick=function(){openModal('lc-overlay');};
-}
 
 </script>
 
@@ -5913,37 +5863,219 @@ function lcUpdBadge(){
     <div id="sosModalList"></div>
   </div>
 </div>
-<script>
-(function(){var p=document.createElement('div');p.textContent='JS ✓ v90';
-p.style.cssText='position:fixed;bottom:16px;right:12px;background:#2e7d32;color:#fff;font-size:10px;font-weight:700;padding:4px 10px;border-radius:10px;z-index:99999;pointer-events:none;font-family:monospace;opacity:.85';
-document.body.appendChild(p);setTimeout(function(){if(p.parentNode)p.parentNode.removeChild(p);},8000);})();
-</script>
-<div id="lc-overlay" class="modal-overlay" style="z-index:9500"
-  onclick="if(event.target===this)closeModal('lc-overlay')">
-  <div class="modal" style="border-radius:20px 20px 0 0;max-width:480px">
-    <div class="modal-header">
-      <div class="modal-title">🌸 Family Login</div>
-      <button class="modal-close" onclick="closeModal('lc-overlay')">✕</button>
-    </div>
-    <div style="padding:8px 16px 20px">
-      <div id="lc-msg" style="display:none;padding:9px 12px;border-radius:10px;font-size:.82rem;font-weight:700;text-align:center;margin-bottom:12px;background:#fdecea;color:#c62828"></div>
-      <label style="font-size:.8rem;font-weight:600;color:#555;display:block;margin-bottom:6px">Who are you?</label>
-      <select id="lc-sel" class="form-select" style="margin-bottom:14px">
-        <option value="">— Select your name —</option>
-        <option value="mom">👩 Mom</option>
-        <option value="dad">👨 Dad</option>
-        <option value="son">🧑 Son</option>
-        <option value="daughter">👧 Daughter</option>
-        <option value="soninlaw">🤵 Son in Law</option>
-      </select>
-      <label style="font-size:.8rem;font-weight:600;color:#555;display:block;margin-bottom:6px">Family PIN</label>
-      <input type="password" id="lc-pin" class="form-input" inputmode="numeric" maxlength="8"
-        placeholder="Enter PIN" style="text-align:center;letter-spacing:.3em;font-size:1.1rem;margin-bottom:16px">
-      <button id="lc-btn" class="btn btn-primary btn-block" onclick="lcSubmit()">🔓 Login</button>
-      <button style="width:100%;margin-top:10px;padding:12px;background:transparent;border:none;color:#999;font-size:.83rem;cursor:pointer"
-        onclick="closeModal('lc-overlay')">Continue without login</button>
-    </div>
+
+<div id="loginScreen"
+  style="position:fixed;top:0;left:0;right:0;bottom:0;
+         background:linear-gradient(160deg,#f5f0ea 0%,#e8f5e9 100%);
+         z-index:9999;display:flex;flex-direction:column;
+         align-items:center;justify-content:center;padding:24px;
+         font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+
+  <!-- Logo / Title -->
+  <div style="text-align:center;margin-bottom:32px">
+    <div style="font-size:48px;margin-bottom:8px">🌸</div>
+    <div style="font-size:1.8rem;font-weight:800;color:#3a3a3a;letter-spacing:-0.5px">AnbuCare</div>
+    <div style="font-size:.85rem;color:#888;margin-top:4px">Family Cancer Care Dashboard</div>
+  </div>
+
+  <!-- Login Card -->
+  <div style="background:white;border-radius:20px;padding:28px 24px;
+              width:100%;max-width:380px;
+              box-shadow:0 4px 24px rgba(0,0,0,.10)">
+
+    <div id="lc-msg"
+      style="display:none;padding:10px 14px;border-radius:10px;
+             font-size:.84rem;font-weight:700;text-align:center;
+             margin-bottom:16px;background:#fdecea;color:#c62828"></div>
+
+    <label style="display:block;font-size:.82rem;font-weight:700;
+                  color:#6B7C6E;margin-bottom:8px">Who are you?</label>
+    <select id="lc-sel"
+      style="width:100%;padding:12px 14px;border:1.5px solid #d4d0cc;
+             border-radius:12px;font-size:.95rem;background:#fafaf8;
+             color:#3a3a3a;margin-bottom:16px;outline:none;
+             font-family:inherit;-webkit-appearance:none">
+      <option value="">— Select your name —</option>
+      <option value="mom">👩 Mom</option>
+      <option value="dad">👨 Dad</option>
+      <option value="son">🧑 Son</option>
+      <option value="daughter">👧 Daughter</option>
+      <option value="soninlaw">🤵 Son in Law</option>
+    </select>
+
+    <label style="display:block;font-size:.82rem;font-weight:700;
+                  color:#6B7C6E;margin-bottom:8px">Family Password</label>
+    <input id="lc-pw" type="password"
+      placeholder="Enter family password"
+      style="width:100%;padding:12px 14px;border:1.5px solid #d4d0cc;
+             border-radius:12px;font-size:1rem;background:#fafaf8;
+             color:#3a3a3a;margin-bottom:20px;outline:none;
+             font-family:inherit;box-sizing:border-box;
+             -webkit-text-security:disc">
+
+    <button id="lc-btn"
+      onclick="lcDoLogin()"
+      style="width:100%;padding:14px;background:#4a7c59;border:none;
+             border-radius:12px;color:white;font-size:1rem;font-weight:700;
+             cursor:pointer;font-family:inherit;letter-spacing:.3px">
+      🔓 Login
+    </button>
+
+    <button onclick="lcSkip()"
+      style="width:100%;padding:12px;margin-top:10px;background:transparent;
+             border:none;color:#aaa;font-size:.83rem;cursor:pointer;
+             font-family:inherit">
+      Continue without login
+    </button>
+  </div>
+
+  <div style="margin-top:20px;font-size:.75rem;color:#bbb;text-align:center">
+    Session stays active for 6 hours
   </div>
 </div>
+<script>
+/* AnbuCare v94 — Login (full-screen, visible by default) */
+var LC_SESSION_KEY = 'anbucare_v94_sess';
+var LC_HOURS = 6;
+
+function lcGetSess() {
+  try {
+    var s = JSON.parse(localStorage.getItem(LC_SESSION_KEY) || 'null');
+    return (s && Date.now() < s.exp) ? s : null;
+  } catch(e) { return null; }
+}
+
+function lcMsg(txt, ok) {
+  var el = document.getElementById('lc-msg');
+  if (!el) return;
+  el.textContent = txt;
+  el.style.background = ok ? '#D8EDD9' : '#fdecea';
+  el.style.color = ok ? '#1b5e20' : '#c62828';
+  el.style.display = txt ? 'block' : 'none';
+}
+
+function lcShowScreen() {
+  var s = document.getElementById('loginScreen');
+  if (s) s.style.display = 'flex';
+}
+
+function lcHideScreen() {
+  var s = document.getElementById('loginScreen');
+  if (s) s.style.display = 'none';
+}
+
+function lcSkip() {
+  lcHideScreen();
+}
+
+function lcUpdateBadge() {
+  var badge = document.getElementById('lc-badge');
+  var label = document.getElementById('lc-lbl');
+  if (!badge || !label) return;
+  var sess = lcGetSess();
+  if (sess) {
+    label.textContent = sess.name;
+    badge.style.background = '#D8EDD9';
+    badge.style.color = '#1b5e20';
+    badge.onclick = function() {
+      if (confirm('Log out as ' + sess.name + '?')) {
+        localStorage.removeItem(LC_SESSION_KEY);
+        lcUpdateBadge();
+        lcShowScreen();
+      }
+    };
+  } else {
+    label.textContent = 'Login';
+    badge.style.background = '#F0EDE8';
+    badge.style.color = '#3a3a3a';
+    badge.onclick = function() { lcShowScreen(); };
+  }
+}
+
+async function lcDoLogin() {
+  var sel = document.getElementById('lc-sel');
+  var pw  = document.getElementById('lc-pw');
+  var btn = document.getElementById('lc-btn');
+  lcMsg('');
+
+  if (!sel || !sel.value) { lcMsg('Please select your name'); return; }
+  if (!pw  || !pw.value.trim()) { lcMsg('Please enter the family password'); return; }
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Verifying…';
+
+  try {
+    var url = localStorage.getItem('anbucare_url') ||
+              (typeof GAS_URL !== 'undefined' ? GAS_URL : '');
+
+    if (!url) {
+      lcMsg('No Sheets URL — tap ✕ then tap ⚙️ to connect first');
+      btn.disabled = false;
+      btn.textContent = '🔓 Login';
+      return;
+    }
+
+    var ctrl  = new AbortController();
+    var timer = setTimeout(function() { ctrl.abort(); }, 12000);
+
+    var res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'login',
+        memberId: sel.value,
+        password: pw.value.trim()
+      }),
+      redirect: 'follow',
+      signal: ctrl.signal
+    });
+    clearTimeout(timer);
+
+    var data = JSON.parse(await res.text());
+
+    if (data.success) {
+      var name = data.memberName || sel.options[sel.selectedIndex].text.replace(/^\S+\s/, '');
+      localStorage.setItem(LC_SESSION_KEY, JSON.stringify({
+        id:   data.memberId,
+        name: name,
+        tok:  data.sessionToken || '',
+        exp:  Date.now() + LC_HOURS * 3600 * 1000
+      }));
+      lcHideScreen();
+      lcUpdateBadge();
+      if (typeof toast === 'function') toast('✅ Welcome, ' + name + '!');
+      /* Load fresh data from Sheets */
+      try { if (typeof loadFcState === 'function') loadFcState(); } catch(e) {}
+      try { if (typeof renderAll  === 'function') await renderAll(); }  catch(e) {}
+    } else {
+      lcMsg(data.error || 'Wrong password — please try again');
+    }
+
+  } catch(err) {
+    lcMsg(err.name === 'AbortError' ? 'Timeout — check internet' : 'Error: ' + err.message);
+  }
+
+  btn.disabled = false;
+  btn.textContent = '🔓 Login';
+}
+
+/* On page load: hide login if valid session exists, else show it */
+window.addEventListener('load', function() {
+  lcUpdateBadge();
+  if (lcGetSess()) {
+    lcHideScreen();  /* valid session → go straight to app */
+  }
+  /* else loginScreen is already visible (display:flex by default) */
+});
+
+/* Re-check session every 5 min */
+setInterval(function() {
+  if (!lcGetSess()) {
+    lcUpdateBadge();
+    lcShowScreen();
+  }
+}, 5 * 60 * 1000);
+
+</script>
 </body>
 </html>
