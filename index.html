@@ -1160,8 +1160,7 @@ function lcLogin() {
       <div class="form-group"><label class="form-label">Patient Name</label><input type="text" class="form-input" id="cgTpPatient" placeholder="Patient's full name"></div>
       <div class="form-group"><label class="form-label">Treatment Name / Protocol</label>
         <input type="text" class="form-input" id="cgTpName" placeholder="e.g. Capecitabine, FOLFOX, Radiation…"></div>
-      <div class="form-group"><label class="form-label">Drug / Regimen details</label>
-        <input type="text" class="form-input" id="cgTpProtocol" placeholder="e.g. 500mg twice daily, 6 cycles"></div>
+      
       <div class="form-row">
         <div class="form-group"><label class="form-label">Oncologist</label>
           <input type="text" class="form-input" id="cgTpOncologist" placeholder="Dr. Name"></div>
@@ -1187,12 +1186,13 @@ function lcLogin() {
           <div class="form-group"><label class="form-label">Date</label><input type="text" class="form-input date-text-input" id="cDateDisp" inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10" autocomplete="off" oninput="autoDateFmt(this,'cDate')" onblur="valDateInp(this,'cDate')"><input type="hidden" id="cDate"></div>
           <div class="form-group"><label class="form-label">Cycle No.</label><input type="number" class="form-input" id="cCycle" min="1" placeholder="1"></div>
         </div>
-        <div class="form-group"><label class="form-label">Session No.</label><input type="number" class="form-input" id="cSession" min="1" placeholder="1"></div>
+        
         <div class="form-group" style="background:var(--chemo-l);border-radius:12px;padding:11px 14px;border-left:3px solid var(--chemo)">
           <div style="font-size:.72rem;font-weight:700;color:var(--chemo);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px">🩺 Treatment</div>
           <div id="treatProfileDisplay" style="font-size:.95rem;font-weight:700;color:var(--text)">Set your treatment in "My Treatment" above ↑</div>
         </div>
         <div class="form-group"><label class="form-label">Hospital / Centre</label><input type="text" class="form-input" id="cHospital" placeholder="e.g. Apollo Cancer Centre"></div>
+        <div class="form-group"><label class="form-label">Drug / Regimen details</label><input type="text" class="form-input" id="cgTpProtocol" placeholder="e.g. 500mg twice daily, 6 cycles"></div>
         <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="cNotes" rows="3" placeholder="Observations during session…"></textarea></div>
         <button class="btn btn-chemo btn-block" id="btnSubmitChemo" onclick="submitChemo()">💉 Save Session</button>
       </div>
@@ -3291,7 +3291,7 @@ function renderHelplines(){
         <div class="hl-num">${esc(h.number)}</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-        <a class="call-btn" href="tel:${h.number.replace(/-/g,'')}"
+        <a class="call-btn" href="tel:${String(h.number||'').replace(/-/g,'')}"
            style="${h.priority?'background:#c62828;box-shadow:0 3px 12px rgba(198,40,40,.4)':''}"
            title="Call ${esc(h.name)}">
           <svg xmlns='http://www.w3.org/2000/svg' width='22' height='22' viewBox='0 0 24 24' fill='white'><path d='M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.01-.24c1.12.37 2.33.57 3.58.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C9.61 21 3 14.39 3 6a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.46.57 3.58a1 1 0 0 1-.25 1.01l-2.2 2.2z'/></svg>
@@ -3887,7 +3887,8 @@ function renderChemoBySym(){
 function editChemo(id){
   var s=S.chemoSessions.find(function(x){return String(x.id)===String(id);});if(!s)return;
   setDateInput('cDate', s.date||today);document.getElementById('cCycle').value=s.cycle||1;
-  document.getElementById('cSession').value=s.session||1;document.getElementById('cHospital').value=s.hospital||'';
+  document.getElementById('cHospital').value=s.hospital||'';
+  var cgTpEl=document.getElementById('cgTpProtocol');if(cgTpEl)cgTpEl.value=s.protocol||'';
   document.getElementById('cNotes').value=s.notes||'';_editingChemoId=s.id;
   var btn=document.getElementById('btnSubmitChemo');if(btn)btn.textContent='💉 Update Session';
   document.querySelectorAll('#tab-chemo .sub-tab').forEach(function(b,i){b.classList.toggle('active',i===0);});
@@ -3921,7 +3922,7 @@ function updateTest(){
 
 function submitChemo(){
   var hosp=document.getElementById('cHospital').value.trim();if(!hosp){toast('⚠️ Hospital required');return;}
-  var en={id:_editingChemoId||S.nextId++,date:document.getElementById('cDate').value||today,cycle:+document.getElementById('cCycle').value||1,session:+document.getElementById('cSession').value||1,treatType:(S.treatmentProfile&&S.treatmentProfile.name)||'',hospital:hosp,notes:document.getElementById('cNotes').value};
+  var en={id:_editingChemoId||S.nextId++,date:document.getElementById('cDate').value||today,cycle:+document.getElementById('cCycle').value||1,protocol:(document.getElementById('cgTpProtocol')?document.getElementById('cgTpProtocol').value.trim():''),treatType:(S.treatmentProfile&&S.treatmentProfile.name)||'',hospital:hosp,notes:document.getElementById('cNotes').value};
   if(_editingChemoId){var ix=S.chemoSessions.findIndex(function(x){return String(x.id)===String(_editingChemoId);});if(ix>=0)S.chemoSessions[ix]=en;else S.chemoSessions.push(en);_editingChemoId=null;var btn=document.getElementById('btnSubmitChemo');if(btn)btn.textContent='💉 Save Session';toast('✅ Session updated!');}
   else{S.chemoSessions.push(en);toast('💉 Session logged!');}
   renderChemo();renderTreatProfileBanner();
