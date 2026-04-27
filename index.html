@@ -32,7 +32,7 @@ input,textarea,select{font-family:inherit;font-size:16px;-webkit-appearance:none
 .app{max-width:100vw;margin:0 auto;padding:0 0 calc(100px + env(safe-area-inset-bottom))}
 
 /* HEADER */
-.header{background:#FFFFFF;color:#333333;border-bottom:2px solid #E8E4DE;padding:calc(13px + env(safe-area-inset-top)) 15px 13px;padding-left:max(15px,env(safe-area-inset-left));padding-right:max(15px,env(safe-area-inset-right));display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:var(--shadow-lg)}
+.header{background:transparent;color:#333333;border-bottom:none;box-shadow:0 3px 16px rgba(100,80,60,.18);padding:0;overflow:visible;padding:calc(13px + env(safe-area-inset-top)) 15px 13px;padding-left:max(15px,env(safe-area-inset-left));padding-right:max(15px,env(safe-area-inset-right));display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;box-shadow:var(--shadow-lg)}
 .hbrand{display:flex;align-items:center;gap:9px}
 .hlogo{font-size:1.9rem}.htitle{font-size:1.25rem;font-weight:700;font-family:'Libre Baskerville',Georgia,serif;color:#C0714F;letter-spacing:.01em}.hdate{font-size:.75rem;opacity:.8;margin-top:1px}
 .hright{display:flex;align-items:center;gap:8px}
@@ -573,6 +573,46 @@ input:checked+.tslider::before{transform:translateX(20px)}
 .sos-modal-note{font-size:.83rem;color:var(--text);margin-top:8px;background:#fffbeb;border-radius:8px;padding:7px 10px;border-left:3px solid #d97706}
 .fc-dot-done{background:rgba(255,255,255,.95)!important;box-shadow:0 0 0 2px #4ade80!important;}
 .fc-dot-skip{background:rgba(255,255,255,.4)!important;box-shadow:0 0 0 2px #fbbf24!important;}
+
+/* ── Option C: Earthy Split header ───────────────── */
+.header-split{display:flex;align-items:stretch;min-height:calc(56px + env(safe-area-inset-top));width:100%;overflow:visible;position:relative;}
+.header-left{background:#C0714F;flex:1 1 52%;display:flex;align-items:center;padding:calc(11px + env(safe-area-inset-top)) 0 11px 14px;gap:9px;overflow:visible;position:relative;}
+.header-right{background:#7A9E7E;flex:1 1 48%;display:flex;align-items:center;justify-content:flex-end;padding:calc(11px + env(safe-area-inset-top)) 12px 11px 0;gap:8px;overflow:visible;}
+.hkolam-split{position:absolute;right:-27px;top:50%;transform:translateY(-50%);width:54px;height:54px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:50%;box-shadow:0 0 0 3px #C0714F,0 0 0 5.5px #7A9E7E,0 4px 16px rgba(0,0,0,.24);z-index:10;flex-shrink:0;}
+.header-title-blk{display:flex;flex-direction:column;}
+.htitle{font-size:1.22rem;font-weight:700;font-family:'Libre Baskerville',Georgia,serif;color:#fff;letter-spacing:.01em;line-height:1.2;}
+.hdate{font-size:.73rem;color:rgba(255,255,255,.82);margin-top:2px;}
+#syncBadge{font-size:.68rem;color:rgba(255,255,255,.75);}
+#lc-badge{background:rgba(255,255,255,.22)!important;border:1.5px solid rgba(255,255,255,.55)!important;color:#fff!important;font-size:.85rem;font-weight:700;width:38px!important;height:38px!important;border-radius:50%!important;}
+.red-cross-btn{background:#e53935!important;border:1.5px solid #c62828!important;color:#fff!important;box-shadow:0 2px 8px rgba(229,57,53,.45)!important;}
+.neuro-hdr{display:flex;align-items:center;justify-content:space-between;
+    padding:10px 0 8px;cursor:pointer;user-select:none;-webkit-user-select:none;}
+  .neuro-hdr-title{font-size:.92rem;font-weight:800;color:#5A4090;
+    display:flex;align-items:center;gap:7px;}
+  .neuro-badge{font-size:.62rem;background:#EDE7F6;color:#5A4090;
+    padding:2px 8px;border-radius:10px;font-weight:800;letter-spacing:.3px;}
+  .neuro-toggle{font-size:.76rem;color:#999;white-space:nowrap;}
+  .neuro-loc-box{background:#F3EEF9;border:1.5px solid #D1C4E9;
+    border-radius:12px;padding:10px 12px;margin-bottom:13px;}
+  .neuro-loc-title{font-size:.72rem;font-weight:800;color:#7B5EA7;
+    text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px;}
+  .neuro-loc-chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .neuro-lchip{padding:6px 14px;background:#fff;border-radius:20px;
+    font-size:.8rem;font-weight:700;color:#7B5EA7;cursor:pointer;
+    border:1.5px solid #D1C4E9;transition:all .15s;-webkit-tap-highlight-color:transparent;}
+  .neuro-lchip.sel{background:#7B5EA7;color:#fff;border-color:#5A4090;}
+  .neuro-sym-div{border:none;border-top:1px dashed #E8E0F4;margin:4px 0 11px;}
+  .neuro-signs-lbl{font-size:.72rem;font-weight:800;color:#7B5EA7;
+    text-transform:uppercase;letter-spacing:.7px;margin:8px 0 6px;}
+  #neuroBody .sym-btn.active{border-color:#5A4090!important;background:#EDE7F6!important;}
+  #neuroBody .sym-btn.active .sbl{color:#4A148C!important;}
+  .neuro-hist-row{display:flex;flex-wrap:wrap;align-items:center;gap:5px;
+    margin-top:6px;padding:5px 10px;background:#EDE7F6;border-radius:8px;font-size:.75rem;}
+  .neuro-hist-lbl{font-weight:800;color:#5A4090;}
+  .neuro-hist-val{color:#444;}
+  .neuro-hist-chip{background:#D1C4E9;color:#4A148C;border-radius:7px;
+    padding:1px 7px;font-size:.68rem;font-weight:700;}
+  /* ── end v73 neuro ────────────────────────────────────── */
 </style>
 </head>
 <body>
@@ -826,17 +866,16 @@ function lcLogin() {
 
 <!-- HEADER -->
 <div class="header">
-  <div class="hbrand">
-    <div><div class="htitle">AnbuCare</div><div style="font-size:9px;color:#aaa;line-height:1;font-family:monospace;margin-top:-2px">v99</div><div class="hdate" id="hDate"></div><span id="syncBadge" title="Last synced from Sheets"></span></div>
-    <button class="red-cross-btn" onclick="openModal('helplineModal')" title="Emergency">✚</button>
-  </div>
-  <div class="hright">
-    <button id="lc-badge" class="hbtn" title="Login"
-      onclick="document.getElementById('loginScreen').style.display='flex'">&#x1F464;</button>
-    <button class="hbtn" onclick="openModal('connectModal')">&#x2699;&#xFE0F;</button>
-    <!-- PK1: Pavithra Kolam — Sacred 8-petal lotus -->
-<div style="width:44px;height:44px;display:flex;align-items:center;justify-content:center;cursor:default" title="AnbuCare — Healing Kolam">
-<svg width="44" height="44" viewBox="0 0 100 100" style="overflow:visible">
+  <div class="header-split">
+    <!-- LEFT: Terracotta — title + date -->
+    <div class="header-left">
+      <div class="header-title-blk">
+        <div class="htitle">AnbuCare</div>
+        <div class="hdate" id="hDate"></div>
+        <span id="syncBadge" title="Last synced from Sheets"></span>
+      </div>
+      <!-- Kolam badge on the split seam -->
+      <div class="hkolam-split"><svg width="50" height="50" viewBox="0 0 100 100" style="overflow:visible">
   <defs>
     <radialGradient id="g1c" cx="50%" cy="50%" r="50%">
       <stop offset="0%"   stop-color="#E1AD01"/>
@@ -988,8 +1027,15 @@ function lcLogin() {
       <circle cx="50" cy="50" r="3.5" fill="#C9920A"/>
     </g>
   </g>
-</svg>
-</div>
+</svg></div>
+    </div>
+    <!-- RIGHT: Sage — emergency + CG -->
+    <div class="header-right">
+      <button class="red-cross-btn hbtn" onclick="openModal('helplineModal')" title="Emergency" style="font-size:1.1rem;font-weight:900;width:34px!important;height:34px!important;">&#x271A;</button>
+      <button id="lc-badge" class="hbtn" title="Login"
+        onclick="document.getElementById('loginScreen').style.display='flex'"
+        style="width:34px!important;height:34px!important;font-size:.72rem!important;font-weight:700;">&#x1F464;</button>
+    </div>
   </div>
 </div>
 
@@ -1231,7 +1277,109 @@ function lcLogin() {
               <button class="sym-btn" data-v="5" onclick="symTap('A',5)"><span class="sbe">🚫</span><span class="sbl">None</span></button>
             </div>
           </div>
-          <div class="divider"></div>
+          
+<!-- ⚡ v73 NEUROPATHY WATCH ─────────────────────────── -->
+          <div class="neuro-hdr" onclick="toggleNeuroWatch()">
+            <div class="neuro-hdr-title">
+              ⚡ Neuropathy Watch
+              <span class="neuro-badge">NEW</span>
+            </div>
+            <span class="neuro-toggle" id="neuroToggle">▼ tap to expand</span>
+          </div>
+<div id="neuroBody" style="display:none">
+
+            <!-- ① LOCATION on top -->
+            <div class="neuro-loc-box">
+              <div class="neuro-loc-title">📍 Where do you feel it?</div>
+              <div class="neuro-loc-chips" id="neuroLocChips">
+                <span class="neuro-lchip" onclick="this.classList.toggle('sel')">🖐 Hands</span>
+                <span class="neuro-lchip" onclick="this.classList.toggle('sel')">🦶 Feet</span>
+                <span class="neuro-lchip" onclick="this.classList.toggle('sel')">💪 Arms</span>
+                <span class="neuro-lchip" onclick="this.classList.toggle('sel')">🦵 Legs</span>
+                <span class="neuro-lchip" onclick="this.classList.toggle('sel')">🔄 All over</span>
+              </div>
+            </div>
+
+            <!-- ② TINGLING -->
+            <div class="sym-row">
+              <div class="sym-label">
+                <span>🤺 Tingling / Pins &amp; Needles</span>
+                <span class="sym-val v1" id="vNT"></span>
+              </div>
+              <input type="hidden" id="sNT" value="1">
+              <div class="sym-btn-grp" id="sgNT">
+                <button class="sym-btn active" data-v="1" onclick="symTap('NT',1)"><span class="sbe">✅</span><span class="sbl">None</span></button>
+                <button class="sym-btn" data-v="2" onclick="symTap('NT',2)"><span class="sbe">🟡</span><span class="sbl">Mild</span></button>
+                <button class="sym-btn" data-v="3" onclick="symTap('NT',3)"><span class="sbe">🟠</span><span class="sbl">Mod.</span></button>
+                <button class="sym-btn" data-v="4" onclick="symTap('NT',4)"><span class="sbe">🔴</span><span class="sbl">High</span></button>
+                <button class="sym-btn" data-v="5" onclick="symTap('NT',5)"><span class="sbe">🆘</span><span class="sbl">Severe</span></button>
+              </div>
+            </div>
+            <hr class="neuro-sym-div">
+
+            <!-- ③ NUMBNESS -->
+            <div class="sym-row">
+              <div class="sym-label">
+                <span>😶 Numbness</span>
+                <span class="sym-val v1" id="vNN"></span>
+              </div>
+              <input type="hidden" id="sNN" value="1">
+              <div class="sym-btn-grp" id="sgNN">
+                <button class="sym-btn active" data-v="1" onclick="symTap('NN',1)"><span class="sbe">✅</span><span class="sbl">None</span></button>
+                <button class="sym-btn" data-v="2" onclick="symTap('NN',2)"><span class="sbe">🟡</span><span class="sbl">Mild</span></button>
+                <button class="sym-btn" data-v="3" onclick="symTap('NN',3)"><span class="sbe">🟠</span><span class="sbl">Mod.</span></button>
+                <button class="sym-btn" data-v="4" onclick="symTap('NN',4)"><span class="sbe">🔴</span><span class="sbl">High</span></button>
+                <button class="sym-btn" data-v="5" onclick="symTap('NN',5)"><span class="sbe">🆘</span><span class="sbl">Severe</span></button>
+              </div>
+            </div>
+            <hr class="neuro-sym-div">
+
+            <!-- ④ BURNING -->
+            <div class="sym-row">
+              <div class="sym-label">
+                <span>🔥 Burning Sensation</span>
+                <span class="sym-val v1" id="vNB"></span>
+              </div>
+              <input type="hidden" id="sNB" value="1">
+              <div class="sym-btn-grp" id="sgNB">
+                <button class="sym-btn active" data-v="1" onclick="symTap('NB',1)"><span class="sbe">✅</span><span class="sbl">None</span></button>
+                <button class="sym-btn" data-v="2" onclick="symTap('NB',2)"><span class="sbe">🟡</span><span class="sbl">Mild</span></button>
+                <button class="sym-btn" data-v="3" onclick="symTap('NB',3)"><span class="sbe">🟠</span><span class="sbl">Mod.</span></button>
+                <button class="sym-btn" data-v="4" onclick="symTap('NB',4)"><span class="sbe">🔴</span><span class="sbl">High</span></button>
+                <button class="sym-btn" data-v="5" onclick="symTap('NB',5)"><span class="sbe">🆘</span><span class="sbl">Severe</span></button>
+              </div>
+            </div>
+            <hr class="neuro-sym-div">
+
+            <!-- ⑤ BALANCE / WEAKNESS -->
+            <div class="sym-row">
+              <div class="sym-label">
+                <span>🚶 Balance / Weakness</span>
+                <span class="sym-val v1" id="vNW"></span>
+              </div>
+              <input type="hidden" id="sNW" value="1">
+              <div class="sym-btn-grp" id="sgNW">
+                <button class="sym-btn active" data-v="1" onclick="symTap('NW',1)"><span class="sbe">🟢</span><span class="sbl">Normal</span></button>
+                <button class="sym-btn" data-v="2" onclick="symTap('NW',2)"><span class="sbe">🟡</span><span class="sbl">Slight</span></button>
+                <button class="sym-btn" data-v="3" onclick="symTap('NW',3)"><span class="sbe">🟠</span><span class="sbl">Mod.</span></button>
+                <button class="sym-btn" data-v="4" onclick="symTap('NW',4)"><span class="sbe">🔴</span><span class="sbl">Poor</span></button>
+                <button class="sym-btn" data-v="5" onclick="symTap('NW',5)"><span class="sbe">🆘</span><span class="sbl">Critical</span></button>
+              </div>
+            </div>
+            <hr class="neuro-sym-div">
+
+            <!-- ⑥ ADDITIONAL SIGNS chips -->
+            <div class="neuro-signs-lbl">Additional Signs</div>
+            <div class="chip-row" id="neuroSignChips">
+              <div class="chip" onclick="this.classList.toggle('sel')">⚡ Cramps</div>
+              <div class="chip" onclick="this.classList.toggle('sel')">🌡 Skin Sensitivity</div>
+              <div class="chip" onclick="this.classList.toggle('sel')">💪 Muscle Weakness</div>
+              <div class="chip" onclick="this.classList.toggle('sel')">🥵 Sweating / Chills</div>
+              <div class="chip" onclick="this.classList.toggle('sel')">🚻 Bladder Issues</div>
+            </div>
+
+          </div>
+<div class="divider"></div>
           <div class="form-label" style="margin-bottom:8px">Also experiencing:</div>
           <div class="chip-row" id="extraChips">
             <div class="chip" onclick="this.classList.toggle('sel')">💧 Dry mouth</div>
@@ -3862,6 +4010,36 @@ function deleteBowelEntry(date){
 }
 
 
+/* v73 Neuropathy Watch */
+function toggleNeuroWatch(){
+  var b=document.getElementById('neuroBody');
+  var t=document.getElementById('neuroToggle');
+  if(!b)return;
+  if(b.style.display==='none'){
+    b.style.display='';
+    t.textContent='▲ collapse';
+  } else {
+    b.style.display='none';
+    t.textContent='▼ tap to expand';
+  }
+}
+
+function resetNeuroWatch(){
+  ['sNT','sNN','sNB','sNW'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el) el.value=1;
+  });
+  ['sgNT','sgNN','sgNB','sgNW'].forEach(function(gid){
+    var g=document.getElementById(gid);
+    if(!g) return;
+    g.querySelectorAll('.sym-btn').forEach(function(b,i){
+      b.classList.toggle('active', i===0);
+    });
+  });
+  document.querySelectorAll('#neuroLocChips .neuro-lchip, #neuroSignChips .chip')
+    .forEach(function(c){ c.classList.remove('sel'); });
+}
+
 function saveAllLog(){
   const btn=document.getElementById('btnSaveAllLog');
   btn.disabled=true;btn.textContent='⏳ Saving…';
@@ -3869,7 +4047,7 @@ function saveAllLog(){
     try{_saveSymInternal();}catch(e){toast('⚠️ Symptom save error: '+e.message);}
     try{_saveBowelInternal();}catch(e){toast('⚠️ Bowel save error: '+e.message);}
     btn.disabled=false;btn.textContent='💾 Save Daily Log';
-    toast('✅ Daily log saved!');saveNow();
+    toast('✅ Daily log saved!');saveNow();try{resetNeuroWatch();}catch(e){}
   try{renderFlashCards();}catch(_re){} try{renderNext3Strip();}catch(_re){} try{renderOverdue();}catch(_re){}
   },500);
 }
