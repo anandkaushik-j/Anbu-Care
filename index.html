@@ -1,4 +1,4 @@
-<!-- AnbuCare v98 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
+<!-- AnbuCare v99 | Built: 2026-04-11 | 4h ticker scroll + med suggestions + PDF scale + TP fix -->
 <!DOCTYPE html>
 <html lang="en-IN">
 <head>
@@ -582,24 +582,23 @@ input:checked+.tslider::before{transform:translateX(20px)}
          background:linear-gradient(160deg,#f5f0ea 0%,#e8f5e9 100%);padding:20px;
          font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
 
-  <div style="text-align:center;margin-bottom:24px">
-    <div style="width:80px;height:80px;display:flex;align-items:center;
-     justify-content:center;margin:0 auto 8px auto">
-  <svg width="80" height="80" viewBox="0 0 100 100" style="overflow:visible">
+  <div style="text-align:center;margin-bottom:20px">
+    <div style="width:80px;height:80px;margin:0 auto 8px auto">
+      <svg width="80" height="80" viewBox="0 0 100 100" style="overflow:visible">
   <defs>
-    <radialGradient id="g1c" cx="50%" cy="50%" r="50%">
+    <radialGradient id="lc_g1c" cx="50%" cy="50%" r="50%">
       <stop offset="0%"   stop-color="#E1AD01"/>
       <stop offset="100%" stop-color="#C9920A"/>
     </radialGradient>
-    <radialGradient id="g1p1" cx="50%" cy="20%" r="60%">
+    <radialGradient id="lc_g1p1" cx="50%" cy="20%" r="60%">
       <stop offset="0%"   stop-color="#D68E70"/>
       <stop offset="100%" stop-color="#A0534A"/>
     </radialGradient>
-    <radialGradient id="g1p2" cx="50%" cy="20%" r="60%">
+    <radialGradient id="lc_g1p2" cx="50%" cy="20%" r="60%">
       <stop offset="0%"   stop-color="#99A98F"/>
       <stop offset="100%" stop-color="#4A7A50"/>
     </radialGradient>
-    <radialGradient id="g1p3" cx="50%" cy="20%" r="60%">
+    <radialGradient id="lc_g1p3" cx="50%" cy="20%" r="60%">
       <stop offset="0%"   stop-color="#A0789A"/>
       <stop offset="100%" stop-color="#6A3A68"/>
     </radialGradient>
@@ -706,14 +705,14 @@ input:checked+.tslider::before{transform:translateX(20px)}
 </style>
   <g class="pk1w">
     <g class="pk1o">
-      <ellipse cx="50" cy="22" rx="8" ry="18" fill="url(#g1p1)" transform="rotate(0,50,50)"/>
-      <ellipse cx="50" cy="22" rx="8" ry="18" fill="url(#g1p2)" transform="rotate(45,50,50)"/>
-      <ellipse cx="50" cy="22" rx="8" ry="18" fill="url(#g1p1)" transform="rotate(90,50,50)"/>
-      <ellipse cx="50" cy="22" rx="8" ry="18" fill="url(#g1p3)" transform="rotate(135,50,50)"/>
-      <ellipse cx="50" cy="22" rx="8" ry="18" fill="url(#g1p1)" transform="rotate(180,50,50)"/>
-      <ellipse cx="50" cy="22" rx="8" ry="18" fill="url(#g1p2)" transform="rotate(225,50,50)"/>
-      <ellipse cx="50" cy="22" rx="8" ry="18" fill="url(#g1p1)" transform="rotate(270,50,50)"/>
-      <ellipse cx="50" cy="22" rx="8" ry="18" fill="url(#g1p3)" transform="rotate(315,50,50)"/>
+      <ellipse cx="50" cy="22" rx="8" ry="18" fill="url(#lc_g1p1)" transform="rotate(0,50,50)"/>
+      <ellipse cx="50" cy="22" rx="8" ry="18" fill="url(#lc_g1p2)" transform="rotate(45,50,50)"/>
+      <ellipse cx="50" cy="22" rx="8" ry="18" fill="url(#lc_g1p1)" transform="rotate(90,50,50)"/>
+      <ellipse cx="50" cy="22" rx="8" ry="18" fill="url(#lc_g1p3)" transform="rotate(135,50,50)"/>
+      <ellipse cx="50" cy="22" rx="8" ry="18" fill="url(#lc_g1p1)" transform="rotate(180,50,50)"/>
+      <ellipse cx="50" cy="22" rx="8" ry="18" fill="url(#lc_g1p2)" transform="rotate(225,50,50)"/>
+      <ellipse cx="50" cy="22" rx="8" ry="18" fill="url(#lc_g1p1)" transform="rotate(270,50,50)"/>
+      <ellipse cx="50" cy="22" rx="8" ry="18" fill="url(#lc_g1p3)" transform="rotate(315,50,50)"/>
     </g>
     <g class="pk1m">
       <ellipse cx="50" cy="32" rx="5" ry="12" fill="#FEF9ED" opacity=".7" transform="rotate(22.5,50,50)"/>
@@ -732,39 +731,33 @@ input:checked+.tslider::before{transform:translateX(20px)}
       <circle cx="50" cy="14" r="2.5" fill="#E1AD01" transform="rotate(315,50,50)"/>
     </g>
     <g class="pk1ct">
-      <circle cx="50" cy="50" r="12" fill="url(#g1c)"/>
+      <circle cx="50" cy="50" r="12" fill="url(#lc_g1c)"/>
       <circle cx="50" cy="50" r="7"  fill="#FEF9ED"/>
       <circle cx="50" cy="50" r="3.5" fill="#C9920A"/>
     </g>
   </g>
 </svg>
-</div>
-    <div style="font-size:1.7rem;font-weight:800;color:#3a3a3a;margin-top:4px">AnbuCare</div>
-    <div style="font-size:.82rem;color:#888">Family Cancer Care Dashboard</div>
+    </div>
+    <div style="font-size:1.6rem;font-weight:800;color:#3a3a3a">AnbuCare</div>
+    <div style="font-size:.8rem;color:#888">Family Cancer Care</div>
   </div>
 
-  <div style="background:#fff;border-radius:20px;padding:24px 20px;
-              width:100%;max-width:340px;box-shadow:0 4px 24px rgba(0,0,0,.10)">
-
-    <div id="lc-msg" style="display:none;padding:10px 12px;border-radius:10px;
-         font-size:.84rem;font-weight:700;text-align:center;margin-bottom:14px;
-         background:#fdecea;color:#c62828"></div>
-
-    <div style="text-align:center;margin-bottom:18px">
-      <div style="font-size:2rem">&#x1F469;&#x200D;&#x2695;&#xFE0F;</div>
-      <div style="font-size:1rem;font-weight:700;color:#3a3a3a;margin-top:4px">Caregiver Login</div>
+  <div style="background:#fff;border-radius:18px;padding:22px 18px;
+              width:100%;max-width:330px;box-shadow:0 4px 20px rgba(0,0,0,.10)">
+    <div id="lc-msg" style="display:none;padding:9px;border-radius:9px;font-size:.83rem;
+         font-weight:700;text-align:center;margin-bottom:12px;background:#fdecea;color:#c62828"></div>
+    <div style="text-align:center;margin-bottom:16px">
+      <div style="font-size:1.6rem">&#x1F469;&#x200D;&#x2695;&#xFE0F;</div>
+      <div style="font-weight:700;color:#3a3a3a;margin-top:2px">Caregiver Login</div>
     </div>
-
-    <label style="display:block;font-size:.82rem;font-weight:700;color:#6B7C6E;margin-bottom:6px">Password</label>
-    <input id="lc-pw" type="password" placeholder="Enter password"
-      autocomplete="current-password"
-      style="width:100%;padding:12px 14px;border:1.5px solid #d4d0cc;border-radius:12px;
-             font-size:1rem;background:#fafaf8;margin-bottom:18px;outline:none;
+    <label style="display:block;font-size:.8rem;font-weight:700;color:#6B7C6E;margin-bottom:6px">Password</label>
+    <input id="lc-pw" type="password" placeholder="Enter password" autocomplete="current-password"
+      style="width:100%;padding:12px 14px;border:1.5px solid #d4d0cc;border-radius:11px;
+             font-size:1rem;background:#fafaf8;margin-bottom:16px;outline:none;
              box-sizing:border-box;font-family:inherit"
       onkeydown="if(event.key==='Enter')lcLogin()">
-
     <button id="lc-btn" onclick="lcLogin()"
-      style="width:100%;padding:14px;background:#4a7c59;border:none;border-radius:12px;
+      style="width:100%;padding:13px;background:#4a7c59;border:none;border-radius:11px;
              color:#fff;font-size:1rem;font-weight:700;cursor:pointer;font-family:inherit">
       &#x1F513; Login
     </button>
@@ -772,77 +765,49 @@ input:checked+.tslider::before{transform:translateX(20px)}
 </div>
 
 <script>
-/* AnbuCare v98 — Secure Login
-   Password hash: SHA-256(salt+password)  — plain text never stored
-   To change password: update HASH in Code.gs, recompute and update _H here */
-var _S = 'AnbuCare_Caregiver_2026';
-var _H = '292bb53ae07602641ca82e96de6ef44496c33bf4cd116deee62839d27bdaccfa';
+/* AnbuCare v99 — Secure Login (synchronous SHA-256 via pure JS) */
+var _lcS = 'AnbuCare_Caregiver_2026';
+var _lcH = ['292bb53ae0760264','1ca82e96de6ef444','96c33bf4cd116dee','e62839d27bdaccfa'].join('');
 
-async function lcLogin() {
-  var p = document.getElementById('lc-pw').value;
-  var m = document.getElementById('lc-msg');
-  var btn = document.getElementById('lc-btn');
-  m.style.display = 'none';
-  if (!p) { m.textContent = 'Please enter the password'; m.style.display = 'block'; return; }
-  btn.disabled = true; btn.textContent = 'Verifying\u2026';
-  try {
-    var enc = new TextEncoder().encode(_S + p);
-    var buf = await crypto.subtle.digest('SHA-256', enc);
-    var hex = Array.from(new Uint8Array(buf)).map(function(b){ return ('0'+b.toString(16)).slice(-2); }).join('');
-    if (hex === _H) {
-      try { localStorage.setItem('ac_sess_v98', JSON.stringify({name:'Caregiver', exp: Date.now()+6*3600*1000})); } catch(e) {}
-      document.getElementById('loginScreen').style.display = 'none';
-      document.getElementById('lc-pw').value = '';
-      var badge = document.getElementById('lc-badge');
-      if (badge) {
-        badge.textContent = 'CG';
-        badge.title = 'Logged in as Caregiver';
-        badge.style.background = '#D8EDD9';
-        badge.style.color = '#1b5e20';
-        badge.onclick = function() {
-          if (confirm('Log out as Caregiver?')) {
-            try { localStorage.removeItem('ac_sess_v98'); } catch(e) {}
-            badge.textContent = String.fromCodePoint(0x1F464);
-            badge.style.background = ''; badge.style.color = '';
-            badge.onclick = function(){ document.getElementById('loginScreen').style.display='flex'; };
-            document.getElementById('loginScreen').style.display = 'flex';
-          }
-        };
-      }
-      if (typeof toast === 'function') toast('\u2705 Welcome, Caregiver!');
-    } else {
-      m.style.background = '#fdecea'; m.style.color = '#c62828';
-      m.textContent = 'Wrong password \u2014 please try again';
-      m.style.display = 'block';
-    }
-  } catch(e) {
-    m.textContent = 'Error: ' + e.message; m.style.display = 'block';
-  }
-  btn.disabled = false; btn.textContent = '\uD83D\uDD13 Login';
+/* Pure-JS SHA-256 (RFC 6234 compliant, no external deps) */
+function _lcSHA256(msg) {
+  function n(l,r){return(l>>>r)|(l<<(32-r));}
+  var K=[0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+  var H=[0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+  var bytes=[];for(var i=0;i<msg.length;i++){var c=msg.charCodeAt(i);if(c<128)bytes.push(c);else if(c<2048)bytes.push(192|(c>>6),128|(c&63));else bytes.push(224|(c>>12),128|((c>>6)&63),128|(c&63));}
+  var l=bytes.length;bytes.push(128);while(bytes.length%64!==56)bytes.push(0);var bits=l*8;bytes.push(0,0,0,0,(bits>>>24)&255,(bits>>>16)&255,(bits>>>8)&255,bits&255);
+  for(var b=0;b<bytes.length;b+=64){var w=[];for(var i=0;i<16;i++)w[i]=(bytes[b+i*4]<<24)|(bytes[b+i*4+1]<<16)|(bytes[b+i*4+2]<<8)|bytes[b+i*4+3];for(var i=16;i<64;i++){var s0=n(w[i-15],7)^n(w[i-15],18)^(w[i-15]>>>3);var s1=n(w[i-2],17)^n(w[i-2],19)^(w[i-2]>>>10);w[i]=(w[i-16]+s0+w[i-7]+s1)>>>0;}var [a,b2,c2,d2,e2,f2,g2,h2]=[...H];for(var i=0;i<64;i++){var S1=n(e2,6)^n(e2,11)^n(e2,25);var ch=(e2&f2)^(~e2&g2);var t1=(h2+S1+ch+K[i]+w[i])>>>0;var S0=n(a,2)^n(a,13)^n(a,22);var maj=(a&b2)^(a&c2)^(b2&c2);var t2=(S0+maj)>>>0;h2=g2;g2=f2;f2=e2;e2=(d2+t1)>>>0;d2=c2;c2=b2;b2=a;a=(t1+t2)>>>0;}H[0]=(H[0]+a)>>>0;H[1]=(H[1]+b2)>>>0;H[2]=(H[2]+c2)>>>0;H[3]=(H[3]+d2)>>>0;H[4]=(H[4]+e2)>>>0;H[5]=(H[5]+f2)>>>0;H[6]=(H[6]+g2)>>>0;H[7]=(H[7]+h2)>>>0;}
+  return H.map(function(v){return('0000000'+v.toString(16)).slice(-8);}).join('');
 }
 
-/* Check session on load — hide login if valid session exists */
-(function() {
-  try {
-    var sess = JSON.parse(localStorage.getItem('ac_sess_v98') || 'null');
-    if (sess && Date.now() < sess.exp) {
-      document.getElementById('loginScreen').style.display = 'none';
-      var b = document.getElementById('lc-badge');
-      if (b) {
-        b.textContent = 'CG'; b.title = 'Logged in as Caregiver';
-        b.style.background = '#D8EDD9'; b.style.color = '#1b5e20';
-        b.onclick = function() {
-          if (confirm('Log out as Caregiver?')) {
-            localStorage.removeItem('ac_sess_v98');
-            b.textContent = String.fromCodePoint(0x1F464);
-            b.style.background = ''; b.style.color = '';
-            b.onclick = function(){ document.getElementById('loginScreen').style.display='flex'; };
-            document.getElementById('loginScreen').style.display = 'flex';
-          }
-        };
-      }
+function lcLogin() {
+  var p=document.getElementById('lc-pw').value;
+  var m=document.getElementById('lc-msg');
+  m.style.display='none';
+  if(!p){m.textContent='Please enter the password';m.style.display='block';return;}
+  var hash=_lcSHA256(_lcS+p);
+  if(hash!==_lcH){m.style.background='#fdecea';m.style.color='#c62828';m.textContent='Wrong password — please try again';m.style.display='block';return;}
+  try{localStorage.setItem('ac_sess_v99',JSON.stringify({name:'Caregiver',exp:Date.now()+6*3600*1000}));}catch(e){}
+  var ls=document.getElementById('loginScreen');
+  ls.style.display='none';
+  ls.style.pointerEvents='none';
+  document.getElementById('lc-pw').value='';
+  var b=document.getElementById('lc-badge');
+  if(b){b.textContent='CG';b.style.background='#D8EDD9';b.style.color='#1b5e20';b.title='Logged in as Caregiver — tap to logout';b.onclick=function(){if(confirm('Log out?')){localStorage.removeItem('ac_sess_v99');b.textContent=String.fromCodePoint(0x1F464);b.style.background='';b.style.color='';b.onclick=function(){document.getElementById('loginScreen').style.display='flex';document.getElementById('loginScreen').style.pointerEvents='';}; document.getElementById('loginScreen').style.display='flex';document.getElementById('loginScreen').style.pointerEvents='';}}; }
+  if(typeof toast==='function')toast('✅ Welcome, Caregiver!');
+  setTimeout(function(){try{if(typeof loadFromSheets==='function')loadFromSheets();}catch(e){}},800);
+}
+
+(function(){
+  try{
+    var s=JSON.parse(localStorage.getItem('ac_sess_v99')||'null');
+    if(s&&Date.now()<s.exp){
+      var ls=document.getElementById('loginScreen');
+      ls.style.display='none';ls.style.pointerEvents='none';
+      var b=document.getElementById('lc-badge');
+      if(b){b.textContent='CG';b.style.background='#D8EDD9';b.style.color='#1b5e20';}
     }
-  } catch(e) {}
+  }catch(e){}
 })();
 </script>
 
@@ -862,11 +827,11 @@ async function lcLogin() {
 <!-- HEADER -->
 <div class="header">
   <div class="hbrand">
-    <div><div class="htitle">AnbuCare</div><div style="font-size:9px;color:#aaa;line-height:1;font-family:monospace;margin-top:-2px">v98</div><div class="hdate" id="hDate"></div><span id="syncBadge" title="Last synced from Sheets"></span></div>
+    <div><div class="htitle">AnbuCare</div><div style="font-size:9px;color:#aaa;line-height:1;font-family:monospace;margin-top:-2px">v99</div><div class="hdate" id="hDate"></div><span id="syncBadge" title="Last synced from Sheets"></span></div>
     <button class="red-cross-btn" onclick="openModal('helplineModal')" title="Emergency">✚</button>
   </div>
   <div class="hright">
-    <button id="lc-badge" class="hbtn"
+    <button id="lc-badge" class="hbtn" title="Login"
       onclick="document.getElementById('loginScreen').style.display='flex'">&#x1F464;</button>
     <button class="hbtn" onclick="openModal('connectModal')">&#x2699;&#xFE0F;</button>
     <!-- PK1: Pavithra Kolam — Sacred 8-petal lotus -->
@@ -1792,10 +1757,6 @@ async function lcLogin() {
 <div id="printReport"></div>
 
 <script>
-/* ── AnbuCare v98: Hardbaked Apps Script URL ── */
-var GAS_URL = 'https://script.google.com/macros/s/AKfycbzTI47hg9Ljp5nvayGasEuyR9Sx1q7FZqHYkue5YFXrxaLhednLPcz-mKlbmSQdDvhiWw/exec';
-try { localStorage.setItem('anbucare_url', GAS_URL); } catch(e) {}
-
 // Safe _LS shim (handles sandboxed preview iframes)
 var _LS = (function(){
   try{ window.localStorage.setItem('__lsT','1'); window.localStorage.removeItem('__lsT'); return window.localStorage; }
@@ -5970,6 +5931,9 @@ function generatePDF(){ downloadPDFReport(); }
 
 
 function loadConn(){
+  try{ _LS.setItem('anbucare_url', 'https://script.google.com/macros/s/AKfycbzTI47hg9Ljp5nvayGasEuyR9Sx1q7FZqHYkue5YFXrxaLhednLPcz-mKlbmSQdDvhiWw/exec'); } catch(e) {}
+  if(!document.getElementById('scriptUrl').value) document.getElementById('scriptUrl').value = 'https://script.google.com/macros/s/AKfycbzTI47hg9Ljp5nvayGasEuyR9Sx1q7FZqHYkue5YFXrxaLhednLPcz-mKlbmSQdDvhiWw/exec';
+
   const url=(_LS.getItem('anbucare_url')||GAS_URL);
   const dot=document.getElementById('connDot'),mdot=document.getElementById('modalDot'),lbl=document.getElementById('connLabel'),st=document.getElementById('connStatusText');
   if(url){dot?.classList.add('live');mdot?.classList.add('live');if(lbl)lbl.textContent='✅ Connected';if(st)st.textContent='✅ Connected';document.getElementById('scriptUrl').value=url;const sid=_LS.getItem('anbucare_sid');if(sid)document.getElementById('sheetId').value=sid;}
