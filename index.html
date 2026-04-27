@@ -639,6 +639,12 @@ input:checked+.tslider::before{transform:translateX(20px)}
 #acCalBackdrop{display:none;position:fixed;inset:0;z-index:9998;}
 #acCalBackdrop.open{display:block;}
 /* End AnbuCare Calendar CSS */
+
+/* Mandatory field validation */
+.field-error{border-color:#e53935!important;animation:fieldShake .3s ease;}
+@keyframes fieldShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.field-error-msg{font-size:.75rem;color:#e53935;margin-top:3px;display:block;}
+
 </style>
 </head>
 <body>
@@ -3691,11 +3697,14 @@ function updateMed(){
 
 function submitMed(){
   if(window._editMedId){ updateMed(); return; }
-  const name=document.getElementById('mName').value.trim();if(!name){toast('⚠️ Name required');return;}
+  const name=document.getElementById('mName').value.trim();
+  if(!name){_reqErr('mName','Medicine name is required');return;}
   const times=chips('mTimeChips');
+  const _msd=document.getElementById('mStart').value;
+  if(!_msd){_reqErr('mStartDisp','Start date is required');return;}
   const _mdRaw=document.getElementById('mDays').value.trim();
   const md=parseInt(_mdRaw)||0;
-  if(!_mdRaw||md<1){toast('⚠️ Please enter number of days');return;}
+  if(!_mdRaw||md<1){_reqErr('mDays','Number of days is required');return;}
   const ms=document.getElementById('mStart').value;
   S.medicines.push({id:S.nextId++,name,qty:+document.getElementById('mQty').value||1,unit:document.getElementById('mUnit').value,freq:document.getElementById('mFreq').value,times:times.length?times:['Morning'],food:document.getElementById('mFood').value,start:ms,days:md,end:document.getElementById('mEnd').value||(ms&&md?addDays(ms,md-1):''),notes:document.getElementById('mNotes').value});
   normalizeMed(S.medicines[S.medicines.length-1]);renderMeds();renderFlashCards();renderNext3Strip();closeModal('addModal');resetChips('mTimeChips');setTimeout(renderReminders,50);['mName','mNotes','mDays'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});const md2=document.getElementById('mEndDisplay');if(md2)md2.textContent='— set start & days';
@@ -3847,9 +3856,12 @@ function updateDiet(){
 
 function submitDiet(){
   if(window._editDietId){ updateDiet(); return; }
-  const foods=document.getElementById('dFoods').value.trim();if(!foods){toast('⚠️ Food items required');return;}
+  const foods=document.getElementById('dFoods').value.trim();
+  if(!foods){_reqErr('dFoods','Food items are required');return;}
+  const _ddt=document.getElementById('dDate').value;
+  if(!_ddt){_reqErr('dDateDisp','Date is required');return;}
   const _dnRaw=document.getElementById('dDays').value.trim();
-  if(!_dnRaw||parseInt(_dnRaw)<1){toast('⚠️ Please enter number of days');return;}
+  if(!_dnRaw||parseInt(_dnRaw)<1){_reqErr('dDays','Number of days is required');return;}
   const ds=document.getElementById('dDate').value||today,dn=Math.max(1,parseInt(_dnRaw));
   const dm=document.getElementById('dMeal').value,dt=document.getElementById('dTime').value,dp=document.getElementById('dPrep').value,dtg=chips('dTagChips');
   const de=addDays(ds,dn-1);
@@ -3873,7 +3885,12 @@ function renderTests(){
   }).join('');
 }
 function submitTest(){
-  const lab=document.getElementById('tLab').value.trim();if(!lab){toast('⚠️ Lab required');return;}
+  const ttype=document.getElementById('tType').value;
+  if(!ttype){_reqErr('tType','Test type is required');return;}
+  const _ttd=document.getElementById('tDate').value;
+  if(!_ttd){_reqErr('tDateDisp','Date is required');return;}
+  const lab=document.getElementById('tLab').value.trim();
+  if(!lab){_reqErr('tLab','Lab / Centre name is required');return;}
   S.tests.push({id:S.nextId++,type:document.getElementById('tType').value,date:document.getElementById('tDate').value,lab,fasting:document.getElementById('tFasting').value,notes:document.getElementById('tNotes').value,status:'upcoming'});
   renderTests();closeModal('addModal');document.getElementById('tLab').value='';document.getElementById('tNotes').value='';
   toast('🧪 Test scheduled!');saveNow();
@@ -3989,13 +4006,20 @@ function closeLogSessionForm(){
 }
 
 function submitChemo(){
-  var hosp=document.getElementById('cHospital').value.trim();if(!hosp){toast('⚠️ Hospital required');return;}
+  var dateVal=document.getElementById('cDate').value;
+  if(!dateVal){_reqErr('cDateDisp','Date is required');return;}
+  var hosp=document.getElementById('cHospital').value.trim();
+  if(!hosp){_reqErr('cHospital','Hospital / Centre is required');return;}
   var en={id:_editingChemoId||S.nextId++,date:document.getElementById('cDate').value||today,cycle:+document.getElementById('cCycle').value||1,protocol:(document.getElementById('cgTpProtocol')?document.getElementById('cgTpProtocol').value.trim():''),treatType:(S.treatmentProfile&&S.treatmentProfile.name)||'',hospital:hosp,notes:document.getElementById('cNotes').value};
   if(_editingChemoId){var ix=S.chemoSessions.findIndex(function(x){return String(x.id)===String(_editingChemoId);});if(ix>=0)S.chemoSessions[ix]=en;else S.chemoSessions.push(en);_editingChemoId=null;var btn=document.getElementById('btnSubmitChemo');if(btn)btn.textContent='💉 Save Session';toast('✅ Session updated!');}
   else{S.chemoSessions.push(en);toast('💉 Session logged!');}
   renderChemo();renderTreatProfileBanner();
   try{renderFlashCards();}catch(_re){} try{renderNext3Strip();}catch(_re){} try{renderOverdue();}catch(_re){}
   ['cHospital','cNotes'].forEach(function(id){document.getElementById(id).value='';});saveNow();
+  // Close form + switch to Session History tab
+  closeLogSessionForm();
+  var sessBtn=document.querySelector('.sub-tab[onclick*=\'sessions\']');
+  showSub('chemo','sessions',sessBtn||null);
 }
 function deleteChemo(id){
   if(!confirm('Remove this treatment session?')) return;
@@ -6327,6 +6351,24 @@ function fmtDate(s){if(!s)return'';const p=String(s).substring(0,10).split('-');
   window.openCalPicker=openCal;window.closeCalPicker=closeCal;window.acCalNav=navCal;window._acSel=selCal;
 })();
 /* End AnbuCare Calendar JS */
+
+
+function _reqErr(id,msg){
+  var el=document.getElementById(id);
+  if(!el)return;
+  el.classList.add('field-error');
+  var sib=el.parentNode.querySelector('.field-error-msg');
+  if(!sib){sib=document.createElement('span');sib.className='field-error-msg';el.parentNode.appendChild(sib);}
+  sib.textContent=msg||'This field is required';
+  el.focus();
+  setTimeout(function(){el.classList.remove('field-error');},2000);
+}
+function _clearErr(id){
+  var el=document.getElementById(id);if(!el)return;
+  el.classList.remove('field-error');
+  var sib=el.parentNode.querySelector('.field-error-msg');if(sib)sib.remove();
+}
+
 </script>
 
 <!-- ═══ FLASHCARD NEXT POPUP ═══ -->
