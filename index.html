@@ -613,6 +613,32 @@ input:checked+.tslider::before{transform:translateX(20px)}
   .neuro-hist-chip{background:#D1C4E9;color:#4A148C;border-radius:7px;
     padding:1px 7px;font-size:.68rem;font-weight:700;}
   /* ── end v73 neuro ────────────────────────────────────── */
+
+/* AnbuCare Calendar Picker */
+.ac-date-wrap{display:flex!important;align-items:stretch;width:100%;}
+.ac-date-wrap .form-input{flex:1!important;min-width:0!important;width:auto!important;border-radius:10px 0 0 10px!important;border-right:none!important;}
+.ac-date-wrap .form-input:focus{border-right:none!important;box-shadow:none!important;}
+.ac-date-wrap:focus-within .form-input{border-color:#99A98F!important;}
+.ac-date-wrap:focus-within .ac-cal-btn{border-color:#99A98F!important;background:#E8F0E9;}
+.ac-cal-btn{flex-shrink:0!important;width:44px!important;background:#F0EDE8;border:1.5px solid #D9D4CC;border-left:none!important;border-radius:0 10px 10px 0!important;cursor:pointer;font-size:1.1rem;display:flex!important;align-items:center;justify-content:center;color:#7A9E7E;height:auto!important;min-height:0!important;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+.ac-cal-btn:hover,.ac-cal-btn:active{background:#E8F0E9;border-color:#99A98F;}
+#acCalPicker{position:fixed;z-index:9999;background:#fff;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,.25);padding:14px 12px 12px;width:292px;font-family:inherit;display:none;border:1.5px solid #E0E8E0;}
+#acCalPicker.open{display:block;animation:acCalIn .18s ease;}
+@keyframes acCalIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.ac-cal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.ac-cal-nav{background:none;border:1.5px solid #ddd;font-size:1.2rem;cursor:pointer;color:#7A9E7E;border-radius:10px;width:34px;height:34px;display:flex;align-items:center;justify-content:center;}
+.ac-cal-nav:active{background:#E8F0E9;}
+.ac-cal-mth{font-weight:700;font-size:.98rem;color:#2a2a2a;}
+.ac-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.ac-cal-dow{text-align:center;font-size:.6rem;font-weight:800;color:#bbb;padding:2px 0 6px;text-transform:uppercase;}
+.ac-cal-day{text-align:center;border-radius:8px;font-size:.84rem;cursor:pointer;color:#333;height:34px;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+.ac-cal-day:active,.ac-cal-day:hover{background:#E8F0E9;}
+.ac-cal-day.today{border:2px solid #7A9E7E;font-weight:700;color:#5A8A60;}
+.ac-cal-day.selected{background:#7A9E7E!important;color:#fff!important;font-weight:700;}
+.ac-cal-day.other-month{color:#ccc;}
+#acCalBackdrop{display:none;position:fixed;inset:0;z-index:9998;}
+#acCalBackdrop.open{display:block;}
+/* End AnbuCare Calendar CSS */
 </style>
 </head>
 <body>
@@ -1165,7 +1191,7 @@ function lcLogin() {
         <div class="form-group"><label class="form-label">Oncologist</label>
           <input type="text" class="form-input" id="cgTpOncologist" placeholder="Dr. Name"></div>
         <div class="form-group"><label class="form-label">Start Date</label>
-          <input type="text" class="form-input date-text-input" id="cgTpStartDateDisp" inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10" autocomplete="off" oninput="autoDateFmt(this,'cgTpStartDate')" onblur="valDateInp(this,'cgTpStartDate')"><input type="hidden" id="cgTpStartDate"></div>
+          <div class="ac-date-wrap"><input type="text" class="form-input date-text-input" id="cgTpStartDateDisp" inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10" autocomplete="off" oninput="autoDateFmt(this,'cgTpStartDate')" onblur="valDateInp(this,'cgTpStartDate')"><button type="button" class="ac-cal-btn" data-cal="cgTpStartDateDisp" onclick="window.openCalPicker('cgTpStartDateDisp','cgTpStartDate')" aria-label="Open calendar">&#128197;</button><input type="hidden" id="cgTpStartDate"></div></div>
       </div>
       <button class="btn btn-chemo btn-block" onclick="saveTreatmentProfile()">💾 Save Treatment</button>
     </div>
@@ -1189,7 +1215,7 @@ function lcLogin() {
   <div id="logSessionForm" style="display:none">
       <div class="card-body">
         <div class="form-row">
-          <div class="form-group"><label class="form-label">Date</label><input type="text" class="form-input date-text-input" id="cDateDisp" inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10" autocomplete="off" oninput="autoDateFmt(this,'cDate')" onblur="valDateInp(this,'cDate')"><input type="hidden" id="cDate"></div>
+          <div class="form-group"><label class="form-label">Date</label><div class="ac-date-wrap"><input type="text" class="form-input date-text-input" id="cDateDisp" inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10" autocomplete="off" oninput="autoDateFmt(this,'cDate')" onblur="valDateInp(this,'cDate')"><button type="button" class="ac-cal-btn" data-cal="cDateDisp" onclick="window.openCalPicker('cDateDisp','cDate')" aria-label="Open calendar">&#128197;</button><input type="hidden" id="cDate"></div></div>
           <div class="form-group"><label class="form-label">Cycle No.</label><input type="number" class="form-input" id="cCycle" min="1" placeholder="1"></div>
         </div>
         
@@ -1672,8 +1698,8 @@ function lcLogin() {
           <button class="rbtn" onclick="setRange('custom',this)">Custom</button>
         </div>
         <div id="customRange" class="form-row hidden">
-          <div class="form-group"><label class="form-label">From</label><input type="text" class="form-input date-text-input" id="rangeFromDisp" inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10" autocomplete="off" oninput="autoDateFmt(this,'rangeFrom')" onblur="valDateInp(this,'rangeFrom')"><input type="hidden" id="rangeFrom"></div>
-          <div class="form-group"><label class="form-label">To</label><input type="text" class="form-input date-text-input" id="rangeToDisp" inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10" autocomplete="off" oninput="autoDateFmt(this,'rangeTo')" onblur="valDateInp(this,'rangeTo')"><input type="hidden" id="rangeTo"></div>
+          <div class="form-group"><label class="form-label">From</label><div class="ac-date-wrap"><input type="text" class="form-input date-text-input" id="rangeFromDisp" inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10" autocomplete="off" oninput="autoDateFmt(this,'rangeFrom')" onblur="valDateInp(this,'rangeFrom')"><button type="button" class="ac-cal-btn" data-cal="rangeFromDisp" onclick="window.openCalPicker('rangeFromDisp','rangeFrom')" aria-label="Open calendar">&#128197;</button><input type="hidden" id="rangeFrom"></div></div>
+          <div class="form-group"><label class="form-label">To</label><div class="ac-date-wrap"><input type="text" class="form-input date-text-input" id="rangeToDisp" inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10" autocomplete="off" oninput="autoDateFmt(this,'rangeTo')" onblur="valDateInp(this,'rangeTo')"><button type="button" class="ac-cal-btn" data-cal="rangeToDisp" onclick="window.openCalPicker('rangeToDisp','rangeTo')" aria-label="Open calendar">&#128197;</button><input type="hidden" id="rangeTo"></div></div>
         </div>
         <div class="form-row">
           <div class="form-group"><label class="form-label">Patient Name</label><input type="text" class="form-input" id="pdfPatient" placeholder="Patient name"></div>
@@ -1805,7 +1831,7 @@ function lcLogin() {
       <div class="form-group"><label class="form-label">Food Instructions</label><select class="form-select" id="mFood"><option>After food</option><option>Before food</option><option>With food</option><option>Empty stomach</option><option>No restriction</option></select></div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Start Date</label>
-          <input type="text" class="form-input date-text-input" id="mStartDisp" inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10" autocomplete="off" oninput="autoDateFmt(this,'mStart','calcMedEnd')" onblur="valDateInp(this,'mStart')"><input type="hidden" id="mStart"></div>
+          <div class="ac-date-wrap"><input type="text" class="form-input date-text-input" id="mStartDisp" inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10" autocomplete="off" oninput="autoDateFmt(this,'mStart','calcMedEnd')" onblur="valDateInp(this,'mStart')"><button type="button" class="ac-cal-btn" data-cal="mStartDisp" onclick="window.openCalPicker('mStartDisp','mStart','calcMedEnd')" aria-label="Open calendar">&#128197;</button><input type="hidden" id="mStart"></div></div>
         <div class="form-group"><label class="form-label">No. of Days</label>
           <div style="display:flex;gap:6px;align-items:center">
             <input type="number" class="form-input" id="mDays" min="1" max="365" placeholder="e.g. 30" oninput="calcMedEnd()">
@@ -1841,7 +1867,7 @@ function lcLogin() {
       <div class="form-group"><label class="form-label">Dietary Tags</label><div class="chip-row" id="dTagChips"><div class="chip" onclick="this.classList.toggle('sel')">🌾 Low fiber</div><div class="chip" onclick="this.classList.toggle('sel')">✂️ Low residue</div><div class="chip" onclick="this.classList.toggle('sel')">💪 High protein</div><div class="chip" onclick="this.classList.toggle('sel')">🥣 Soft/mashed</div><div class="chip" onclick="this.classList.toggle('sel')">🚫 No spice</div><div class="chip" onclick="this.classList.toggle('sel')">🧂 Low salt</div><div class="chip" onclick="this.classList.toggle('sel')">🫙 Strained</div></div></div>
       <div class="form-row">
         <div class="form-group"><label class="form-label">Start Date</label>
-          <input type="text" class="form-input date-text-input" id="dDateDisp" inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10" autocomplete="off" oninput="autoDateFmt(this,'dDate','calcDietEnd')" onblur="valDateInp(this,'dDate')"><input type="hidden" id="dDate"></div>
+          <div class="ac-date-wrap"><input type="text" class="form-input date-text-input" id="dDateDisp" inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10" autocomplete="off" oninput="autoDateFmt(this,'dDate','calcDietEnd')" onblur="valDateInp(this,'dDate')"><button type="button" class="ac-cal-btn" data-cal="dDateDisp" onclick="window.openCalPicker('dDateDisp','dDate')" aria-label="Open calendar">&#128197;</button><input type="hidden" id="dDate"></div></div>
         <div class="form-group"><label class="form-label">No. of Days</label>
           <div style="display:flex;gap:6px;align-items:center">
             <input type="number" class="form-input" id="dDays" min="1" max="365" placeholder="e.g. 7" oninput="calcDietEnd()">
@@ -1860,7 +1886,7 @@ function lcLogin() {
     </div>
     <div id="af-test" class="hidden">
       <div class="form-group"><label class="form-label">Test Type</label><input type="text" class="form-input" id="tType" placeholder="e.g. Blood CBC, MRI, CT Scan" list="tTypeDatalist" autocomplete="off"><datalist id="tTypeDatalist"></datalist></div>
-      <div class="form-row"><div class="form-group"><label class="form-label">Scheduled Date</label><input type="text" class="form-input date-text-input" id="tDateDisp" inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10" autocomplete="off" oninput="autoDateFmt(this,'tDate')" onblur="valDateInp(this,'tDate')"><input type="hidden" id="tDate"></div><div class="form-group"><label class="form-label">Fasting?</label><select class="form-select" id="tFasting"><option>No</option><option>Yes – 8 hours</option><option>Yes – 12 hours</option><option>Yes – overnight</option></select></div></div>
+      <div class="form-row"><div class="form-group"><label class="form-label">Scheduled Date</label><div class="ac-date-wrap"><input type="text" class="form-input date-text-input" id="tDateDisp" inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10" autocomplete="off" oninput="autoDateFmt(this,'tDate')" onblur="valDateInp(this,'tDate')"><button type="button" class="ac-cal-btn" data-cal="tDateDisp" onclick="window.openCalPicker('tDateDisp','tDate')" aria-label="Open calendar">&#128197;</button><input type="hidden" id="tDate"></div></div><div class="form-group"><label class="form-label">Fasting?</label><select class="form-select" id="tFasting"><option>No</option><option>Yes – 8 hours</option><option>Yes – 12 hours</option><option>Yes – overnight</option></select></div></div>
       <div class="form-group"><label class="form-label">Lab / Hospital</label><input type="text" class="form-input" id="tLab" placeholder="e.g. Apollo Diagnostics"></div>
       <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="tNotes" rows="2" placeholder="Bring previous reports…"></textarea></div>
       <button class="btn btn-purple btn-block" onclick="submitTest()">🧪 Schedule Test</button>
@@ -6260,6 +6286,47 @@ function fmtDate(s){if(!s)return'';const p=String(s).substring(0,10).split('-');
   } else { _startPoll(); }
 })();
 
+
+
+/* AnbuCare Calendar Picker JS */
+(function(){
+  var D=null,H=null,CB=null,Y=new Date().getFullYear(),M=new Date().getMonth();
+  var TD=new Date().getDate(),TM=new Date().getMonth(),TY=new Date().getFullYear();
+  function openCal(dId,hId,cb){
+    D=dId;H=hId;CB=cb||null;
+    var el=document.getElementById(dId),v=el?el.value:'';
+    if(v&&v.length===10){var p=v.split('/');if(p.length===3&&p[2].length===4){M=parseInt(p[1],10)-1;Y=parseInt(p[2],10);}else{M=TM;Y=TY;}}else{M=TM;Y=TY;}
+    renderCal();
+    var btn=document.querySelector('[data-cal="'+dId+'"]'),pop=document.getElementById('acCalPicker');
+    if(btn&&pop){var r=btn.getBoundingClientRect(),t=r.bottom+4,l=r.right-292;if(l<6)l=6;if(l+296>window.innerWidth)l=window.innerWidth-298;if(t+340>window.innerHeight)t=r.top-344;pop.style.top=t+'px';pop.style.left=l+'px';}
+    document.getElementById('acCalPicker').classList.add('open');
+    document.getElementById('acCalBackdrop').classList.add('open');
+  }
+  function closeCal(){document.getElementById('acCalPicker').classList.remove('open');document.getElementById('acCalBackdrop').classList.remove('open');}
+  function navCal(d){M+=d;if(M>11){M=0;Y++;}if(M<0){M=11;Y--;}renderCal();}
+  function renderCal(){
+    var MN=['January','February','March','April','May','June','July','August','September','October','November','December'];
+    document.getElementById('acCalMthLbl').textContent=MN[M]+' '+Y;
+    var dows=['Su','Mo','Tu','We','Th','Fr','Sa'],html=dows.map(function(d){return'<div class="ac-cal-dow">'+d+'</div>';}).join('');
+    var fd=new Date(Y,M,1).getDay(),dim=new Date(Y,M+1,0).getDate(),pd=new Date(Y,M,0).getDate();
+    var el=document.getElementById(D),sv=el?el.value:'',sd=0,sm=-1,sy=0;
+    if(sv&&sv.length===10){var sp=sv.split('/');sd=parseInt(sp[0],10);sm=parseInt(sp[1],10)-1;sy=parseInt(sp[2],10);}
+    var pY=M===0?Y-1:Y,pM=(M-1+12)%12,nY=M===11?Y+1:Y,nM=(M+1)%12;
+    for(var i=0;i<fd;i++){var d2=pd-fd+1+i;html+='<div class="ac-cal-day other-month" onclick="window._acSel('+pY+','+pM+','+d2+')">'+d2+'</div>';}
+    for(var d=1;d<=dim;d++){var iT=(d===TD&&M===TM&&Y===TY),iS=(d===sd&&M===sm&&Y===sy);html+='<div class="ac-cal-day'+(iT?' today':'')+(iS?' selected':'')+'" onclick="window._acSel('+Y+','+M+','+d+')">'+d+'</div>';}
+    var rem=(7-(fd+dim)%7)%7;for(var n=1;n<=rem;n++){html+='<div class="ac-cal-day other-month" onclick="window._acSel('+nY+','+nM+','+n+')">'+n+'</div>';}
+    document.getElementById('acCalGrid').innerHTML=html;
+  }
+  function selCal(y,m,d){
+    var dd=String(d).padStart(2,'0'),mm=String(m+1).padStart(2,'0'),yyyy=String(y);
+    var dEl=document.getElementById(D),hEl=document.getElementById(H);
+    if(dEl)dEl.value=dd+'/'+mm+'/'+yyyy;if(hEl)hEl.value=yyyy+'-'+mm+'-'+dd;
+    if(CB){try{window[CB]&&window[CB]();}catch(e){}}
+    closeCal();
+  }
+  window.openCalPicker=openCal;window.closeCalPicker=closeCal;window.acCalNav=navCal;window._acSel=selCal;
+})();
+/* End AnbuCare Calendar JS */
 </script>
 
 <!-- ═══ FLASHCARD NEXT POPUP ═══ -->
@@ -6312,6 +6379,17 @@ function fmtDate(s){if(!s)return'';const p=String(s).substring(0,10).split('-');
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px"><span style="font-weight:800">🆘 SOS Medicines</span><button onclick="closeSOSModal()" style="background:var(--surface2);border:none;border-radius:50%;width:32px;height:32px;cursor:pointer">✕</button></div>
     <div id="sosModalList"></div>
   </div>
+</div>
+
+<!-- AnbuCare Calendar -->
+<div id="acCalBackdrop" onclick="window.closeCalPicker()"></div>
+<div id="acCalPicker">
+  <div class="ac-cal-hdr">
+    <button class="ac-cal-nav" onclick="window.acCalNav(-1)">&#8249;</button>
+    <span class="ac-cal-mth" id="acCalMthLbl"></span>
+    <button class="ac-cal-nav" onclick="window.acCalNav(1)">&#8250;</button>
+  </div>
+  <div class="ac-cal-grid" id="acCalGrid"></div>
 </div>
 </body>
 </html>
