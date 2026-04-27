@@ -582,7 +582,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
 .header-title-blk{display:flex;flex-direction:column;}
 .htitle{font-size:1.22rem;font-weight:700;font-family:'Libre Baskerville',Georgia,serif;color:#fff;letter-spacing:.01em;line-height:1.2;}
 .hdate{font-size:.73rem;color:rgba(255,255,255,.82);margin-top:2px;}
-#syncBadge{font-size:.68rem;color:rgba(255,255,255,.75);}
+#syncBadge{font-size:.68rem;color:rgba(255,255,255,.75);}#syncBadge:empty{display:none!important;}
 #lc-badge{background:rgba(255,255,255,.22)!important;border:1.5px solid rgba(255,255,255,.55)!important;color:#fff!important;font-size:.85rem;font-weight:700;width:38px!important;height:38px!important;border-radius:50%!important;}
 .red-cross-btn{background:#e53935!important;border:1.5px solid #c62828!important;color:#fff!important;box-shadow:0 2px 8px rgba(229,57,53,.45)!important;}
 .neuro-hdr{display:flex;align-items:center;justify-content:space-between;
@@ -1174,13 +1174,19 @@ function lcLogin() {
 
 <div class="sub-tabs">
     <button class="sub-tab active" onclick="showSub('chemo','log',this)">💉 Log Session</button>
-    <button class="sub-tab" onclick="showSub('chemo','sessions',this)">📋 Sessions</button>
+    <button class="sub-tab" onclick="showSub('chemo','sessions',this)">📋 Session History</button>
   </div>
   <div id="chemo-sessions" class="hidden">
     <div class="card"><div class="card-header"><div class="card-title">💉 Session History</div></div><div class="card-body"><div id="chemoList"></div></div></div>
   </div>
   <div id="chemo-log">
-    <div class="card"><div class="card-header"><div class="card-title">💉 Log Treatment Session</div></div>
+    <div class="card">
+  <div class="card-header"><div class="card-title">💉 Log Treatment Session</div></div>
+  <div id="logSessionPrompt" style="padding:18px 16px;text-align:center">
+    <div style="font-size:.88rem;color:var(--muted);margin-bottom:14px">Record today's chemo or treatment session</div>
+    <button class="btn btn-chemo btn-block" onclick="openLogSessionForm()">💉 Log a Session</button>
+  </div>
+  <div id="logSessionForm" style="display:none">
       <div class="card-body">
         <div class="form-row">
           <div class="form-group"><label class="form-label">Date</label><input type="text" class="form-input date-text-input" id="cDateDisp" inputmode="numeric" placeholder="DD/MM/YYYY" maxlength="10" autocomplete="off" oninput="autoDateFmt(this,'cDate')" onblur="valDateInp(this,'cDate')"><input type="hidden" id="cDate"></div>
@@ -1194,8 +1200,12 @@ function lcLogin() {
         <div class="form-group"><label class="form-label">Hospital / Centre</label><input type="text" class="form-input" id="cHospital" placeholder="e.g. Apollo Cancer Centre"></div>
         <div class="form-group"><label class="form-label">Drug / Regimen details</label><input type="text" class="form-input" id="cgTpProtocol" placeholder="e.g. 500mg twice daily, 6 cycles"></div>
         <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="cNotes" rows="3" placeholder="Observations during session…"></textarea></div>
+        <div style="display:flex;gap:8px;margin-top:4px">
         <button class="btn btn-chemo btn-block" id="btnSubmitChemo" onclick="submitChemo()">💉 Save Session</button>
+        <button class="btn btn-outline" onclick="closeLogSessionForm()" style="min-width:80px">✕ Cancel</button>
       </div>
+      </div><!-- end card-body -->
+  </div><!-- end logSessionForm -->
     </div>
   </div>
 </div>
@@ -3558,12 +3568,20 @@ function isoToDisp(iso){
 }
 function autoDateFmt(el,hiddenId,cb){
   var raw=el.value;
+  var cursorPos=el.selectionStart;
   var digits=raw.replace(/\D/g,'').substring(0,8);
   var out='';
   if(digits.length>0)out=digits.substring(0,2);
   if(digits.length>2)out+='/'+digits.substring(2,4);
   if(digits.length>4)out+='/'+digits.substring(4,8);
+  // Preserve cursor: count how many slashes are before cursor in new value
+  var slashesBefore=(out.substring(0,cursorPos).match(/\//g)||[]).length;
+  var rawSlashesBefore=(raw.substring(0,cursorPos).match(/\//g)||[]).length;
+  var newCursor=cursorPos+(slashesBefore-rawSlashesBefore);
+  if(newCursor<0)newCursor=0;
+  if(newCursor>out.length)newCursor=out.length;
   el.value=out;
+  try{el.setSelectionRange(newCursor,newCursor);}catch(e){}
   var hid=document.getElementById(hiddenId);
   if(!hid)return;
   if(digits.length===8){
@@ -3847,7 +3865,7 @@ function renderChemo(){
     return `<div class="chemo-card">
       <div class="card-row-actions">
         <div class="card-content">
-          <span class="chemo-badge">Cycle ${s.cycle} · Session ${s.session}</span>${s.treatType?`<span class="chemo-badge" style="background:var(--purple-l);color:var(--purple);margin-left:5px">🧪 ${esc(s.treatType)}</span>`:''}
+          <span class="chemo-badge">Cycle ${s.cycle}</span>${s.treatType?`<span class="chemo-badge" style="background:var(--purple-l);color:var(--purple);margin-left:5px">🧪 ${esc(s.treatType)}</span>`:''}${s.protocol?`<span class="chemo-badge" style="background:#f0ede8;color:#6B7C6E;margin-left:5px;font-weight:500">${esc(s.protocol)}</span>`:''}
           <div class="chemo-date">💉 ${fmtDate(s.date)}</div>
           <div class="chemo-info">🏥 ${esc(s.hospital)}</div>
           ${s.notes?`<div class="chemo-info">📝 ${esc(s.notes)}</div>`:''}
@@ -3875,13 +3893,13 @@ function renderChemoBySym(){
   const lbs={nausea:'🤢',fatigue:'😴',pain:'🩹',mood:'😊',appetite:'🍽️'};
   el.innerHTML=[...S.chemoSessions].sort((a,b)=>b.date.localeCompare(a.date)).map(s=>{
     const syms=S.symptoms.filter(x=>x.chemoId===s.id);
-    if(!syms.length)return`<div class="chemo-card"><span class="chemo-badge">Cycle ${s.cycle} · Session ${s.session}</span><div class="chemo-date">${fmtDate(s.date)}</div><div class="chemo-sym" style="color:var(--muted)">No symptoms logged</div></div>`;
+    if(!syms.length)return`<div class="chemo-card"><span class="chemo-badge">Cycle ${s.cycle}</span><div class="chemo-date">${fmtDate(s.date)}</div><div class="chemo-sym" style="color:var(--muted)">No symptoms logged</div></div>`;
     const avg=k=>(Math.round(syms.reduce((a,x)=>a+x[k],0)/syms.length*10)/10);
     const bars=['nausea','fatigue','pain','mood','appetite'].map(k=>{
       const v=avg(k),pct=v*20,col=v<=2?'#43a87a':v<=3?'#f0b429':'#e07b54';
       return `<div style="margin-bottom:4px;display:flex;align-items:center;gap:8px"><span style="font-size:.8rem;width:24px">${lbs[k]}</span><div style="flex:1;background:var(--surface2);border-radius:4px;height:7px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${col};border-radius:4px"></div></div><span style="font-size:.74rem;font-weight:700;color:${col};min-width:28px">${v}/5</span></div>`;
     }).join('');
-    return `<div class="chemo-card"><span class="chemo-badge">Cycle ${s.cycle} · Session ${s.session}</span><div class="chemo-date">${fmtDate(s.date)} · ${syms.length} log${syms.length>1?'s':''}</div><div class="chemo-sym">${bars}</div></div>`;
+    return `<div class="chemo-card"><span class="chemo-badge">Cycle ${s.cycle}</span><div class="chemo-date">${fmtDate(s.date)} · ${syms.length} log${syms.length>1?'s':''}</div><div class="chemo-sym">${bars}</div></div>`;
   }).join('');
 }
 function editChemo(id){
@@ -3891,6 +3909,7 @@ function editChemo(id){
   var cgTpEl=document.getElementById('cgTpProtocol');if(cgTpEl)cgTpEl.value=s.protocol||'';
   document.getElementById('cNotes').value=s.notes||'';_editingChemoId=s.id;
   var btn=document.getElementById('btnSubmitChemo');if(btn)btn.textContent='💉 Update Session';
+  openLogSessionForm();
   document.querySelectorAll('#tab-chemo .sub-tab').forEach(function(b,i){b.classList.toggle('active',i===0);});
   var ld=document.getElementById('chemo-log');if(ld)ld.classList.remove('hidden');
   var sd=document.getElementById('chemo-sessions');if(sd)sd.classList.add('hidden');
@@ -3918,6 +3937,29 @@ function updateTest(){
   closeModal('addModal');
   toast('✅ Test updated!');
   saveNow();
+}
+
+function openLogSessionForm(){
+  document.getElementById('logSessionPrompt').style.display='none';
+  document.getElementById('logSessionForm').style.display='block';
+  // Pre-fill today's date
+  var dd=document.getElementById('cDateDisp');
+  if(dd&&!dd.value){
+    var t=new Date();
+    var d=String(t.getDate()).padStart(2,'0')+'/'+String(t.getMonth()+1).padStart(2,'0')+'/'+t.getFullYear();
+    dd.value=d;
+    autoDateFmt(dd,'cDate');
+  }
+}
+function closeLogSessionForm(){
+  document.getElementById('logSessionForm').style.display='none';
+  document.getElementById('logSessionPrompt').style.display='block';
+  // Reset form
+  ['cDateDisp','cHospital','cgTpProtocol','cNotes'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+  var cc=document.getElementById('cCycle');if(cc)cc.value='';
+  var cd=document.getElementById('cDate');if(cd)cd.value='';
+  _editingChemoId=null;
+  var btn=document.getElementById('btnSubmitChemo');if(btn)btn.textContent='💉 Save Session';
 }
 
 function submitChemo(){
