@@ -708,6 +708,11 @@ input:checked+.tslider::before{transform:translateX(20px)}
 .ss-cancel:active { background:#ebebeb; }
 
 </style>
+  <!-- PDF libs: preload so Download/Share is instant -->
+  <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" as="script">
+  <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" as="script">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 </head>
 <body>
 <div id="loginScreen"
@@ -2165,7 +2170,7 @@ const MERGE_KEYS = ['tasks','medicines','dietPlan','tests','chemoSessions',
   renderAll();
 }
 
-let _saveTimer=null,_saving=false,_editingChemoId=null,fcItemState={},_fcLastDate=today;
+let _saveTimer=null,_saving=false,_editingChemoId=null,fcItemState={},_fcLastDate=today,_syncCooldownUntil=0,_lastSaveStartTs='';
 function saveNow(){
   // Cancel any pending debounced save
   clearTimeout(_saveTimer);
@@ -6219,7 +6224,7 @@ function fmtDate(s){if(!s)return'';const p=String(s).substring(0,10).split('-');
 // Post-save delay 4s to allow GAS write to complete
 // ======================================================
 (function(){
-  var _ch=null, _afTimer=null, _apTimer=null, _syncCooldownUntil=0, _lastSaveStartTs='';
+  var _ch=null, _afTimer=null, _apTimer=null; // _syncCooldownUntil + _lastSaveStartTs now global
   var ACTIVE_MS=8000, IDLE_MS=45000;
 
   function _startPoll(){
