@@ -2554,31 +2554,8 @@ async function fetchAffirmation(){
 
   setAff(area, cat, localPick[0], localPick[1], tierLabel, true);
 
-  // ── Try live APIs in sequence ─────────────────────────────────
-  const apis = [
-    async () => {
-      const r = await fetch('https://api.quotable.io/quotes/random?tags=inspirational|motivational|courage|hope|perseverance&limit=1&maxLength=200');
-      const d = await r.json();
-      const item = Array.isArray(d)?d[0]:d?.results?.[0];
-      if(item?.content && isGoodQuote(item.content)) return {q:item.content, a:item.author, src:'quotable.io'};
-    },
-    async () => {
-      const r = await fetch('https://zenquotes.io/api/random');
-      const d = await r.json();
-      if(Array.isArray(d) && d[0]?.q && isGoodQuote(d[0].q)) return {q:d[0].q, a:d[0].a||'—', src:'zenquotes.io'};
-    },
-  ];
-
-  for(const apiFn of apis){
-    try{
-      const result = await Promise.race([apiFn(), new Promise((_,r)=>setTimeout(()=>r(new Error('timeout')),4000))]);
-      if(result?.q && isGoodQuote(result.q)){
-        setAff(area, cat, result.q, result.a, result.src, false);
-        return;
-      }
-    }catch(_){}
-  }
-  // All APIs failed — local quote already showing, done
+  // External APIs removed: quotable.io SSL expired, zenquotes.io CORS blocked on GitHub Pages
+  // Local pool above already shows instantly — no external dependency needed
 }
 
 function setAff(area, cat, q, author, src, loading){
@@ -3544,7 +3521,7 @@ function renderDietDaySummary(){
 function renderMeds(){
   try{renderMedsDaySummary();}catch(_e){}
   try{refreshMedSug();}catch(_e){}
-  const el=document.getElementById('medList');
+  const el=document.getElementById('medList');if(!el)return;
   if(!S.medicines.length){el.innerHTML='<div class="empty"><span class="emoji">💊</span>No medicines yet</div>';return;}
   el.innerHTML=S.medicines.map(function(m){var hS=Array.isArray(m.times)&&m.times.some(function(t){return t.includes('SOS');});return `<div class="med-card"><div class="card-row-actions"><div class="card-content"><div class="med-name">${esc(m.name)}${hS?' <span style="font-size:.72rem;background:#fffbeb;color:#b45309;border:1px solid #fcd34d;border-radius:5px;padding:1px 6px;font-weight:700">SOS</span>':''}</div><div class="med-dose">${m.qty} ${m.unit} · ${esc(m.food)}</div><div class="med-tags">${m.times.map(function(t){return '<span class="mtag '+(t.includes('SOS')?'mtag-sos':'mtag-time')+'">'+t+'</span>';}).join('')}<span class="mtag mtag-food">🍽️ ${esc(m.food)}</span><span class="mtag mtag-dates">📅 ${fmtDate(m.start)||'—'} → ${fmtDate(m.end)||'—'}</span>${m.days?`<span class="mtag" style="background:#e8f4f0;color:var(--primary)">⏱ ${m.days} day${m.days>1?'s':''}</span>`:''}</div>${m.notes?`<div style="font-size:.75rem;color:var(--muted);margin-top:6px">📌 ${esc(m.notes)}</div>`:''}</div><button class="edit-btn" onclick="editMed(${m.id})">✏️ Edit</button><button class="del-btn" onclick="deleteMed(${m.id})">🗑</button></div></div>`}).join('');
 }
@@ -3799,7 +3776,7 @@ function submitMed(){
 // ═══════════════════════════════════════════
 function renderDiet(){
   try{renderDietDaySummary();}catch(_e){}
-  const el=document.getElementById('dietList');
+  const el=document.getElementById('dietList');if(!el)return;
   const all=[...S.dietPlan].sort((a,b)=>(a.date||'').localeCompare(b.date||''));
   if(!all.length){el.innerHTML='<div class="empty"><span class="emoji">🥗</span>No diet plan yet</div>';return;}
   el.innerHTML=all.map(d=>{
@@ -3951,7 +3928,7 @@ function submitDiet(){
 // ═══════════════════════════════════════════
 function renderTests(){
   refreshTestTypeDatalist();
-  const el=document.getElementById('testList');
+  const el=document.getElementById('testList');if(!el)return;
   if(!S.tests.length){el.innerHTML='<div class="empty"><span class="emoji">🧪</span>No tests scheduled</div>';return;}
   el.innerHTML=[...S.tests].sort((a,b)=>a.date.localeCompare(b.date)).map(t=>{
     const diff=Math.ceil((new Date(t.date)-new Date())/(864e5));
@@ -3977,7 +3954,7 @@ function submitTest(){
 // CHEMO
 // ═══════════════════════════════════════════
 function renderChemo(){
-  const el=document.getElementById('chemoList');if(!S.chemoSessions.length){el.innerHTML='<div class="empty"><span class="emoji">💉</span>No sessions logged</div>';return;}
+  const el=document.getElementById('chemoList');if(!el)return;if(!S.chemoSessions.length){el.innerHTML='<div class="empty"><span class="emoji">💉</span>No sessions logged</div>';return;}
   el.innerHTML=[...S.chemoSessions].sort((a,b)=>b.date.localeCompare(a.date)).map((s,i)=>{
     const syms=S.symptoms.filter(x=>x.chemoId===s.id);
     const avg=syms.length?(Math.round(syms.reduce((a,x)=>a+x.nausea,0)/syms.length*10)/10):null;
@@ -4008,7 +3985,7 @@ function deleteChemoSession(sessionId, fallbackIdx){
   saveNow();
 }
 function renderChemoBySym(){
-  const el=document.getElementById('chemoSymList');if(!S.chemoSessions.length){el.innerHTML='<div class="empty"><span class="emoji">📊</span>No sessions yet</div>';return;}
+  const el=document.getElementById('chemoSymList');if(!el)return;if(!S.chemoSessions.length){el.innerHTML='<div class="empty"><span class="emoji">📊</span>No sessions yet</div>';return;}
   const lbs={nausea:'🤢',fatigue:'😴',pain:'🩹',mood:'😊',appetite:'🍽️'};
   el.innerHTML=[...S.chemoSessions].sort((a,b)=>b.date.localeCompare(a.date)).map(s=>{
     const syms=S.symptoms.filter(x=>x.chemoId===s.id);
@@ -5082,7 +5059,7 @@ function _renderIOSAudioPlayer(wrap, blobUrl, n){
 }
 
 function renderVoice(){
-  const el=document.getElementById('voiceList');
+  const el=document.getElementById('voiceList');if(!el)return;
   if(!el)return;
   el.innerHTML=S.voiceNotes.length
     ? S.voiceNotes.map(n=>vHTML(n)).join('')
