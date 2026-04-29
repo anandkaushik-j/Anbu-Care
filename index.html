@@ -929,6 +929,7 @@ function lcLogin() {
   var b=document.getElementById('lc-badge');
   if(b){b.textContent='CG';b.style.background='#D8EDD9';b.style.color='#1b5e20';b.title='Logged in as Caregiver — tap to logout';b.onclick=function(){ showLogoutModal(); }; }
   if(typeof toast==='function')toast('✅ Welcome, Caregiver!');
+  try{ window.history.pushState({ac:'app',ts:Date.now()},'',window.location.href); }catch(e){}
   setTimeout(function(){try{if(typeof loadFromSheets==='function')loadFromSheets();}catch(e){}},800);
 }
 
@@ -5445,9 +5446,12 @@ function previewReport(){
       <button onclick="document.getElementById('pvScroll').scrollTo({top:0,behavior:'smooth'})"
         style="background:#E1AD01;color:#2c4a2e;border:none;border-radius:7px;padding:6px 11px;
         font-size:.72rem;font-weight:800;cursor:pointer;white-space:nowrap;">⬆ Top</button>
-      <button onclick="downloadPDFReport()"
-        style="background:#C0714F;color:#fff;border:none;border-radius:7px;padding:6px 11px;
-        font-size:.72rem;font-weight:800;cursor:pointer;white-space:nowrap;">⬇ PDF</button>
+      <button onclick="pvDownload()"
+        style="background:#4a7c59;color:#fff;border:none;border-radius:7px;padding:6px 11px;
+        font-size:.72rem;font-weight:800;cursor:pointer;white-space:nowrap;">⬇ Download</button>
+      <button onclick="pvShare()"
+        style="background:#3d7a4f;color:#fff;border:none;border-radius:7px;padding:6px 11px;
+        font-size:.72rem;font-weight:800;cursor:pointer;white-space:nowrap;">📤 Share</button>
       <button onclick="document.getElementById('pdfPreviewOverlay').style.display='none'"
         style="background:rgba(255,255,255,.18);color:#fff;border:1.5px solid rgba(255,255,255,.3);
         border-radius:7px;padding:6px 11px;font-size:.72rem;font-weight:700;cursor:pointer;">✕ Close</button>
@@ -6392,34 +6396,6 @@ function _shareViaEmail() {
   toast('📧 Attach the downloaded PDF in your email app');
 }
 
-
-
-function showLogoutModal(){
-  var m=document.getElementById('logoutModal');
-  if(m){m.style.display='flex';}
-}
-function hideLogoutModal(){
-  var m=document.getElementById('logoutModal');
-  if(m){m.style.display='none';}
-}
-function doLogout(){
-  hideLogoutModal();
-  try{ localStorage.removeItem('ac_sess_v99'); }catch(e){}
-  var b=document.getElementById('lc-badge');
-  if(b){
-    b.textContent='\u{1F464}';
-    b.style.background='';b.style.color='';b.title='Login';
-    b.onclick=function(){ document.getElementById('loginScreen').style.display='flex'; };
-  }
-  var ls=document.getElementById('loginScreen');
-  if(ls){ ls.style.display='flex'; ls.style.pointerEvents=''; }
-  var pw=document.getElementById('lc-pw');
-  if(pw){ pw.value=''; pw.focus(); }
-  var msg=document.getElementById('lc-msg');
-  if(msg) msg.style.display='none';
-  if(typeof toast==='function') toast('👋 Logged out successfully');
-}
-
 </script>
 
 <!-- ═══ FLASHCARD NEXT POPUP ═══ -->
@@ -6542,29 +6518,105 @@ function doLogout(){
   </div>
 </div>
 
-
-<!-- Logout Modal -->
+<!-- ═══ LOGOUT MODAL ═══ -->
 <div id="logoutModal" style="display:none;position:fixed;inset:0;z-index:99998;
   align-items:center;justify-content:center;background:rgba(0,0,0,.55);
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backdrop-filter:blur(3px);">
   <div style="background:#fff;border-radius:22px;padding:28px 24px 22px;
-    max-width:300px;width:88%;text-align:center;
-    box-shadow:0 20px 60px rgba(0,0,0,.3);animation:luIn .25s cubic-bezier(.16,1,.3,1);">
-    <div style="font-size:2.2rem;margin-bottom:10px;">🔒</div>
-    <h3 style="margin:0 0 6px;font-size:1.05rem;font-weight:800;color:#1a1a1a;">Log out?</h3>
-    <p style="margin:0 0 22px;font-size:.82rem;color:#666;line-height:1.5;">
-      You'll need to enter the password again to access AnbuCare.</p>
+    max-width:310px;width:88%;text-align:center;
+    box-shadow:0 20px 60px rgba(0,0,0,.3);animation:_luIn .25s cubic-bezier(.16,1,.3,1);">
+    <div id="luIcon" style="font-size:2.2rem;margin-bottom:10px;">&#x1F512;</div>
+    <h3 id="luTitle" style="margin:0 0 6px;font-size:1.05rem;font-weight:800;color:#1a1a1a;">Log out?</h3>
+    <p id="luMsg" style="margin:0 0 22px;font-size:.82rem;color:#666;line-height:1.5;">
+      Your data will be saved to Google Sheets before logging out.</p>
     <div style="display:flex;gap:10px;">
-      <button onclick="hideLogoutModal()"
+      <button id="luCancelBtn" onclick="hideLogoutModal()"
         style="flex:1;padding:13px 8px;background:#f0f0f0;border:none;border-radius:13px;
           font-size:.9rem;font-weight:700;color:#444;cursor:pointer;">Cancel</button>
-      <button onclick="doLogout()"
-        style="flex:1;padding:13px 8px;background:linear-gradient(135deg,#e53935,#b71c1c);
+      <button id="luSaveBtn" onclick="doLogout()"
+        style="flex:1;padding:13px 8px;background:linear-gradient(135deg,#2e7d32,#1b5e20);
           border:none;border-radius:13px;font-size:.9rem;font-weight:700;color:#fff;cursor:pointer;">
-        Log Out</button>
+        &#x1F4BE; Save &amp; Logout</button>
     </div>
   </div>
 </div>
-<style>@keyframes luIn{from{transform:scale(.88) translateY(20px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}</style>
+<style>@keyframes _luIn{from{transform:scale(.88) translateY(20px);opacity:0}to{transform:scale(1) translateY(0);opacity:1}}</style>
+<script>
+function pvDownload(){
+  document.getElementById("pdfPreviewOverlay").style.display="none";
+  setTimeout(function(){ downloadPDFReport(); }, 150);
+}
+function pvShare(){
+  document.getElementById("pdfPreviewOverlay").style.display="none";
+  setTimeout(function(){ sharePDFReport(); }, 150);
+}
+function showLogoutModal(){
+  var icon=document.getElementById("luIcon");
+  var title=document.getElementById("luTitle");
+  var msg=document.getElementById("luMsg");
+  var saveBtn=document.getElementById("luSaveBtn");
+  var cancelBtn=document.getElementById("luCancelBtn");
+  if(icon)    icon.textContent="&#x1F512;";
+  if(title)   title.textContent="Log out?";
+  if(msg)     msg.textContent="Your data will be saved to Google Sheets before logging out.";
+  if(saveBtn){saveBtn.disabled=false;saveBtn.innerHTML="&#x1F4BE; Save & Logout";saveBtn.style.background="linear-gradient(135deg,#2e7d32,#1b5e20)";}
+  if(cancelBtn) cancelBtn.disabled=false;
+  var m=document.getElementById("logoutModal");
+  if(m) m.style.display="flex";
+}
+function hideLogoutModal(){
+  var m=document.getElementById("logoutModal");
+  if(m) m.style.display="none";
+}
+function _showLoginScreen(){
+  var ls=document.getElementById("loginScreen");
+  if(ls){ ls.style.display="flex"; ls.style.pointerEvents=""; }
+  var pw=document.getElementById("lc-pw");
+  if(pw){ pw.value=""; setTimeout(function(){try{pw.focus();}catch(e){}},120); }
+  var msg=document.getElementById("lc-msg");
+  if(msg){ msg.style.display="none"; }
+}
+async function doLogout(){
+  var saveBtn=document.getElementById("luSaveBtn");
+  var cancelBtn=document.getElementById("luCancelBtn");
+  var icon=document.getElementById("luIcon");
+  var msgEl=document.getElementById("luMsg");
+  var hasUrl=false;
+  try{ hasUrl=!!(_LS.getItem("anbucare_url")||GAS_URL); }catch(e){}
+  if(hasUrl){
+    if(saveBtn){saveBtn.disabled=true;saveBtn.textContent="⏳ Saving…";saveBtn.style.background="linear-gradient(135deg,#f57c00,#e65100)";}
+    if(cancelBtn) cancelBtn.disabled=true;
+    if(icon)  icon.innerHTML="&#x1F4BE;";
+    if(msgEl) msgEl.textContent="Saving all data to Google Sheets…";
+    try{ saveNow(); }catch(e){}
+    await new Promise(function(r){ setTimeout(r,3000); });
+    if(icon)  icon.innerHTML="&#x2705;";
+    if(msgEl) msgEl.textContent="Data saved! Logging out…";
+    if(saveBtn) saveBtn.textContent="Logging out…";
+    await new Promise(function(r){ setTimeout(r,700); });
+  }
+  hideLogoutModal();
+  try{ localStorage.removeItem("ac_sess_v99"); }catch(e){}
+  var b=document.getElementById("lc-badge");
+  if(b){
+    b.innerHTML="&#x1F464;";
+    b.style.background=""; b.style.color=""; b.title="Login";
+    b.onclick=function(){ _showLoginScreen(); };
+  }
+  try{ window.history.pushState({ac:"loggedOut",ts:Date.now()},"",window.location.href); }catch(e){}
+  _showLoginScreen();
+  if(typeof toast==="function") toast(hasUrl?"&#x1F44B; Logged out — data saved to Sheets":"&#x1F44B; Logged out");
+}
+(function(){
+  try{ window.history.pushState({ac:"app",ts:Date.now()},"",window.location.href); }catch(e){}
+  window.addEventListener("popstate", function(){
+    var sess=null;
+    try{ sess=JSON.parse(localStorage.getItem("ac_sess_v99")||"null"); }catch(e){}
+    var loggedIn=sess&&Date.now()<sess.exp;
+    if(!loggedIn){ _showLoginScreen(); }
+    try{ window.history.pushState({ac:loggedIn?"app":"loggedOut",ts:Date.now()},"",window.location.href); }catch(e){}
+  });
+})();
+</script>
 </body>
 </html>
