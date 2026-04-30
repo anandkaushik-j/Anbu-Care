@@ -6075,29 +6075,40 @@ async function _makePDFDoc(btnId){
       if(typeof toast==='function')toast('Add patient data first, then download PDF');
       throw new Error('No data to render');
     }
-    var el=document.getElementById('printReport');
-    if(!el){throw new Error('printReport element missing');}
-    // Scope body{} CSS to #printReport so styles apply correctly when captured
-    var scopedOut=out.replace(
-      /body\s*\{([^}]*)\}/g,
-      function(m,rules){ return '#printReport{'+rules+'}'; }
-    );
-    el.innerHTML=scopedOut;
-    // Apply body-level styles directly on the element too (belt-and-suspenders)
-    el.style.cssText='display:block;position:fixed;left:0;top:0;width:794px;min-height:400px;background:#FAF9F6;z-index:199999;opacity:1;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#2c3e2d;';
-    // Wait for full layout + fonts paint
-    await new Promise(function(r){setTimeout(r,1200);});
-    // Load CDN libs
+    // FIX 2: use a fresh position:ABSOLUTE captureEl (not fixed)
+    // position:fixed elements share the viewport stacking context —
+    // pdfGenOverlay (fixed z:200000) was compositing ON TOP of printReport
+    // (fixed z:199999) during html2canvas, producing a blank/dark PDF.
+    // An absolute element is in the document stacking context, not viewport,
+    // so the fixed overlay cannot overlap it during capture.
+    var captureEl=document.createElement('div');
+    captureEl.style.cssText='position:absolute;left:0;top:0;width:794px;background:#FAF9F6;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#2c3e2d;z-index:1;';
+    captureEl.innerHTML=out;
+    document.body.appendChild(captureEl);
+    // Scroll to top so absolute top:0 aligns with viewport origin
+    var _savedScroll=window.scrollY||0;
+    window.scrollTo(0,0);
+    // Wait for full layout + font paint
+    await new Promise(function(r){setTimeout(r,1000);});
+    // Load CDN libs while spinner is still showing
     await _loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
     await _loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-    // Capture — element is fully painted, no tricks needed
-    var canvas=await html2canvas(el,{
+    // CRITICAL: hide spinner BEFORE html2canvas — even absolute elements
+    // can be affected by fixed overlays in some browser compositing paths
+    _ov.style.display='none';
+    await new Promise(function(r){setTimeout(r,80);});// one repaint frame
+    var elH=captureEl.scrollHeight||captureEl.offsetHeight||2000;
+    var canvas=await html2canvas(captureEl,{
       scale:2, useCORS:true, allowTaint:true, logging:false,
-      backgroundColor:'#ffffff', windowWidth:794,
-      width:794, height:el.scrollHeight||1400
+      backgroundColor:'#FAF9F6', windowWidth:794,
+      width:794, height:elH, scrollX:0, scrollY:0
     });
-    // Hide report immediately after capture
-    el.style.cssText='display:none';
+    // Restore scroll + re-show spinner while PDF is being built
+    window.scrollTo(0,_savedScroll);
+    _ov.style.display='flex';
+    // Remove capture element
+    if(captureEl.parentNode)captureEl.parentNode.removeChild(captureEl);
+    captureEl=null;
     // Validate canvas
     var cw=canvas.width, ch=canvas.height;
     if(!cw||!ch||isNaN(cw)||isNaN(ch)||cw<10||ch<10){
@@ -6122,7 +6133,8 @@ async function _makePDFDoc(btnId){
     }
     return pdf;
   } finally {
-    // Always remove overlay + restore button
+    // Always remove captureEl + overlay + restore button
+    try{if(typeof captureEl!=='undefined'&&captureEl&&captureEl.parentNode)captureEl.parentNode.removeChild(captureEl);}catch(e){}
     try{if(_ov&&_ov.parentNode)_ov.parentNode.removeChild(_ov);}catch(e){}
     var ex=document.getElementById('pdfGenOverlay');
     if(ex&&ex.parentNode)ex.parentNode.removeChild(ex);
