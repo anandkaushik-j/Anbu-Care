@@ -6068,9 +6068,12 @@ async function _makePDFDoc(btnId){
     var el=document.getElementById('printReport');
     if(!el){throw new Error('printReport element missing');}
     el.innerHTML=out;
-    el.style.cssText='display:block;position:fixed;left:-9999px;top:0;width:794px;min-height:200px;background:#fff;z-index:99999;opacity:0;pointer-events:none;overflow:visible;';
+    el.style.cssText='display:block;position:fixed;left:0;top:0;width:794px;min-height:200px;background:#fff;z-index:99999;opacity:0;pointer-events:none;overflow:visible;';
     // Give DOM time to paint
-    await new Promise(function(r){setTimeout(r,600);});
+    await new Promise(function(r){setTimeout(r,900);});
+    // Prevent page jump during capture
+    var prevOverflow=document.body?document.body.style.overflow:'';
+    if(document.body)document.body.style.overflow='hidden';
     // Load CDN libs lazily
     await _loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
     await _loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
@@ -6078,8 +6081,10 @@ async function _makePDFDoc(btnId){
     var canvas=await html2canvas(el,{
       scale:2, useCORS:true, allowTaint:true, logging:false,
       backgroundColor:'#ffffff', windowWidth:794,
-      width:794, height:el.scrollHeight||1200
+      width:794, height:el.scrollHeight||1200,
+      scrollX:0, scrollY:0, x:0, y:0
     });
+    if(document.body)document.body.style.overflow=prevOverflow;
     el.style.cssText='display:none';
     // Build multi-page PDF
     var {jsPDF}=window.jspdf;
@@ -6145,28 +6150,43 @@ function pvDownload(){
 function pvShare(){
   var ov=document.getElementById('pdfPreviewOverlay');
   if(ov){ov.style.display='none';}
-  setTimeout(function(){sharePDFReport();},150);
+  // 300ms: enough for overlay to close + compositing to settle before share
+  setTimeout(function(){sharePDFReport();},300);
 }
 
 // ── v57 Share via Web Share API (WhatsApp, email, Drive, etc.) ────────
 async function sharePDFReport(){
   try{
-    toast('📄 Generating PDF…');
+    toast('📤 Preparing PDF for sharing…');
     var pdf=await _makePDFDoc('btnSharePDF');
     var fname=_pdfFilename();
-    // Build download URL to use in share options
     var blob=pdf.output('blob');
+    // Try native OS share sheet first (Android/iOS)
+    if(navigator.share && navigator.canShare){
+      try{
+        var file=new File([blob],fname,{type:'application/pdf'});
+        if(navigator.canShare({files:[file]})){
+          await navigator.share({title:'AnbuCare Health Report — '+fname,files:[file]});
+          toast('✅ Shared successfully!');
+          return;
+        }
+      }catch(shareErr){
+        if(shareErr.name==='AbortError'){return;} // user cancelled
+        // fall through to download+sheet
+      }
+    }
+    // Fallback: auto-download + show share sheet
     var blobUrl=URL.createObjectURL(blob);
     setTimeout(function(){URL.revokeObjectURL(blobUrl);},120000);
-    // Download PDF automatically so user has it ready
     var a=document.createElement('a');
     a.href=blobUrl; a.download=fname;
     document.body.appendChild(a); a.click();
-    setTimeout(function(){document.body.removeChild(a);},3000);
-    // Show share bottom sheet
+    setTimeout(function(){if(a.parentNode)a.parentNode.removeChild(a);},3000);
+    toast('✅ PDF downloaded — choose where to share it');
     _showShareSheet(fname);
   }catch(e){
     if(e.name!=='AbortError') toast('⚠️ Share failed: '+e.message);
+    console.error('sharePDFReport',e);
   }
 }
 
@@ -6410,14 +6430,14 @@ function _closeShareSheet() {
   }, 300);
 }
 function _shareViaWhatsApp() {
-  var name = (S && S.treatmentProfile && S.treatmentProfile.name) ? S.treatmentProfile.name : 'the patient';
+  var tp=S&&S.treatmentProfile?S.treatmentProfile:{}; var name=tp.patientName||tp.name||S.patientName||'the patient';
   var msg = encodeURIComponent('Hi! Please find the latest AnbuCare health report for ' + name + '. The PDF has been downloaded to my device — I will attach it to this message.');
   window.open('https://wa.me/?text=' + msg, '_blank');
   _closeShareSheet();
   toast('📎 Attach the downloaded PDF in WhatsApp');
 }
 function _shareViaEmail() {
-  var name = (S && S.treatmentProfile && S.treatmentProfile.name) ? S.treatmentProfile.name : 'the patient';
+  var tp=S&&S.treatmentProfile?S.treatmentProfile:{}; var name=tp.patientName||tp.name||S.patientName||'the patient';
   var subject = encodeURIComponent('AnbuCare Health Report — ' + name);
   var body = encodeURIComponent('Please find the AnbuCare health report attached.\n\nThe PDF (' + _ssFilename + ') has been downloaded to your device — please attach it to this email before sending.\n\nShared via AnbuCare.');
   window.location.href = 'mailto:?subject=' + subject + '&body=' + body;
