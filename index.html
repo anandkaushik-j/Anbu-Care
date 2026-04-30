@@ -5452,9 +5452,10 @@ function previewReport(){
       <button onclick="document.getElementById('pvScroll').scrollTo({top:0,behavior:'smooth'})"
         style="background:#E1AD01;color:#2c4a2e;border:none;border-radius:7px;padding:6px 11px;
         font-size:.72rem;font-weight:800;cursor:pointer;white-space:nowrap;">⬆ Top</button>
-      <button onclick="downloadPDFReport()"
+      <button onclick="pvDownload()"
         style="background:#C0714F;color:#fff;border:none;border-radius:7px;padding:6px 11px;
         font-size:.72rem;font-weight:800;cursor:pointer;white-space:nowrap;">⬇ PDF</button>
+      <button onclick="pvShare()" style="background:#3d6b43;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:.85rem;font-weight:700;cursor:pointer;white-space:nowrap;">📤 Share</button>
       <button onclick="document.getElementById('pdfPreviewOverlay').style.display='none'"
         style="background:rgba(255,255,255,.18);color:#fff;border:1.5px solid rgba(255,255,255,.3);
         border-radius:7px;padding:6px 11px;font-size:.72rem;font-weight:700;cursor:pointer;">✕ Close</button>
@@ -6061,6 +6062,12 @@ function _pdfFilename(){
 async function _makePDFDoc(btnId){
   var btn=document.getElementById(btnId);
   if(btn){btn.disabled=true;btn.textContent='⏳ Generating…';}
+  // Show full-screen loading overlay so user doesn't see the report flash
+  var _ov=document.createElement('div');
+  _ov.id='pdfGenOverlay';
+  _ov.style.cssText='position:fixed;inset:0;z-index:200000;background:rgba(44,74,46,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;';
+  _ov.innerHTML='<div style="width:48px;height:48px;border:5px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:pdfSpin 0.8s linear infinite;"></div><div style="color:#fff;font-size:1.05rem;font-weight:600;">Generating PDF…</div><div style="color:rgba(255,255,255,.7);font-size:.85rem;">Please wait</div><style>@keyframes pdfSpin{to{transform:rotate(360deg);}}</style>';
+  document.body.appendChild(_ov);
   try{
     // Build report HTML
     var out=_buildPDFHtml();
@@ -6071,27 +6078,27 @@ async function _makePDFDoc(btnId){
     var el=document.getElementById('printReport');
     if(!el){throw new Error('printReport element missing');}
     el.innerHTML=out;
-    // IMPORTANT: Do NOT use opacity:0 — html2canvas renders opacity:0 as blank.
-    // Use off-screen left:-9999px (v60 proven approach). html2canvas walks DOM,
-    // not viewport screenshot, so off-screen elements are captured correctly.
-    el.style.cssText='display:block;position:fixed;left:-9999px;top:0;width:794px;min-height:400px;background:#fff;z-index:-1;';
-    // Wait for full layout paint (fonts + images + CSS)
+    // Fully visible, fully painted — overlay hides it from user
+    el.style.cssText='display:block;position:fixed;left:0;top:0;width:794px;min-height:400px;background:#fff;z-index:199999;opacity:1;';
+    // Wait for full layout + fonts paint
     await new Promise(function(r){setTimeout(r,1200);});
     // Load CDN libs
     await _loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
     await _loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-    // Capture (no x/y/scroll overrides — let html2canvas handle off-screen element)
+    // Capture — element is fully painted, no tricks needed
     var canvas=await html2canvas(el,{
       scale:2, useCORS:true, allowTaint:true, logging:false,
-      backgroundColor:'#ffffff', windowWidth:794
+      backgroundColor:'#ffffff', windowWidth:794,
+      width:794, height:el.scrollHeight||1400
     });
+    // Hide report immediately after capture
     el.style.cssText='display:none';
     // Validate canvas
     var cw=canvas.width, ch=canvas.height;
     if(!cw||!ch||isNaN(cw)||isNaN(ch)||cw<10||ch<10){
-      throw new Error('Canvas empty ('+cw+'x'+ch+'). Try again after data loads.');
+      throw new Error('Canvas empty ('+cw+'x'+ch+'). Add patient data and retry.');
     }
-    // Build multi-page PDF
+    // Build PDF
     var {jsPDF}=window.jspdf;
     var pdf=new jsPDF('p','mm','a4');
     var pgW=pdf.internal.pageSize.getWidth();
@@ -6110,10 +6117,13 @@ async function _makePDFDoc(btnId){
     }
     return pdf;
   } finally {
+    // Always remove overlay + restore button
+    try{if(_ov&&_ov.parentNode)_ov.parentNode.removeChild(_ov);}catch(e){}
+    var ex=document.getElementById('pdfGenOverlay');
+    if(ex&&ex.parentNode)ex.parentNode.removeChild(ex);
     if(btn){btn.disabled=false; btn.innerHTML=btn.id==='btnDlPDF'?'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>':'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>';}
   }
-}
-// ── v57 Download directly to device ──────────────────────────────────
+}// ── v57 Download directly to device ──────────────────────────────────
 async function downloadPDFReport(){
   try{
     toast('📄 Generating PDF…');
