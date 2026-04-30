@@ -6062,40 +6062,41 @@ async function _makePDFDoc(btnId){
   var btn=document.getElementById(btnId);
   if(btn){btn.disabled=true;btn.textContent='⏳ Generating…';}
   try{
-    // Build and inject report HTML
+    // Build report HTML
     var out=_buildPDFHtml();
-    if(!out||out.trim().length<100){if(typeof toast==='function')toast('Add patient data first, then download PDF');throw new Error('No data to render');}
+    if(!out||out.trim().length<100){
+      if(typeof toast==='function')toast('Add patient data first, then download PDF');
+      throw new Error('No data to render');
+    }
     var el=document.getElementById('printReport');
     if(!el){throw new Error('printReport element missing');}
     el.innerHTML=out;
-    el.style.cssText='display:block;position:fixed;left:0;top:0;width:794px;min-height:200px;background:#fff;z-index:99999;opacity:0;pointer-events:none;overflow:visible;';
-    // Give DOM time to paint
-    await new Promise(function(r){setTimeout(r,900);});
-    // Prevent page jump during capture
-    var prevOverflow=document.body?document.body.style.overflow:'';
-    if(document.body)document.body.style.overflow='hidden';
-    // Load CDN libs lazily
+    // IMPORTANT: Do NOT use opacity:0 — html2canvas renders opacity:0 as blank.
+    // Use off-screen left:-9999px (v60 proven approach). html2canvas walks DOM,
+    // not viewport screenshot, so off-screen elements are captured correctly.
+    el.style.cssText='display:block;position:fixed;left:-9999px;top:0;width:794px;min-height:400px;background:#fff;z-index:-1;';
+    // Wait for full layout paint (fonts + images + CSS)
+    await new Promise(function(r){setTimeout(r,1200);});
+    // Load CDN libs
     await _loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
     await _loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-    // Render to canvas at 2x for crisp text
+    // Capture (no x/y/scroll overrides — let html2canvas handle off-screen element)
     var canvas=await html2canvas(el,{
       scale:2, useCORS:true, allowTaint:true, logging:false,
-      backgroundColor:'#ffffff', windowWidth:794,
-      width:794, height:el.scrollHeight||1200,
-      scrollX:0, scrollY:0, x:0, y:0
+      backgroundColor:'#ffffff', windowWidth:794
     });
-    if(document.body)document.body.style.overflow=prevOverflow;
     el.style.cssText='display:none';
+    // Validate canvas
+    var cw=canvas.width, ch=canvas.height;
+    if(!cw||!ch||isNaN(cw)||isNaN(ch)||cw<10||ch<10){
+      throw new Error('Canvas empty ('+cw+'x'+ch+'). Try again after data loads.');
+    }
     // Build multi-page PDF
     var {jsPDF}=window.jspdf;
     var pdf=new jsPDF('p','mm','a4');
     var pgW=pdf.internal.pageSize.getWidth();
     var pgH=pdf.internal.pageSize.getHeight();
     var imgW=pgW;
-    var cw=canvas.width, ch=canvas.height;
-    if(!cw||!ch||isNaN(cw)||isNaN(ch)||cw<10||ch<10){
-      throw new Error('Canvas empty ('+cw+'x'+ch+'). Add patient data then retry.');
-    }
     var imgH=(ch*pgW)/cw;
     if(!imgH||isNaN(imgH)||imgH<=0){imgH=pgH;}
     var imgData=canvas.toDataURL('image/jpeg',0.92);
@@ -6112,7 +6113,6 @@ async function _makePDFDoc(btnId){
     if(btn){btn.disabled=false; btn.innerHTML=btn.id==='btnDlPDF'?'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>':'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>';}
   }
 }
-
 // ── v57 Download directly to device ──────────────────────────────────
 async function downloadPDFReport(){
   try{
