@@ -6087,9 +6087,8 @@ async function _makePDFDoc(btnId){
     await _loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
     // Capture — element is fully painted, no tricks needed
     var canvas=await html2canvas(el,{
-      scale:2, useCORS:true, allowTaint:true, logging:false,
-      backgroundColor:'#ffffff', windowWidth:794,
-      width:794, height:el.scrollHeight||1400
+      scale:2, useCORS:true, logging:false,
+      backgroundColor:'#ffffff', windowWidth:794
     });
     // Hide report immediately after capture
     el.style.cssText='display:none';
@@ -6106,7 +6105,12 @@ async function _makePDFDoc(btnId){
     var imgW=pgW;
     var imgH=(ch*pgW)/cw;
     if(!imgH||isNaN(imgH)||imgH<=0){imgH=pgH;}
-    var imgData=canvas.toDataURL('image/jpeg',0.92);
+    var imgData;
+    try{ imgData=canvas.toDataURL('image/jpeg',0.92); }
+    catch(tErr){ throw new Error('Canvas tainted (CORS). Try again: '+tErr.message); }
+    if(!imgData||imgData==='data:,'||imgData.length<100){
+      throw new Error('Canvas toDataURL returned empty. Check browser CORS settings.');
+    }
     var pos=0, remaining=imgH-pgH;
     pdf.addImage(imgData,'JPEG',0,pos,imgW,imgH);
     while(remaining>1){
