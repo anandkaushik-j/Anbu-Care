@@ -6077,9 +6077,14 @@ async function _makePDFDoc(btnId){
     }
     var el=document.getElementById('printReport');
     if(!el){throw new Error('printReport element missing');}
-    el.innerHTML=out;
-    // Fully visible, fully painted — overlay hides it from user
-    el.style.cssText='display:block;position:fixed;left:0;top:0;width:794px;min-height:400px;background:#fff;z-index:199999;opacity:1;';
+    // Scope body{} CSS to #printReport so styles apply correctly when captured
+    var scopedOut=out.replace(
+      /body\s*\{([^}]*)\}/g,
+      function(m,rules){ return '#printReport{'+rules+'}'; }
+    );
+    el.innerHTML=scopedOut;
+    // Apply body-level styles directly on the element too (belt-and-suspenders)
+    el.style.cssText='display:block;position:fixed;left:0;top:0;width:794px;min-height:400px;background:#FAF9F6;z-index:199999;opacity:1;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#2c3e2d;';
     // Wait for full layout + fonts paint
     await new Promise(function(r){setTimeout(r,1200);});
     // Load CDN libs
@@ -6087,8 +6092,9 @@ async function _makePDFDoc(btnId){
     await _loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
     // Capture — element is fully painted, no tricks needed
     var canvas=await html2canvas(el,{
-      scale:2, useCORS:true, logging:false,
-      backgroundColor:'#ffffff', windowWidth:794
+      scale:2, useCORS:true, allowTaint:true, logging:false,
+      backgroundColor:'#ffffff', windowWidth:794,
+      width:794, height:el.scrollHeight||1400
     });
     // Hide report immediately after capture
     el.style.cssText='display:none';
@@ -6105,12 +6111,7 @@ async function _makePDFDoc(btnId){
     var imgW=pgW;
     var imgH=(ch*pgW)/cw;
     if(!imgH||isNaN(imgH)||imgH<=0){imgH=pgH;}
-    var imgData;
-    try{ imgData=canvas.toDataURL('image/jpeg',0.92); }
-    catch(tErr){ throw new Error('Canvas tainted (CORS). Try again: '+tErr.message); }
-    if(!imgData||imgData==='data:,'||imgData.length<100){
-      throw new Error('Canvas toDataURL returned empty. Check browser CORS settings.');
-    }
+    var imgData=canvas.toDataURL('image/jpeg',0.92);
     var pos=0, remaining=imgH-pgH;
     pdf.addImage(imgData,'JPEG',0,pos,imgW,imgH);
     while(remaining>1){
