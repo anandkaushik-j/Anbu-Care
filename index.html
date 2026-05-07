@@ -592,20 +592,20 @@ input:checked+.tslider::before{transform:translateX(20px)}
 .red-cross-btn{background:#e53935!important;border:1.5px solid #c62828!important;color:#fff!important;box-shadow:0 2px 8px rgba(229,57,53,.45)!important;}
 .neuro-hdr{display:flex;align-items:center;justify-content:space-between;
     padding:10px 0 8px;cursor:pointer;user-select:none;-webkit-user-select:none;}
-  .neuro-hdr-title{font-size:.92rem;font-weight:800;color:#5A4090;
+  .neuro-hdr-title{font-size:.92rem;font-weight:800;color:#3d6b43;
     display:flex;align-items:center;gap:7px;}
-  .neuro-badge{font-size:.62rem;background:#EDE7F6;color:#5A4090;
+  .neuro-badge{font-size:.62rem;background:#e8f5e9;color:#3d6b43;
     padding:2px 8px;border-radius:10px;font-weight:800;letter-spacing:.3px;}
   .neuro-toggle{font-size:.76rem;color:#999;white-space:nowrap;}
-  .neuro-loc-box{background:#F3EEF9;border:1.5px solid #D1C4E9;
+  .neuro-loc-box{background:#f1f8f2;border:1.5px solid #c8e6c9;
     border-radius:12px;padding:10px 12px;margin-bottom:13px;}
-  .neuro-loc-title{font-size:.72rem;font-weight:800;color:#7B5EA7;
+  .neuro-loc-title{font-size:.72rem;font-weight:800;color:#3d6b43;
     text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px;}
   .neuro-loc-chips{display:flex;flex-wrap:wrap;gap:6px;}
   .neuro-lchip{padding:6px 14px;background:#fff;border-radius:20px;
-    font-size:.8rem;font-weight:700;color:#7B5EA7;cursor:pointer;
-    border:1.5px solid #D1C4E9;transition:all .15s;-webkit-tap-highlight-color:transparent;}
-  .neuro-lchip.sel{background:#7B5EA7;color:#fff;border-color:#5A4090;}
+    font-size:.8rem;font-weight:700;color:#3d6b43;cursor:pointer;
+    border:1.5px solid #c8e6c9;transition:all .15s;-webkit-tap-highlight-color:transparent;}
+  .neuro-lchip.sel{background:#3d6b43;color:#fff;border-color:#2e7d32;}
   .neuro-sym-div{border:none;border-top:1px dashed #E8E0F4;margin:4px 0 11px;}
   .neuro-signs-lbl{font-size:.72rem;font-weight:800;color:#7B5EA7;
     text-transform:uppercase;letter-spacing:.7px;margin:8px 0 6px;}
@@ -1489,8 +1489,8 @@ document.addEventListener('DOMContentLoaded',function(){
 <!-- ⚡ v73 NEUROPATHY WATCH ─────────────────────────── -->
           <div class="neuro-hdr" onclick="toggleNeuroWatch()">
             <div class="neuro-hdr-title">
-              ⚡ Nerve Comfort Check
-              
+              🌿 Nerve Comfort Check
+              <span style="font-size:.68rem;font-weight:400;color:#7a9e7e;font-style:italic;">just how your body feels today</span>
             </div>
             <span class="neuro-toggle" id="neuroToggle">▼ tap to expand</span>
           </div>
@@ -1511,16 +1511,16 @@ document.addEventListener('DOMContentLoaded',function(){
             <!-- ② TINGLING -->
             <div class="sym-row">
               <div class="sym-label">
-                <span>🤺 Tingling / Pins &amp; Needles</span>
+                <span>🌊 Tingling / Pins &amp; Needles</span>
                 <span class="sym-val v1" id="vNT"></span>
               </div>
               <input type="hidden" id="sNT" value="1">
               <div class="sym-btn-grp" id="sgNT">
-                <button class="sym-btn active" data-v="1" onclick="symTap('NT',1)"><span class="sbe">✅</span><span class="sbl">None</span></button>
-                <button class="sym-btn" data-v="2" onclick="symTap('NT',2)"><span class="sbe">🟡</span><span class="sbl">Mild</span></button>
-                <button class="sym-btn" data-v="3" onclick="symTap('NT',3)"><span class="sbe">🟠</span><span class="sbl">Mod.</span></button>
-                <button class="sym-btn" data-v="4" onclick="symTap('NT',4)"><span class="sbe">🔴</span><span class="sbl">High</span></button>
-                <button class="sym-btn" data-v="5" onclick="symTap('NT',5)"><span class="sbe">🆘</span><span class="sbl">Very difficult</span></button>
+                <button class="sym-btn active" data-v="1" onclick="symTap('NT',1)"><span class="sbe">💚</span><span class="sbl">Not today</span></button>
+                <button class="sym-btn" data-v="2" onclick="symTap('NT',2)"><span class="sbe">🌿</span><span class="sbl">A little</span></button>
+                <button class="sym-btn" data-v="3" onclick="symTap('NT',3)"><span class="sbe">🌼</span><span class="sbl">Noticeable</span></button>
+                <button class="sym-btn" data-v="4" onclick="symTap('NT',4)"><span class="sbe">🌸</span><span class="sbl">Quite a bit</span></button>
+                <button class="sym-btn" data-v="5" onclick="symTap('NT',5)"><span class="sbe">🤍</span><span class="sbl">Hard to ignore</span></button>
               </div>
             </div>
             <hr class="neuro-sym-div">
@@ -1528,16 +1528,16 @@ document.addEventListener('DOMContentLoaded',function(){
             <!-- ③ NUMBNESS -->
             <div class="sym-row">
               <div class="sym-label">
-                <span>😶 Numbness</span>
+                <span>🌫️ Numbness</span>
                 <span class="sym-val v1" id="vNN"></span>
               </div>
               <input type="hidden" id="sNN" value="1">
               <div class="sym-btn-grp" id="sgNN">
-                <button class="sym-btn active" data-v="1" onclick="symTap('NN',1)"><span class="sbe">✅</span><span class="sbl">None</span></button>
-                <button class="sym-btn" data-v="2" onclick="symTap('NN',2)"><span class="sbe">🟡</span><span class="sbl">Mild</span></button>
-                <button class="sym-btn" data-v="3" onclick="symTap('NN',3)"><span class="sbe">🟠</span><span class="sbl">Mod.</span></button>
-                <button class="sym-btn" data-v="4" onclick="symTap('NN',4)"><span class="sbe">🔴</span><span class="sbl">High</span></button>
-                <button class="sym-btn" data-v="5" onclick="symTap('NN',5)"><span class="sbe">🆘</span><span class="sbl">Very difficult</span></button>
+                <button class="sym-btn active" data-v="1" onclick="symTap('NN',1)"><span class="sbe">💚</span><span class="sbl">Not today</span></button>
+                <button class="sym-btn" data-v="2" onclick="symTap('NN',2)"><span class="sbe">🌿</span><span class="sbl">A little</span></button>
+                <button class="sym-btn" data-v="3" onclick="symTap('NN',3)"><span class="sbe">🌼</span><span class="sbl">Noticeable</span></button>
+                <button class="sym-btn" data-v="4" onclick="symTap('NN',4)"><span class="sbe">🌸</span><span class="sbl">Quite a bit</span></button>
+                <button class="sym-btn" data-v="5" onclick="symTap('NN',5)"><span class="sbe">🤍</span><span class="sbl">Hard to ignore</span></button>
               </div>
             </div>
             <hr class="neuro-sym-div">
@@ -1545,16 +1545,16 @@ document.addEventListener('DOMContentLoaded',function(){
             <!-- ④ BURNING -->
             <div class="sym-row">
               <div class="sym-label">
-                <span>🔥 Burning Sensation</span>
+                <span>🌡️ Warmth / Burning</span>
                 <span class="sym-val v1" id="vNB"></span>
               </div>
               <input type="hidden" id="sNB" value="1">
               <div class="sym-btn-grp" id="sgNB">
-                <button class="sym-btn active" data-v="1" onclick="symTap('NB',1)"><span class="sbe">✅</span><span class="sbl">None</span></button>
-                <button class="sym-btn" data-v="2" onclick="symTap('NB',2)"><span class="sbe">🟡</span><span class="sbl">Mild</span></button>
-                <button class="sym-btn" data-v="3" onclick="symTap('NB',3)"><span class="sbe">🟠</span><span class="sbl">Mod.</span></button>
-                <button class="sym-btn" data-v="4" onclick="symTap('NB',4)"><span class="sbe">🔴</span><span class="sbl">High</span></button>
-                <button class="sym-btn" data-v="5" onclick="symTap('NB',5)"><span class="sbe">🆘</span><span class="sbl">Very difficult</span></button>
+                <button class="sym-btn active" data-v="1" onclick="symTap('NB',1)"><span class="sbe">💚</span><span class="sbl">Not today</span></button>
+                <button class="sym-btn" data-v="2" onclick="symTap('NB',2)"><span class="sbe">🌿</span><span class="sbl">A little</span></button>
+                <button class="sym-btn" data-v="3" onclick="symTap('NB',3)"><span class="sbe">🌼</span><span class="sbl">Noticeable</span></button>
+                <button class="sym-btn" data-v="4" onclick="symTap('NB',4)"><span class="sbe">🌸</span><span class="sbl">Quite a bit</span></button>
+                <button class="sym-btn" data-v="5" onclick="symTap('NB',5)"><span class="sbe">🤍</span><span class="sbl">Hard to ignore</span></button>
               </div>
             </div>
             <hr class="neuro-sym-div">
@@ -1562,16 +1562,16 @@ document.addEventListener('DOMContentLoaded',function(){
             <!-- ⑤ BALANCE / WEAKNESS -->
             <div class="sym-row">
               <div class="sym-label">
-                <span>🚶 Balance / Weakness</span>
+                <span>🧘 Balance &amp; Steadiness</span>
                 <span class="sym-val v1" id="vNW"></span>
               </div>
               <input type="hidden" id="sNW" value="1">
               <div class="sym-btn-grp" id="sgNW">
-                <button class="sym-btn active" data-v="1" onclick="symTap('NW',1)"><span class="sbe">🟢</span><span class="sbl">Normal</span></button>
-                <button class="sym-btn" data-v="2" onclick="symTap('NW',2)"><span class="sbe">🟡</span><span class="sbl">Slight</span></button>
-                <button class="sym-btn" data-v="3" onclick="symTap('NW',3)"><span class="sbe">🟠</span><span class="sbl">Mod.</span></button>
-                <button class="sym-btn" data-v="4" onclick="symTap('NW',4)"><span class="sbe">🔴</span><span class="sbl">Poor</span></button>
-                <button class="sym-btn" data-v="5" onclick="symTap('NW',5)"><span class="sbe">🆘</span><span class="sbl">Critical</span></button>
+                <button class="sym-btn active" data-v="1" onclick="symTap('NW',1)"><span class="sbe">💚</span><span class="sbl">Steady</span></button>
+                <button class="sym-btn" data-v="2" onclick="symTap('NW',2)"><span class="sbe">🌿</span><span class="sbl">Slightly off</span></button>
+                <button class="sym-btn" data-v="3" onclick="symTap('NW',3)"><span class="sbe">🌼</span><span class="sbl">Noticeable</span></button>
+                <button class="sym-btn" data-v="4" onclick="symTap('NW',4)"><span class="sbe">🌸</span><span class="sbl">Quite unsteady</span></button>
+                <button class="sym-btn" data-v="5" onclick="symTap('NW',5)"><span class="sbe">🤍</span><span class="sbl">Need support</span></button>
               </div>
             </div>
             <hr class="neuro-sym-div">
