@@ -707,9 +707,48 @@ input:checked+.tslider::before{transform:translateX(20px)}
              transition:background .15s; }
 .ss-cancel:active { background:#ebebeb; }
 
+
+  /* AnbuCare v120 additions */
+  .role-tab{flex:1;padding:10px;border:2px solid #d4d0cc;border-radius:10px;font-size:.88rem;font-weight:700;cursor:pointer;background:#fafaf8;color:#6B7C6E;transition:all .15s;}
+  .role-tab.active{background:#4a7c59;color:#fff;border-color:#4a7c59;}
+  .mood-btn{font-size:1.8rem;background:transparent;border:2px solid transparent;border-radius:50%;width:48px;height:48px;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;justify-content:center;}
+  .mood-btn.sel{border-color:var(--primary);background:var(--success-l);transform:scale(1.2);}
+  .night-dim{opacity:0.45;filter:grayscale(0.5);}
+  .cg-checkin-btn{display:block;width:100%;padding:14px;margin-bottom:10px;background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;font-size:.95rem;font-weight:700;color:var(--text);cursor:pointer;text-align:left;transition:all .15s;}
+  .cg-checkin-btn:hover{background:var(--success-l);border-color:var(--success);}
 </style>
 </head>
 <body>
+<script>
+/* AnbuCare v120 — Safe localStorage shim (fixes sandbox/iframe SecurityError) */
+(function(){
+  var _mem = {};
+  var _real = null;
+  try {
+    localStorage.setItem('__ac_test__', '1');
+    localStorage.removeItem('__ac_test__');
+    _real = localStorage;
+  } catch(e) {
+    _real = null;
+  }
+  window._safeLS = {
+    getItem: function(k){ try{ return _real ? _real.getItem(k) : (_mem[k]!==undefined?_mem[k]:null); }catch(e){ return _mem[k]!==undefined?_mem[k]:null; } },
+    setItem: function(k,v){ try{ if(_real) _real.setItem(k,v); _mem[k]=String(v); }catch(e){ _mem[k]=String(v); } },
+    removeItem: function(k){ try{ if(_real) _real.removeItem(k); delete _mem[k]; }catch(e){ delete _mem[k]; } },
+    clear: function(){ try{ if(_real) _real.clear(); _mem={}; }catch(e){ _mem={}; } }
+  };
+  /* Also patch window.localStorage itself so direct calls don't throw */
+  try {
+    if(!_real){
+      Object.defineProperty(window, 'localStorage', {
+        get: function(){ return window._safeLS; },
+        configurable: true
+      });
+    }
+  } catch(e) {}
+})();
+</script>
+
 <div id="loginScreen"
   style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;
          display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -882,7 +921,12 @@ input:checked+.tslider::before{transform:translateX(20px)}
          font-weight:700;text-align:center;margin-bottom:12px;background:#fdecea;color:#c62828"></div>
     <div style="text-align:center;margin-bottom:16px">
       <div style="font-size:1.6rem">&#x1F469;&#x200D;&#x2695;&#xFE0F;</div>
-      <div style="font-weight:700;color:#3a3a3a;margin-top:2px">Caregiver Login</div>
+      <div style="font-weight:700;color:#3a3a3a;margin-top:2px">AnbuCare — Family Login</div>
+    </div>
+    
+    <div style="display:flex;gap:10px;margin-bottom:14px;">
+      <button id="roleTabCG" class="role-tab active" onclick="selectRoleTab('cg')">&#x1F468;&#x200D;&#x1F469;&#x200D;&#x1F467; Family / Caregiver</button>
+      <button id="roleTabPT" class="role-tab" onclick="selectRoleTab('pt')">&#x1F338; Patient</button>
     </div>
     <label style="display:block;font-size:.8rem;font-weight:700;color:#6B7C6E;margin-bottom:6px">Password</label>
     <input id="lc-pw" type="password" placeholder="Enter password" autocomplete="current-password"
@@ -893,17 +937,29 @@ input:checked+.tslider::before{transform:translateX(20px)}
     <button id="lc-btn" onclick="lcLogin()"
       style="width:100%;padding:13px;background:#4a7c59;border:none;border-radius:11px;
              color:#fff;font-size:1rem;font-weight:700;cursor:pointer;font-family:inherit">
-      &#x1F513; Login
+      🔓 Enter AnbuCare
     </button>
   </div>
 </div>
 
 <script>
-/* AnbuCare v99 — Secure Login (synchronous SHA-256 via pure JS) */
-var _lcS = 'AnbuCare_Caregiver_2026';
-var _lcH = ['292bb53ae0760264','1ca82e96de6ef444','96c33bf4cd116dee','e62839d27bdaccfa'].join('');
+/* AnbuCare v120 — Auth Shield */
+(function(){
+  var _csc=[65,110,98,117,67,97,114,101,95,67,97,114,101,103,105,118,101,114,95,50,48,50,54];
+  var _psc=[65,110,98,117,67,97,114,101,80,97,116,105,101,110,116,50,48,50,54];
+  var _cgx=[104,99,104,56,56,111,105,59,63,106,109,108,106,104,108,110,107,57,59,98,104,63,99,108,62,63,108,63,60,110,110,110,99,108,57,105,105,56,60,110,57,62,107,107,108,62,63,63,63,108,104,98,105,99,62,104,109,56,62,59,57,57,60,59];
+  var _ptx=[8,90,10,91,9,9,6,13,14,14,89,15,15,93,89,10,89,9,6,15,11,9,10,10,91,89,12,13,11,91,10,6,10,13,90,94,94,93,91,8,7,14,6,94,89,92,93,94,8,6,8,94,94,92,8,12,93,14,91,11,8,91,15,7];
+  function _ds(a){return a.map(function(c){return String.fromCharCode(c);}).join('');}
+  function _dh(a,k){return a.map(function(c){return String.fromCharCode(c^k);}).join('');}
+  window._getCS=function(){return _ds(_csc);};
+  window._getPS=function(){return _ds(_psc);};
+  window._getCH=function(){return _dh(_cgx,0x5A);};
+  window._getPH=function(){return _dh(_ptx,0x3F);};
+})();
+</script>
+<script>
+/* AnbuCare v120 — Secure Login */
 
-/* Pure-JS SHA-256 (RFC 6234 compliant, no external deps) */
 function _lcSHA256(msg) {
   function n(l,r){return(l>>>r)|(l<<(32-r));}
   var K=[0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
@@ -914,7 +970,66 @@ function _lcSHA256(msg) {
   return H.map(function(v){return('0000000'+v.toString(16)).slice(-8);}).join('');
 }
 
-
+function getSession(){try{var s=JSON.parse(_safeLS.getItem('ac_sess_v99')||'null');return(s&&Date.now()<s.exp)?s:null;}catch(e){return null;}}
+function isLoggedIn(){return getSession()!==null;}
+function isCG(){var s=getSession();return !!(s&&s.role==='cg');}
+function isPT(){var s=getSession();return !!(s&&s.role==='pt');}
+window._loginRole='cg';
+function selectRoleTab(role){
+  window._loginRole=role;
+  document.getElementById('roleTabCG').classList.toggle('active',role==='cg');
+  document.getElementById('roleTabPT').classList.toggle('active',role==='pt');
+}
+function lcLogin(){
+  var p=document.getElementById('lc-pw').value;
+  var m=document.getElementById('lc-msg');
+  m.style.display='none';
+  if(!p){m.textContent='Please enter the password';m.style.display='block';return;}
+  var role=window._loginRole||'cg';
+  var hash=_lcSHA256((role==='cg'?window._getCS():window._getPS())+p);
+  var expected=(role==='cg')?window._getCH():window._getPH();
+  if(hash!==expected){
+    m.style.background='#fdecec';m.style.color='#c62828';
+    m.textContent='Wrong password — please try again';
+    m.style.display='block';
+    setTimeout(function(){document.getElementById('lc-pw').focus();},100);
+    return;
+  }
+  var sessName=(role==='cg')?'Caregiver':'Patient';
+  try{_safeLS.setItem('ac_sess_v99',JSON.stringify({name:sessName,role:role,exp:Date.now()+24*3600*1000}));}catch(e){}
+  var ls=document.getElementById('loginScreen');
+  if(ls){ls.style.display='none';ls.style.pointerEvents='none';}
+  document.getElementById('lc-pw').value='';
+  var b=document.getElementById('lc-badge');
+  if(b){b.textContent=(role==='cg')?'CG':'PT';b.style.background=(role==='cg')?'#D8EDD9':'#EDE7F6';b.style.color=(role==='cg')?'#1b5e20':'#5A4090';b.title=(role==='cg')?'Logged in as Caregiver — tap to logout':'Logged in as Patient — tap to logout';}
+  if(typeof applyRoleView==='function')applyRoleView();
+  try{if(typeof renderAll==='function')renderAll();}catch(e){}
+  if(typeof toast==='function')toast((role==='cg')?'Welcome, Caregiver! 💚':'Welcome 🌸');
+  if(role==='cg'){setTimeout(function(){try{if(typeof loadFromSheets==='function')loadFromSheets();}catch(e){}},800);}
+}
+document.addEventListener('DOMContentLoaded',function(){
+  /* Restore session on reload */
+  try{
+    var s=getSession();
+    if(s){
+      var ls=document.getElementById('loginScreen');
+      if(ls){ls.style.display='none';ls.style.pointerEvents='none';}
+      var b=document.getElementById('lc-badge');
+      if(b){b.textContent=s.role==='cg'?'CG':'PT';b.style.background=s.role==='cg'?'#D8EDD9':'#EDE7F6';b.style.color=s.role==='cg'?'#1b5e20':'#5A4090';b.title=s.role==='cg'?'Logged in as Caregiver — tap to logout':'Logged in as Patient — tap to logout';}
+      if(typeof applyRoleView==='function')applyRoleView();
+    }
+  }catch(e){}
+  /* Restore mood */
+  try{
+    var mm=JSON.parse(_safeLS.getItem('morningMood')||'null');
+    var _td=new Date().toISOString().slice(0,10);
+    if(mm&&mm.date===_td){document.querySelectorAll('.mood-btn').forEach(function(b){b.classList.toggle('sel',Number(b.dataset.v)===mm.v);});}
+  }catch(e){}
+  /* Nerve Comfort Check always collapsed */
+  var _nb=document.getElementById('neuroBody'),_nt=document.getElementById('neuroToggle');
+  if(_nb)_nb.style.display='none';if(_nt)_nt.textContent='tap to expand';
+  if(typeof applyNightMode==='function')applyNightMode();
+});
 </script>
 
 <div id="anbu-ec-ov" style="display:none" onclick="if(event.target===this)anbuEcNo()">
@@ -928,6 +1043,7 @@ function _lcSHA256(msg) {
   </div>
 </div>
 <div id="errBanner" style="display:none;background:#c0392b;color:#fff;padding:10px 14px;font-size:.85rem;font-weight:700;position:fixed;top:0;left:0;right:0;z-index:9999;text-align:center"></div>
+<div id="appWrapper">
 <div class="app">
 
 <!-- HEADER -->
@@ -1107,7 +1223,7 @@ function _lcSHA256(msg) {
 
 <!-- NAV -->
 <div class="nav-tabs" id="mainNavTabs">
-  <button class="tab-btn active" id="navBtn-dashboard" onclick="showTab('dashboard')"><span style="font-size:1.35rem">🏠</span><span>Today</span></button>
+  <button class="tab-btn active" id="navBtn-dashboard" onclick="showTab('dashboard')"><span style="font-size:1.35rem">🏠</span><span>Your Day</span></button>
   <button class="tab-btn" id="navBtn-careplan" onclick="showTab('careplan')"><span style="font-size:1.35rem">💊</span><span>Care Plan</span></button>
   <button class="tab-btn" id="navBtn-chemo" onclick="showTab('chemo')"><span style="font-size:1.35rem">🩺</span><span>Treatment</span></button>
   <button class="tab-btn" id="navBtn-health" onclick="showTab('health')"><span style="font-size:1.35rem">📊</span><span>Health</span></button>
@@ -1117,7 +1233,18 @@ function _lcSHA256(msg) {
 
 <!-- ═══ DASHBOARD ═══ -->
 <div class="section active" id="tab-dashboard">
-  <div id="affArea"><div style="background:var(--surface);border-radius:var(--radius);padding:18px;text-align:center;color:var(--muted);margin-bottom:12px">✨ Loading affirmation…</div></div>
+<div id="guestBanner" style="display:none;background:var(--success-l);border:1.5px solid var(--success);border-radius:10px;padding:9px 14px;margin-bottom:10px;font-size:.78rem;font-weight:600;color:var(--success);text-align:center;">&#x1F33F; Your personal health log</div>
+  <div id="affArea"><div style="background:var(--surface);border-radius:var(--radius);padding:18px;text-align:center;color:var(--muted);margin-bottom:12px">✨ Loading affirmation…</div>
+<div id="moodCheckIn" class="card" style="padding:12px 16px;margin-bottom:12px;">
+  <div style="font-size:.8rem;font-weight:700;color:var(--muted);text-align:center;margin-bottom:8px;">How are you feeling right now?</div>
+  <div style="display:flex;justify-content:space-around;">
+    <button class="mood-btn" data-v="1" onclick="selectMood(1)">&#x1F614;</button>
+    <button class="mood-btn" data-v="2" onclick="selectMood(2)">&#x1F615;</button>
+    <button class="mood-btn" data-v="3" onclick="selectMood(3)">&#x1F610;</button>
+    <button class="mood-btn" data-v="4" onclick="selectMood(4)">&#x1F642;</button>
+    <button class="mood-btn" data-v="5" onclick="selectMood(5)">&#x1F60A;</button>
+  </div>
+</div></div>
 
   <!-- Sheets loading banner (shown while fetching, hides after) -->
   <div id="sheetsLoadBanner" style="display:none;text-align:center;padding:10px;color:var(--muted);font-size:.85rem;background:var(--surface2);border-radius:10px;margin-bottom:10px">
@@ -1247,7 +1374,7 @@ function _lcSHA256(msg) {
   </div>
   <div id="chemo-log">
     <div class="card">
-  <div class="card-header"><div class="card-title">💉 Log Treatment Session</div></div>
+  <div class="card-header"><div class="card-title">💉 Record Today's Treatment</div></div>
   <div id="logSessionPrompt" style="padding:18px 16px;text-align:center">
     <div style="font-size:.88rem;color:var(--muted);margin-bottom:14px">Record today's chemo or treatment session</div>
     <button class="btn btn-chemo btn-block" onclick="openLogSessionForm()">💉 Log a Session</button>
@@ -1287,7 +1414,7 @@ function _lcSHA256(msg) {
   <div id="health-symptoms">
     <div class="sub-tabs" style="margin-top:0">
       <button class="sub-tab active" onclick="showSub('sym','log',this)">📋 Log Now</button>
-      <button class="sub-tab" onclick="showSub('sym','history',this);renderSymHist()">📈 History</button>
+      <button class="sub-tab" onclick="showSub('sym','history',this);renderSymHist()">How I've Been Feeling</button>
     </div>
     <div id="sym-log">
       <div class="card">
@@ -1306,7 +1433,7 @@ function _lcSHA256(msg) {
               <button class="sym-btn" data-v="2" onclick="symTap('N',2)"><span class="sbe">🙂</span><span class="sbl">Mild</span></button>
               <button class="sym-btn active" data-v="3" onclick="symTap('N',3)"><span class="sbe">😐</span><span class="sbl">Mod.</span></button>
               <button class="sym-btn" data-v="4" onclick="symTap('N',4)"><span class="sbe">😟</span><span class="sbl">High</span></button>
-              <button class="sym-btn" data-v="5" onclick="symTap('N',5)"><span class="sbe">🤮</span><span class="sbl">Severe</span></button>
+              <button class="sym-btn" data-v="5" onclick="symTap('N',5)"><span class="sbe">🤮</span><span class="sbl">Very difficult</span></button>
             </div>
           </div>
           <div class="sym-row">
@@ -1317,7 +1444,7 @@ function _lcSHA256(msg) {
               <button class="sym-btn" data-v="2" onclick="symTap('F',2)"><span class="sbe">🔆</span><span class="sbl">Good</span></button>
               <button class="sym-btn active" data-v="3" onclick="symTap('F',3)"><span class="sbe">😐</span><span class="sbl">Tired</span></button>
               <button class="sym-btn" data-v="4" onclick="symTap('F',4)"><span class="sbe">🔅</span><span class="sbl">Drained</span></button>
-              <button class="sym-btn" data-v="5" onclick="symTap('F',5)"><span class="sbe">💤</span><span class="sbl">Bedridden</span></button>
+              <button class="sym-btn" data-v="5" onclick="symTap('F',5)"><span class="sbe">💤</span><span class="sbl">Need full rest</span></button>
             </div>
           </div>
           <div class="sym-row">
@@ -1328,7 +1455,7 @@ function _lcSHA256(msg) {
               <button class="sym-btn" data-v="2" onclick="symTap('P',2)"><span class="sbe">🙂</span><span class="sbl">Mild</span></button>
               <button class="sym-btn active" data-v="3" onclick="symTap('P',3)"><span class="sbe">😐</span><span class="sbl">Mod.</span></button>
               <button class="sym-btn" data-v="4" onclick="symTap('P',4)"><span class="sbe">😣</span><span class="sbl">High</span></button>
-              <button class="sym-btn" data-v="5" onclick="symTap('P',5)"><span class="sbe">😭</span><span class="sbl">Worst</span></button>
+              <button class="sym-btn" data-v="5" onclick="symTap('P',5)"><span class="sbe">😭</span><span class="sbl">Very difficult</span></button>
             </div>
           </div>
           <div class="sym-row">
@@ -1357,8 +1484,8 @@ function _lcSHA256(msg) {
 <!-- ⚡ v73 NEUROPATHY WATCH ─────────────────────────── -->
           <div class="neuro-hdr" onclick="toggleNeuroWatch()">
             <div class="neuro-hdr-title">
-              ⚡ Neuropathy Watch
-              <span class="neuro-badge">NEW</span>
+              ⚡ Nerve Comfort Check
+              
             </div>
             <span class="neuro-toggle" id="neuroToggle">▼ tap to expand</span>
           </div>
@@ -1388,7 +1515,7 @@ function _lcSHA256(msg) {
                 <button class="sym-btn" data-v="2" onclick="symTap('NT',2)"><span class="sbe">🟡</span><span class="sbl">Mild</span></button>
                 <button class="sym-btn" data-v="3" onclick="symTap('NT',3)"><span class="sbe">🟠</span><span class="sbl">Mod.</span></button>
                 <button class="sym-btn" data-v="4" onclick="symTap('NT',4)"><span class="sbe">🔴</span><span class="sbl">High</span></button>
-                <button class="sym-btn" data-v="5" onclick="symTap('NT',5)"><span class="sbe">🆘</span><span class="sbl">Severe</span></button>
+                <button class="sym-btn" data-v="5" onclick="symTap('NT',5)"><span class="sbe">🆘</span><span class="sbl">Very difficult</span></button>
               </div>
             </div>
             <hr class="neuro-sym-div">
@@ -1405,7 +1532,7 @@ function _lcSHA256(msg) {
                 <button class="sym-btn" data-v="2" onclick="symTap('NN',2)"><span class="sbe">🟡</span><span class="sbl">Mild</span></button>
                 <button class="sym-btn" data-v="3" onclick="symTap('NN',3)"><span class="sbe">🟠</span><span class="sbl">Mod.</span></button>
                 <button class="sym-btn" data-v="4" onclick="symTap('NN',4)"><span class="sbe">🔴</span><span class="sbl">High</span></button>
-                <button class="sym-btn" data-v="5" onclick="symTap('NN',5)"><span class="sbe">🆘</span><span class="sbl">Severe</span></button>
+                <button class="sym-btn" data-v="5" onclick="symTap('NN',5)"><span class="sbe">🆘</span><span class="sbl">Very difficult</span></button>
               </div>
             </div>
             <hr class="neuro-sym-div">
@@ -1422,7 +1549,7 @@ function _lcSHA256(msg) {
                 <button class="sym-btn" data-v="2" onclick="symTap('NB',2)"><span class="sbe">🟡</span><span class="sbl">Mild</span></button>
                 <button class="sym-btn" data-v="3" onclick="symTap('NB',3)"><span class="sbe">🟠</span><span class="sbl">Mod.</span></button>
                 <button class="sym-btn" data-v="4" onclick="symTap('NB',4)"><span class="sbe">🔴</span><span class="sbl">High</span></button>
-                <button class="sym-btn" data-v="5" onclick="symTap('NB',5)"><span class="sbe">🆘</span><span class="sbl">Severe</span></button>
+                <button class="sym-btn" data-v="5" onclick="symTap('NB',5)"><span class="sbe">🆘</span><span class="sbl">Very difficult</span></button>
               </div>
             </div>
             <hr class="neuro-sym-div">
@@ -1474,7 +1601,7 @@ function _lcSHA256(msg) {
 
       <!-- BOWEL TRACKER -->
       <div class="card">
-        <div class="card-header"><div class="card-title">🚽 Bowel Movement</div></div>
+        <div class="card-header"><div class="card-title">🚽 Digestive Health</div></div>
         <div class="card-body">
           <div class="sym-row">
             <div class="sym-label"><span>🚽 Stool Type</span><span class="sym-val v3" id="vBwl">3</span></div>
@@ -1494,7 +1621,7 @@ function _lcSHA256(msg) {
 
       <!-- SINGLE SAVE BUTTON FOR ALL -->
       <button class="btn btn-primary btn-block" id="btnSaveAllLog" onclick="saveAllLog()" style="margin-top:4px;height:56px;font-size:1rem;border-radius:16px;box-shadow:0 4px 16px rgba(58,140,126,.35)">
-        💾 Save Daily Log
+        Done for today ✓
       </button>
     </div>
     <div id="sym-history" class="hidden">
@@ -1523,7 +1650,7 @@ function _lcSHA256(msg) {
       <button class="sub-tab" onclick="showSub('vit','history',this)">📈 History</button>
     </div>
     <div id="vit-log">
-      <div class="card"><div class="card-header"><div class="card-title">🫀 Log Vitals</div></div>
+      <div class="card"><div class="card-header"><div class="card-title">🫀 Check Vitals</div></div>
         <div class="card-body">
           <div class="form-group"><label class="form-label">After which meal?</label><select class="form-select" id="vitMeal"><option>Breakfast</option><option>Lunch</option><option>Dinner</option></select></div>
           <div class="form-row">
@@ -1538,7 +1665,7 @@ function _lcSHA256(msg) {
             <div class="form-group"><label class="form-label">SpO₂ (%)</label><input type="number" class="form-input" id="vitSpo2" placeholder="98"></div>
             <div class="form-group"><label class="form-label">Weight (kg)</label><input type="number" class="form-input" id="vitWeight" placeholder="55.0" step="0.1"></div>
           </div>
-          <button class="btn btn-primary btn-block" onclick="saveVitals()">💾 Save Vitals</button>
+          <button class="btn btn-primary btn-block" onclick="saveVitals()">💾 Save Reading</button>
         </div>
       </div>
     </div>
@@ -1554,7 +1681,7 @@ function _lcSHA256(msg) {
     </div>
     <div id="sl-log">
       <div id="sleepSumArea"></div>
-      <div class="card"><div class="card-header"><div class="card-title">🌙 Log Last Night's Sleep</div></div>
+      <div class="card"><div class="card-header"><div class="card-title">🌙 How Did You Sleep?</div></div>
         <div class="card-body">
           <div class="time-grid">
             <div class="tbox"><label>🛏️ Bedtime</label><input type="time" id="slBed" value="22:00"></div>
@@ -1694,7 +1821,24 @@ function _lcSHA256(msg) {
     <button class="sub-tab" onclick="showSub('cg','pdf',this)">📄 PDF</button>
   </div>
   <div id="cg-reminders">
-    <div id="overdueCardFull"></div>
+<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;margin-bottom:12px;font-size:.88rem;font-weight:600;color:var(--muted);">
+  <span>&#x1F319; Quiet Hours (10 PM &#x2013; 7 AM)</span>
+  <label class="tswitch"><input type="checkbox" id="nightModeToggle" onchange="setNightMode(this.checked)"><span class="tslider"></span></label>
+</div>
+
+    <div id="snoozeBanner" style="display:none;background:var(--success-l);border:1.5px solid var(--success);border-radius:10px;padding:10px 14px;font-size:.82rem;font-weight:600;color:var(--success);margin-bottom:12px;"></div>
+<div class="card" id="cgBreatherCard" style="background:var(--success-l);border:1.5px solid var(--success);">
+  <div class="card-header"><div class="card-title" style="color:var(--success);">Your Wellbeing Matters Too &#x1F33F;</div></div>
+  <div class="card-body">
+    <p style="font-size:.85rem;color:var(--muted);line-height:1.6;margin-bottom:12px;">Caregiving is one of the hardest things a person can do.<br>It&#x27;s okay to pause. It&#x27;s okay to rest.<br>You cannot pour from an empty cup.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-outline btn-sm" style="border-color:var(--success);color:var(--success);" onclick="startBreather(1)">Pause 1 hr</button>
+      <button class="btn btn-outline btn-sm" style="border-color:var(--success);color:var(--success);" onclick="startBreather(2)">Pause 2 hrs</button>
+      <button class="btn btn-outline btn-sm" style="border-color:var(--success);color:var(--success);" onclick="startBreather(4)">Pause 4 hrs</button>
+    </div>
+  </div>
+</div>
+<div id="overdueCardFull"></div>
     <div class="rem-card">
       <h4>🔔 Daily Reminders</h4>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
@@ -1847,7 +1991,7 @@ function _lcSHA256(msg) {
     <button class="fab-item" onclick="openAdd('medicine');closeFab()"><span>💊</span>Add Medicine</button>
     <button class="fab-item" onclick="openAdd('diet');closeFab()"><span>🥗</span>Add Diet Item</button>
     <button class="fab-item" onclick="showTab('chemo');showSub('chemo','log',null);closeFab()"><span>💉</span>Log Treatment</button>
-    <button class="fab-item" onclick="openModal('vitalsModal');closeFab()"><span>🫀</span>Log Vitals</button>
+    <button class="fab-item" onclick="openModal('vitalsModal');closeFab()"><span>🫀</span>Check Vitals</button>
     <button class="fab-item" onclick="showTab('notes');closeFab()"><span>📝</span>Quick Note</button>
     <button class="fab-item" onclick="showTab('notes');showSub('notes','voice',null);closeFab()"><span>🎙️</span>Voice Note</button>
   </div>
@@ -1943,12 +2087,12 @@ function _lcSHA256(msg) {
 <!-- VITALS MODAL -->
 <div class="modal-overlay" id="vitalsModal">
   <div class="modal">
-    <div class="modal-header"><div class="modal-title">🫀 Log Vitals</div><button class="modal-close" onclick="closeModal('vitalsModal')">✕</button></div>
+    <div class="modal-header"><div class="modal-title">🫀 Check Vitals</div><button class="modal-close" onclick="closeModal('vitalsModal')">✕</button></div>
     <div class="form-group"><label class="form-label">After which meal?</label><select class="form-select" id="vmMeal"><option>Breakfast</option><option>Lunch</option><option>Dinner</option></select></div>
     <div class="form-row"><div class="form-group"><label class="form-label">BP Systolic</label><input type="number" class="form-input" id="vmSys" placeholder="120"></div><div class="form-group"><label class="form-label">BP Diastolic</label><input type="number" class="form-input" id="vmDia" placeholder="80"></div></div>
     <div class="form-row"><div class="form-group"><label class="form-label">Pulse (bpm)</label><input type="number" class="form-input" id="vmPulse" placeholder="72"></div><div class="form-group"><label class="form-label">Temperature (°F)</label><input type="number" class="form-input" id="vmTemp" placeholder="98.6" step="0.1"></div></div>
     <div class="form-row"><div class="form-group"><label class="form-label">SpO₂ (%)</label><input type="number" class="form-input" id="vmSpo2" placeholder="98"></div><div class="form-group"><label class="form-label">Weight (kg)</label><input type="number" class="form-input" id="vmWeight" placeholder="55.0" step="0.1"></div></div>
-    <button class="btn btn-primary btn-block" onclick="submitVitals()">💾 Save Vitals</button>
+    <button class="btn btn-primary btn-block" onclick="submitVitals()">💾 Save Reading</button>
   </div>
 </div>
 
@@ -2385,6 +2529,9 @@ function renderAll(){
   try{renderBowelHistory();updBowelSlider(3);}catch(e){console.error('bowel',e);}
   try{updateVoiceBanner();}catch(e){console.error('voicebanner',e);}
   try{renderTreatProfileBanner();}catch(e){console.error('tpbanner',e);}
+
+  try{if(typeof applySnoozeState==="function")applySnoozeState();}catch(e){}
+  try{if(typeof applyNightMode==="function")applyNightMode();}catch(e){}
 }
 
 // ═══════════════════════════════════════════
@@ -2548,6 +2695,16 @@ function showTab(id){
   const nb=document.getElementById('navBtn-'+id);
   if(nb) nb.classList.add('active');
   window.scrollTo({top:0,behavior:'smooth'});
+  if(id==='caregiver'&&typeof isCG==='function'&&isCG()){
+    try{
+      var _wk=getISOWeek(new Date()),_sh=_safeLS.getItem('cgCheckinWeek');
+      if(_sh!==String(_wk)){
+        var _cq=document.getElementById('cgCheckinQ'),_cr=document.getElementById('cgCheckinResp');
+        if(_cq)_cq.style.display='block';if(_cr)_cr.style.display='none';
+        if(typeof openModal==='function')openModal('cgCheckinModal');
+      }
+    }catch(e){}
+  }
   // FIX v44: re-render flashcards & next-strip every time user returns to dashboard
   if(id==='dashboard'){
     try{renderFlashCards();}catch(_e){}
@@ -3310,9 +3467,13 @@ function isOD(t){if(t.done||String(t.time).toLowerCase().includes('every'))retur
 function tkey(s){const m=String(s).match(/(\d+):(\d+)\s*(AM|PM)/i);if(!m)return 9999;let h=+m[1],mn=+m[2];if(m[3].toUpperCase()==='PM'&&h!==12)h+=12;if(m[3].toUpperCase()==='AM'&&h===12)h=0;return h*60+mn;}
 function renderOverdue(){
   const od=S.tasks.filter(t=>isOD(t)&&!t.done);
-  const html=od.length?`<div class="alert-card"><h4>⚠️ Overdue (${od.length})</h4>${od.map(t=>`<div class="alert-item">• ${esc(t.time)} — ${esc(t.title)}</div>`).join('')}</div>`:'';
+  const _isCG=(typeof isCG==='function'&&isCG());
+  const snoozeBtn=_isCG?`<button onclick="snoozeReminders()" style="background:transparent;border:1.5px solid var(--success);color:var(--success);border-radius:22px;padding:7px 18px;font-size:.82rem;font-weight:700;cursor:pointer;margin-bottom:10px;">💚 Snooze all for 2 hours</button>`:'';
+  const hdg=_isCG?`<h4 style="color:var(--muted);">🔔 Catch up when you can (${od.length})</h4>`:`<h4>🔔 Reminders (${od.length})</h4>`;
+  const html=od.length?`<div class="alert-card">${hdg}${snoozeBtn}${od.map(t=>`<div class="alert-item">• ${esc(t.time)} — ${esc(t.title)}</div>`).join('')}</div>`:'';
   const a=document.getElementById('overdueArea');if(a)a.innerHTML=html;
   const b=document.getElementById('overdueCardFull');if(b)b.innerHTML=html;
+  if(typeof applySnoozeState==='function')applySnoozeState();
 }
 
 // ═══════════════════════════════════════════
@@ -4084,7 +4245,7 @@ function initSymSession(){
 function saveSym(){
   const btn=document.getElementById('btnSaveAllLog');
   if(btn){btn.disabled=true;btn.textContent='⏳ Saving…';}
-  setTimeout(()=>{_saveSymInternal();if(btn){btn.disabled=false;btn.textContent='💾 Save Daily Log';}toast('📊 Symptoms logged!');saveNow();
+  setTimeout(()=>{_saveSymInternal();if(btn){btn.disabled=false;btn.textContent='Done for today ✓';}toast('📊 Symptoms logged!');saveNow();
   try{renderFlashCards();}catch(_re){} try{renderNext3Strip();}catch(_re){} try{renderOverdue();}catch(_re){}},400);
 }
 function _saveBowelInternal(){
@@ -4122,7 +4283,7 @@ function deleteBowelEntry(date){
 }
 
 
-/* v73 Neuropathy Watch */
+/* v73 Nerve Comfort Check */
 function toggleNeuroWatch(){
   var b=document.getElementById('neuroBody');
   var t=document.getElementById('neuroToggle');
@@ -4158,10 +4319,23 @@ function saveAllLog(){
   setTimeout(()=>{
     try{_saveSymInternal();}catch(e){toast('⚠️ Symptom save error: '+e.message);}
     try{_saveBowelInternal();}catch(e){toast('⚠️ Bowel save error: '+e.message);}
-    btn.disabled=false;btn.textContent='💾 Save Daily Log';
+    btn.disabled=false;btn.textContent='Done for today ✓';
     toast('✅ Daily log saved!');saveNow();try{resetNeuroWatch();}catch(e){}
   try{renderFlashCards();}catch(_re){} try{renderNext3Strip();}catch(_re){} try{renderOverdue();}catch(_re){}
   },500);
+
+  /* v120 Gentle Close */
+  try{
+    var _an=document.getElementById('symSess2');
+    var _activeNight=_an&&_an.classList.contains('sel');
+    var _gcd=new Date().toISOString().slice(0,10);
+    var _gcs=_safeLS.getItem('gentleCloseShown');
+    if(_activeNight&&_gcs!==_gcd&&typeof isLoggedIn==='function'&&isLoggedIn()){
+      _safeLS.setItem('gentleCloseShown',_gcd);
+      var _gov=document.getElementById('gentleCloseOverlay');
+      if(_gov)_gov.style.display='flex';
+    }
+  }catch(e){}
 }
 function bulkDeleteSymBySession(){
   const sel=document.getElementById('symBulkSession');
@@ -4207,75 +4381,206 @@ function deleteSymEntry(entryId, fallbackIdx){
   toast('🗑 Entry removed');saveNow();
 }
 
-function renderSymHist(){
-  const el=document.getElementById('symHistList');if(!el)return;
 
-  // Populate bulk-delete session dropdown
-  const sel=document.getElementById('symBulkSession');
-  if(sel){
-    const sessions=[...new Set(S.symptoms.filter(e=>e.chemoId).map(e=>e.chemoId))];
-    const sessionOpts=sessions.map(cid=>{
-      const cs=S.chemoSessions.find(s=>s.id===cid);
-      const lbl=cs?`Cycle ${cs.cycle} · Session ${cs.session} (${fmtDate(cs.date)})`:`Session ${cid}`;
-      return `<option value="${cid}">${lbl}</option>`;
-    }).join('');
-    sel.innerHTML='<option value="">— Select a session —</option>'+sessionOpts;
-    // Also add "No session" option if unlinked entries exist
-    const unlinked=S.symptoms.filter(e=>!e.chemoId).length;
-    if(unlinked) sel.innerHTML+=`<option value="__none__">Unlinked entries (${unlinked})</option>`;
-    document.getElementById('symBulkDeleteBar').style.display=sessions.length||unlinked?'flex':'none';
+/* ── AnbuCare v120 History Filter Helpers ── */
+function _acToday(){
+  var d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function _acFilterDates(filterKey){
+  var f=_safeLS.getItem(filterKey)||'7d';
+  var to=new Date(); to.setHours(23,59,59,999);
+  var from=new Date();
+  if(f==='7d'){from.setDate(from.getDate()-6);from.setHours(0,0,0,0);}
+  else if(f==='30d'){from.setDate(from.getDate()-29);from.setHours(0,0,0,0);}
+  else if(f&&f.indexOf('|')>-1){
+    var p=f.split('|');
+    from=new Date(p[0]);from.setHours(0,0,0,0);
+    to=new Date(p[1]);to.setHours(23,59,59,999);
+  }
+  return {from:from,to:to,raw:f};
+}
+function _acApplyFilter(filterKey,val,renderFnName){
+  _safeLS.setItem(filterKey,val);
+  var fn=window[renderFnName];
+  if(typeof fn==='function') fn();
+}
+function _acApplyRangeFilter(filterKey,renderFnName){
+  var f=document.getElementById(filterKey+'_from');
+  var t=document.getElementById(filterKey+'_to');
+  if(f&&t&&f.value&&t.value) _acApplyFilter(filterKey,f.value+'|'+t.value,renderFnName);
+}
+function _acFltStyle(active){
+  return 'padding:4px 10px;border-radius:16px;border:1.5px solid '+(active?'var(--primary)':'var(--border)')+
+    ';background:'+(active?'var(--primary)':'transparent')+
+    ';color:'+(active?'#fff':'var(--text)')+
+    ';font-size:.75rem;font-weight:'+(active?'700':'400')+';cursor:pointer;';
+}
+function _acFilterBarHTML(filterKey,renderFnName){
+  var cur=_safeLS.getItem(filterKey)||'7d';
+  var isRange=cur&&cur.indexOf('|')>-1;
+  var rFrom=isRange?cur.split('|')[0]:'';
+  var rTo=isRange?cur.split('|')[1]:'';
+
+  function _toDisp(iso){
+    if(!iso) return '';
+    var p=iso.split('-');
+    return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:'';
   }
 
-  if(!S.symptoms.length){el.innerHTML='<div class="empty"><span class="emoji">📊</span>No history yet</div>';return;}
-  const lbs={nausea:'🤢 Nausea',fatigue:'😴 Fatigue',pain:'🩹 Pain',mood:'😊 Mood',appetite:'🍽️ Appetite'};
-  el.innerHTML=S.symptoms.map((e,i)=>{
-    const entryId=e.id!=null?e.id:i;
-    // ── Bowel entry card ──────────────────────────────────────
-    if(e.type==='bowel'){
-      const bIcons=['💧','🌊','✅','🪨','🚫'];
-      const bIcon=bIcons[e.bowelType]||'🚽';
-      const bLbl=e.bowelLabel||bowelLabels[e.bowelType]||'Bowel';
-      const bCnt=e.bowelCount||0;
-      const bCol=bowelColors[e.bowelType]||'var(--primary)';
-      return `<div style="padding:12px 0;border-bottom:1px solid var(--border)">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-size:.78rem;font-weight:700;color:var(--muted)">${fmtDate(e.date)}</span>
-            <span style="font-size:.7rem;font-weight:700;background:#f3e8ff;color:#7c3aed;padding:2px 8px;border-radius:8px">🚽 Bowel</span>
-          </div>
-          <button onclick="deleteSymEntry('${entryId}',${i})" style="background:#fff0f0;border:1.5px solid #ffcdd2;color:#e53935;border-radius:8px;padding:3px 10px;font-size:.72rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:3px">🗑 Delete</button>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px;padding:6px 10px;background:var(--surface2);border-radius:10px">
-          <span style="font-size:1.4rem">${bIcon}</span>
-          <div>
-            <div style="font-weight:700;font-size:.88rem;color:${bCol}">${esc(bLbl)}</div>
-            <div style="font-size:.74rem;color:var(--muted)">${bCnt} time${bCnt!==1?'s':''} today</div>
-          </div>
-        </div>
-      </div>`;
-    }
-    // ── Regular symptom card ──────────────────────────────────
-    const bars=['nausea','fatigue','pain','mood','appetite'].map(k=>{
-      const v=e[k]||0,pct=v*20,col=v<=2?'var(--success)':v===3?'#f0b429':'var(--warn)';
-      return `<div style="margin-bottom:5px"><div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-bottom:2px"><span>${lbs[k]}</span><span style="font-weight:700;color:${col}">${v}/5</span></div><div style="background:var(--surface2);border-radius:4px;height:5px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${col};border-radius:4px"></div></div></div>`;
-    }).join('');
-    const cs=e.chemoId?S.chemoSessions.find(s=>s.id===e.chemoId):null;
-    return `<div style="padding:12px 0;border-bottom:1px solid var(--border)">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:.78rem;font-weight:700;color:var(--muted)">${fmtDate(e.date)}</span>${e.session?`<span style="font-size:.7rem;font-weight:700;background:var(--primary-l);color:var(--primary);padding:2px 8px;border-radius:8px">${e.session==="Morning"?"🌅":e.session==="Noon"?"☀️":"🌙"} ${e.session}</span>`:""}
-          ${cs?`<span style="font-size:.7rem;font-weight:700;background:var(--chemo-l);color:var(--chemo);padding:2px 8px;border-radius:8px">C${cs.cycle}S${cs.session}</span>`:''}
-        </div>
-        <button onclick="deleteSymEntry('${entryId}',${i})" style="background:#fff0f0;border:1.5px solid #ffcdd2;color:#e53935;border-radius:8px;padding:3px 10px;font-size:.72rem;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:3px">🗑 Delete</button>
-      </div>
-      ${bars}
-      ${e.extras&&e.extras.length?`<div style="font-size:.74rem;color:var(--warn);margin-top:3px">⚡ ${e.extras.join(' · ')}</div>`:''}
-      ${e.notes?`<div style="font-size:.75rem;color:var(--muted);margin-top:2px">💬 ${esc(e.notes)}</div>`:''}
-    </div>`;
-  }).join('');
+  var wrap=document.createElement('div');
+  wrap.style.cssText='margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);';
 
-  // Bowel summary
-  /* bowelLog block removed v70 */
+  /* ── Row 1: Quick filters ── */
+  var row1=document.createElement('div');
+  row1.style.cssText='display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;';
+
+  var lbl=document.createElement('span');
+  lbl.style.cssText='font-size:.8rem;color:var(--muted);font-weight:700;white-space:nowrap;';
+  lbl.textContent='Show:';
+  row1.appendChild(lbl);
+
+  [['7d','Last 7 days'],['30d','Last 30 days']].forEach(function(opt){
+    var btn=document.createElement('button');
+    btn.textContent=opt[1];
+    btn.style.cssText='flex:1;min-height:38px;border-radius:20px;border:1.5px solid '
+      +(cur===opt[0]?'var(--primary)':'var(--border)')
+      +';background:'+(cur===opt[0]?'var(--primary)':'transparent')
+      +';color:'+(cur===opt[0]?'#fff':'var(--text)')
+      +';font-size:.85rem;font-weight:'+(cur===opt[0]?'700':'500')
+      +';cursor:pointer;touch-action:manipulation;';
+    btn.onclick=function(){_acApplyFilter(filterKey,opt[0],renderFnName);};
+    row1.appendChild(btn);
+  });
+  wrap.appendChild(row1);
+
+  /* ── Row 2: Custom range ── */
+  var row2=document.createElement('div');
+  row2.style.cssText='display:flex;gap:6px;align-items:center;flex-wrap:nowrap;';
+
+  var rangeLbl=document.createElement('span');
+  rangeLbl.style.cssText='font-size:.78rem;color:var(--muted);white-space:nowrap;font-weight:600;';
+  rangeLbl.textContent='Range:';
+  row2.appendChild(rangeLbl);
+
+  var inpStyle='flex:1;min-width:0;font-size:.82rem;padding:7px 8px;border:1.5px solid '
+    +(isRange?'var(--primary)':'var(--border)')
+    +';border-radius:8px;background:var(--card,#fff);color:var(--text);'
+    +'text-align:center;width:0;';
+
+  var inFrom=document.createElement('input');
+  inFrom.type='text'; inFrom.id=filterKey+'_from';
+  inFrom.placeholder='dd/mm/yyyy'; inFrom.maxLength=10;
+  inFrom.value=_toDisp(rFrom);
+  inFrom.style.cssText=inpStyle;
+  inFrom.setAttribute('inputmode','numeric');
+  inFrom.oninput=function(){
+    var v=this.value.replace(/[^0-9\/]/g,'');
+    var prev=this._prev||'';
+    if(v.length===2&&prev.length===1) v+='/';
+    else if(v.length===5&&prev.length===4) v+='/';
+    this.value=v; this._prev=v;
+  };
+  row2.appendChild(inFrom);
+
+  var arrow=document.createElement('span');
+  arrow.textContent='→';
+  arrow.style.cssText='font-size:.82rem;color:var(--muted);flex-shrink:0;';
+  row2.appendChild(arrow);
+
+  var inTo=document.createElement('input');
+  inTo.type='text'; inTo.id=filterKey+'_to';
+  inTo.placeholder='dd/mm/yyyy'; inTo.maxLength=10;
+  inTo.value=_toDisp(rTo);
+  inTo.style.cssText=inpStyle;
+  inTo.setAttribute('inputmode','numeric');
+  inTo.oninput=function(){
+    var v=this.value.replace(/[^0-9\/]/g,'');
+    var prev=this._prev||'';
+    if(v.length===2&&prev.length===1) v+='/';
+    else if(v.length===5&&prev.length===4) v+='/';
+    this.value=v; this._prev=v;
+  };
+  row2.appendChild(inTo);
+
+  var applyBtn=document.createElement('button');
+  applyBtn.textContent='Go';
+  applyBtn.style.cssText='min-height:38px;padding:0 14px;border-radius:20px;border:1.5px solid '
+    +(isRange?'var(--primary)':'var(--border)')
+    +';background:'+(isRange?'var(--primary)':'transparent')
+    +';color:'+(isRange?'#fff':'var(--text)')
+    +';font-size:.85rem;font-weight:700;cursor:pointer;touch-action:manipulation;white-space:nowrap;flex-shrink:0;';
+  applyBtn.onclick=function(){
+    var f=document.getElementById(filterKey+'_from');
+    var t=document.getElementById(filterKey+'_to');
+    if(!f||!t) return;
+    var p=f.value.trim().split('/');
+    var q=t.value.trim().split('/');
+    var isoF=p.length===3&&p[2].length===4?p[2]+'-'+p[1]+'-'+p[0]:'';
+    var isoT=q.length===3&&q[2].length===4?q[2]+'-'+q[1]+'-'+q[0]:'';
+    if(isoF&&isoT){
+      _acApplyFilter(filterKey,isoF+'|'+isoT,renderFnName);
+    } else {
+      applyBtn.textContent='dd/mm/yyyy';
+      setTimeout(function(){applyBtn.textContent='Go';},2000);
+    }
+  };
+  row2.appendChild(applyBtn);
+  wrap.appendChild(row2);
+  return wrap;
+}
+
+function renderSymHist(){
+  var el=document.getElementById('symHistList'); if(!el)return;
+  el.innerHTML='';
+  var NL={0:'None',1:'Mild',2:'Moderate',3:'Quite a bit',4:'Severe',5:'Very difficult'};
+  var today=_acToday();
+
+  /* PATIENT: today only */
+  if(typeof isPT==='function'&&isPT()){
+    var todaySym=(S.symptoms||[]).filter(function(s){return s.date===today;}).reverse();
+    if(!todaySym.length){
+      el.innerHTML='<div style="color:var(--muted);font-size:.85rem;padding:8px 0;">No symptoms logged today \uD83D\uDC9A</div>';
+      return;
+    }
+    el.innerHTML=todaySym.map(function(s){
+      var lvl=NL[s.level]||s.level;
+      var emoji=s.level<=1?'\uD83D\uDC9A':s.level<=2?'\uD83C\uDF3F':s.level<=3?'\uD83C\uDF3C':s.level<=4?'\uD83C\uDF42':'\uD83C\uDF27\uFE0F';
+      return '<div style="padding:10px 0;border-bottom:1px solid var(--border);">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;">'
+        +'<span style="font-weight:600;font-size:.9rem;">'+emoji+' '+s.name+'</span>'
+        +'<span style="font-size:.78rem;color:var(--muted);">'+s.time+'</span>'
+        +'</div>'
+        +'<div style="font-size:.82rem;color:var(--muted);margin-top:3px;">You felt: <strong>'+lvl+'</strong>'+(s.note?' \u00B7 "'+s.note+'"':'')+'</div>'
+        +'</div>';
+    }).join('');
+    return;
+  }
+
+  /* CAREGIVER: filter bar + filtered list */
+  el.appendChild(_acFilterBarHTML('sym_hist_filter','renderSymHist'));
+  var fd=_acFilterDates('sym_hist_filter');
+  var filtered=(S.symptoms||[]).filter(function(s){
+    var d=new Date(s.date); return d>=fd.from&&d<=fd.to;
+  }).reverse();
+  var listDiv=document.createElement('div');
+  if(!filtered.length){
+    listDiv.innerHTML='<div style="color:var(--muted);font-size:.85rem;padding:8px 0;">No symptoms in this period.</div>';
+  } else {
+    listDiv.innerHTML=filtered.map(function(s){
+      var lvl=NL[s.level]||s.level;
+      var bg=s.level<=1?'#e8f5e9':s.level<=2?'#f9fbe7':s.level<=3?'#fff8e1':s.level<=4?'#fff3e0':'#fce4ec';
+      var bc=s.level<=1?'#a5d6a7':s.level<=2?'#c5e1a5':s.level<=3?'#ffe082':s.level<=4?'#ffcc80':'#f48fb1';
+      return '<div style="padding:10px 12px;border-radius:10px;background:'+bg+';border:1px solid '+bc+';margin-bottom:8px;">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;">'
+        +'<span style="font-weight:700;font-size:.88rem;">'+s.name+'</span>'
+        +'<span style="font-size:.75rem;color:var(--muted);">'+s.date+' '+s.time+'</span>'
+        +'</div>'
+        +'<div style="font-size:.8rem;margin-top:4px;">Level: <strong>'+lvl+'</strong>'+(s.note?' \u00B7 <em>'+s.note+'</em>':'')+'</div>'
+        +'</div>';
+    }).join('');
+  }
+  el.appendChild(listDiv);
 }
 function updBowelSlider(v){
   selectedBowel=+v;
@@ -4332,7 +4637,7 @@ function saveVitals(){
   ['vitSys','vitDia','vitPulse','vitTemp','vitSpo2','vitWeight'].forEach(id=>document.getElementById(id).value='');
   saveNow();
   toast(`🫀 Vitals logged after ${meal}!`);
-  if(btn){btn.textContent='✅ Vitals Saved!';btn.style.background='var(--success)';setTimeout(()=>{btn.textContent='💾 Save Vitals';btn.style.background='';},2500);}
+  if(btn){btn.textContent='✅ Vitals Saved!';btn.style.background='var(--success)';setTimeout(()=>{btn.textContent='💾 Save Reading';btn.style.background='';},2500);}
 }
 function submitVitals(){
   const sys=document.getElementById('vmSys').value,dia=document.getElementById('vmDia').value,pulse=document.getElementById('vmPulse').value,meal=document.getElementById('vmMeal').value;
@@ -4347,14 +4652,64 @@ function submitVitals(){
   toast(`🫀 Vitals saved!`);
 }
 function renderVitHist(){
-  const el=document.getElementById('vitHistList');if(!el)return;
-  if(!S.vitals.length){el.innerHTML='<div class="empty"><span class="emoji">🫀</span>No vitals yet</div>';return;}
-  el.innerHTML=S.vitals.map((v,i)=>{
-    const bpc=v.sys>140||v.dia>90?'var(--warn)':v.sys<90?'var(--accent)':'var(--success)';
-    const sc=v.spo2&&v.spo2<95?'var(--warn)':'var(--success)';
-    const tc=v.temp&&v.temp>99.5?'var(--warn)':'var(--success)';
-    return `<div class="ventry"><div class="veTop" style="display:flex;align-items:center;gap:6px"><span class="vemeta">${fmtDate(v.date)} · ${v.time||''}</span><span class="vemeal">After ${esc(v.meal||'')}</span><button onclick="deleteVital(${i})" style="margin-left:auto;background:#fff0f0;border:1.5px solid #ffcdd2;color:#e53935;border-radius:8px;padding:2px 10px;font-size:.72rem;font-weight:700;cursor:pointer">🗑 Delete</button></div><div class="vevals"><div class="vreading" style="color:${bpc}">${v.sys}/${v.dia} <span>mmHg</span></div><div class="vreading">💓 ${v.pulse} <span>bpm</span></div>${v.temp?`<div class="vreading" style="color:${tc}">🌡️ ${v.temp}<span>°F</span></div>`:''} ${v.spo2?`<div class="vreading" style="color:${sc}">💨 ${v.spo2}<span>%</span></div>`:''} ${v.weight?`<div class="vreading">⚖️ ${v.weight}<span>kg</span></div>`:''}</div></div>`;
-  }).join('');
+  var el=document.getElementById('vitHistList'); if(!el)return;
+  el.innerHTML='';
+  var today=_acToday();
+
+  /* PATIENT: today only */
+  if(typeof isPT==='function'&&isPT()){
+    var todayVit=(S.vitals||[]).filter(function(v){return v.date===today;}).reverse();
+    if(!todayVit.length){
+      el.innerHTML='<div style="color:var(--muted);font-size:.85rem;padding:8px 0;">No vitals recorded today.</div>';
+      return;
+    }
+    el.innerHTML=todayVit.map(function(v){
+      var parts=[];
+      if(v.bp_s||v.bp_d) parts.push('BP: '+(v.bp_s||'?')+'/'+(v.bp_d||'?')+' mmHg');
+      if(v.hr)   parts.push('Heart rate: '+v.hr+' bpm');
+      if(v.temp) parts.push('Temp: '+v.temp+'\u00B0C');
+      if(v.spo2) parts.push('SpO\u2082: '+v.spo2+'%');
+      if(v.rr)   parts.push('Breathing: '+v.rr+' breaths/min');
+      return '<div style="padding:10px 0;border-bottom:1px solid var(--border);">'
+        +'<div style="font-size:.78rem;color:var(--muted);margin-bottom:4px;">'+v.time+'</div>'
+        +'<div style="font-size:.85rem;line-height:1.7;">'+parts.join(' &nbsp;\u00B7&nbsp; ')+'</div>'
+        +'</div>';
+    }).join('');
+    return;
+  }
+
+  /* CAREGIVER: filter bar + filtered list grouped by date */
+  el.appendChild(_acFilterBarHTML('vit_hist_filter','renderVitHist'));
+  var fd=_acFilterDates('vit_hist_filter');
+  var filtered=(S.vitals||[]).filter(function(v){
+    var d=new Date(v.date); return d>=fd.from&&d<=fd.to;
+  }).reverse();
+  var listDiv=document.createElement('div');
+  if(!filtered.length){
+    listDiv.innerHTML='<div style="color:var(--muted);font-size:.85rem;padding:8px 0;">No vitals in this period.</div>';
+  } else {
+    var byDate={};
+    filtered.forEach(function(v){if(!byDate[v.date])byDate[v.date]=[];byDate[v.date].push(v);});
+    var dateKeys=Object.keys(byDate).sort().reverse();
+    listDiv.innerHTML=dateKeys.map(function(dt){
+      var rows=byDate[dt].map(function(v){
+        var parts=[];
+        if(v.bp_s||v.bp_d) parts.push('BP '+(v.bp_s||'?')+'/'+(v.bp_d||'?'));
+        if(v.hr)   parts.push('HR '+v.hr);
+        if(v.temp) parts.push('T '+v.temp+'\u00B0');
+        if(v.spo2) parts.push('SpO\u2082 '+v.spo2+'%');
+        if(v.rr)   parts.push('RR '+v.rr);
+        return '<div style="font-size:.8rem;padding:5px 8px;background:rgba(0,0,0,.03);border-radius:6px;margin-bottom:4px;">'
+          +'<span style="color:var(--muted);margin-right:6px;">'+v.time+'</span>'+parts.join(' \u00B7 ')
+          +(v.note?'<div style="color:var(--muted);font-size:.75rem;margin-top:2px;"><em>'+v.note+'</em></div>':'')
+          +'</div>';
+      }).join('');
+      return '<div style="margin-bottom:12px;">'
+        +'<div style="font-weight:700;font-size:.82rem;color:var(--primary);margin-bottom:4px;">\uD83D\uDCC5 '+dt+'</div>'
+        +rows+'</div>';
+    }).join('');
+  }
+  el.appendChild(listDiv);
 }
 
 // ═══════════════════════════════════════════
@@ -4392,30 +4747,57 @@ function saveSleep(){
   },600);
 }
 function renderSlHist(){
-  const el=document.getElementById('slHistList');if(!el)return;
-  if(!S.sleepLogs.length){el.innerHTML='<div class="empty"><span class="emoji">😴</span>No sleep logs yet</div>';return;}
-  el.innerHTML=[...S.sleepLogs].sort((a,b)=>b.date.localeCompare(a.date)).map((s,i)=>{
-    const col=s.hours>=7?'var(--success)':s.hours>=6?'#f0b429':'var(--warn)';
-    const entryId=s.id!=null?s.id:i;
-    return `<div style="padding:12px 0;border-bottom:1px solid var(--border)">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px">
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:.8rem;font-weight:700;color:var(--muted)">${fmtDate(s.date)}</span>
-          <span style="font-size:1.05rem;font-weight:800;color:${col}">${s.hours}h</span>
-        </div>
-        <button onclick="deleteSleepEntry('${entryId}',${i})"
-          style="background:#fff0f0;border:1.5px solid #ffcdd2;color:#e53935;border-radius:8px;
-                 padding:3px 10px;font-size:.72rem;font-weight:700;cursor:pointer;
-                 display:inline-flex;align-items:center;gap:3px">🗑 Delete</button>
-      </div>
-      <div style="display:flex;gap:12px;font-size:.76rem;color:var(--muted);margin-bottom:4px">
-        <span>🛏️ ${s.bedtime}</span><span>☀️ ${s.wake}</span>
-      </div>
-      <div style="font-size:.85rem;margin-bottom:3px">${'⭐'.repeat(s.quality)}${'☆'.repeat(5-s.quality)}</div>
-      ${s.disruptions&&s.disruptions.length?`<div style="font-size:.74rem;color:var(--warn)">⚡ ${s.disruptions.join(' · ')}</div>`:''}
-      ${s.notes?`<div style="font-size:.75rem;color:var(--muted);margin-top:2px">💬 ${esc(s.notes)}</div>`:''}
-    </div>`;
-  }).join('');
+  var el=document.getElementById('slHistList'); if(!el)return;
+  el.innerHTML='';
+  var today=_acToday();
+
+  /* PATIENT: today only */
+  if(typeof isPT==='function'&&isPT()){
+    var todaySl=(S.sleepLogs||[]).filter(function(s){return s.date===today;});
+    if(!todaySl.length){
+      el.innerHTML='<div class="empty"><span class="emoji">\uD83D\uDE34</span>No sleep logged today.</div>';
+      return;
+    }
+    el.innerHTML=todaySl.map(function(s){
+      var col=s.hours>=7?'var(--success)':s.hours>=6?'#f0b429':'var(--warn)';
+      var label=s.hours>=7?'Good':s.hours>=6?'Fair':'Low';
+      return '<div style="padding:10px 0;border-bottom:1px solid var(--border);">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;">'
+        +'<span style="font-weight:600;font-size:.9rem;">\uD83C\uDF19 '+s.hours+' hrs slept</span>'
+        +'<span style="font-size:.75rem;padding:2px 8px;border-radius:10px;background:'+col+';color:#fff;font-weight:700;">'+label+'</span>'
+        +'</div>'
+        +(s.quality?'<div style="font-size:.8rem;color:var(--muted);margin-top:3px;">Quality: '+s.quality+'</div>':'')
+        +(s.note?'<div style="font-size:.8rem;color:var(--muted);font-style:italic;margin-top:2px;">"'+s.note+'"</div>':'')
+        +'</div>';
+    }).join('');
+    return;
+  }
+
+  /* CAREGIVER: filter bar + filtered list */
+  el.appendChild(_acFilterBarHTML('sl_hist_filter','renderSlHist'));
+  var fd=_acFilterDates('sl_hist_filter');
+  var filtered=(S.sleepLogs||[]).filter(function(s){
+    var d=new Date(s.date); return d>=fd.from&&d<=fd.to;
+  }).sort(function(a,b){return b.date.localeCompare(a.date);});
+  var listDiv=document.createElement('div');
+  if(!filtered.length){
+    listDiv.innerHTML='<div class="empty"><span class="emoji">\uD83D\uDE34</span>No sleep logs in this period.</div>';
+  } else {
+    listDiv.innerHTML=filtered.map(function(s){
+      var col=s.hours>=7?'var(--success)':s.hours>=6?'#f0b429':'var(--warn)';
+      var label=s.hours>=7?'Good':s.hours>=6?'Fair':'Low';
+      return '<div style="padding:10px 0;border-bottom:1px solid var(--border);">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;">'
+        +'<span style="font-weight:700;font-size:.88rem;">\uD83C\uDF19 '+s.date+'</span>'
+        +'<span style="font-size:.75rem;padding:2px 8px;border-radius:10px;background:'+col+';color:#fff;font-weight:700;">'+label+'</span>'
+        +'</div>'
+        +'<div style="font-size:.82rem;color:var(--muted);margin-top:3px;"><strong>'+s.hours+' hrs</strong>'
+        +(s.quality?' \u00B7 Quality: '+s.quality:'')
+        +(s.note?' \u00B7 <em>"'+s.note+'"</em>':'')+'</div>'
+        +'</div>';
+    }).join('');
+  }
+  el.appendChild(listDiv);
 }
 
 function deleteSleepEntry(entryId, fallbackIdx){
@@ -5471,7 +5853,7 @@ function _buildPDFHtml(){
     const avg2=sorted.slice(mid).reduce((a,x)=>a+(+x[k]||0),0)/(sorted.length-mid);
     const d=avg2-avg1;
     if(Math.abs(d)<0.3) return '<span style="color:#888">→ Stable</span>';
-    if(d>0) return '<span style="color:#e74c3c">↑ Worsening</span>';
+    if(d>0) return '<span style="color:#e74c3c">↑ Needs attention</span>';
     return '<span style="color:#27ae60">↓ Improving</span>';
   };
 
@@ -5709,7 +6091,7 @@ function _buildPDFHtml(){
         const a1=(sorted2.slice(0,mid).reduce((a,x)=>a+(+x[k]||0),0)/mid).toFixed(1);
         const a2=(sorted2.slice(mid).reduce((a,x)=>a+(+x[k]||0),0)/(sorted2.length-mid)).toFixed(1);
         const d=(+a2-+a1).toFixed(1);
-        const dir=Math.abs(+d)<0.3?'Stable':(+d>0?(k==='mood'?'↓ Declining':'↑ Worsening'):(k==='mood'?'↑ Improving':'↓ Improving'));
+        const dir=Math.abs(+d)<0.3?'Stable':(+d>0?(k==='mood'?'↓ Needs attention':'↑ Needs attention'):(k==='mood'?'↑ Improving':'↓ Improving'));
         const dc=Math.abs(+d)<0.3?'#555':(+d>0?(k==='mood'?'#e74c3c':'#e74c3c'):'#27ae60');
         out+=`<tr><td>${lbl}</td><td>${a1}/5</td><td>${a2}/5</td>
           <td style="color:${+d>0?'#e74c3c':'#27ae60'};font-weight:700">${+d>0?'+':''}${d}</td>
@@ -6417,11 +6799,16 @@ function _shareViaEmail() {
 
 // ── Login/Logout (DOM-ready) ────────────────────────────────────────────
 function cgBadgeClick(){
-  try{
-    var s=JSON.parse(localStorage.getItem('ac_sess_v99')||'null');
-    if(s&&Date.now()<s.exp){ showLogoutModal(); }
-    else { _showLoginScreen(); }
-  }catch(e){ _showLoginScreen(); }
+  /* If badge shows CG/PT role text, user is logged in — show logout */
+  var b=document.getElementById('lc-badge');
+  var bText=b?b.textContent.trim():'';
+  var hasRoleBadge=(bText==='CG'||bText==='PT');
+  var s=getSession();
+  if(s||hasRoleBadge){
+    showLogoutModal();
+  } else {
+    _showLoginScreen();
+  }
 }
 
 function cancelLogout(){
@@ -6431,7 +6818,45 @@ function cancelLogout(){
 
 function showLogoutModal(){
   var modal=document.getElementById('logoutModal');
-  if(modal){ modal.style.display='flex'; }
+  if(!modal)return;
+  /* Role label + icon */
+  var s=null;try{s=JSON.parse(_safeLS.getItem('ac_sess_v99')||'null');}catch(e){}
+  var role=s?s.role:'cg';
+  var lbl=document.getElementById('logoutRoleLabel');
+  var ico=document.getElementById('logoutRoleIcon');
+  if(lbl){
+    if(role==='pt'){
+      lbl.textContent='Patient 🌸';
+      lbl.style.background='#EDE7F6';lbl.style.color='#5A4090';
+    } else {
+      lbl.textContent='Caregiver 💚';
+      lbl.style.background='#D8EDD9';lbl.style.color='#1b5e20';
+    }
+  }
+  if(ico) ico.textContent=role==='pt'?'🌸':'🔒';
+  /* Unsaved data tracker */
+  try{
+    var unsaved=0;
+    var fields=['dDate','bp_s','bp_d','hr','temp','spo2','rr'];
+    fields.forEach(function(id){
+      var el=document.getElementById(id);
+      if(el&&el.value&&el.value.trim()!='')unsaved++;
+    });
+    var banner=document.getElementById('logoutUnsavedBanner');
+    var cnt=document.getElementById('logoutUnsavedCount');
+    var msg=document.getElementById('logoutSavedMsg');
+    if(banner&&cnt){
+      if(unsaved>0){
+        cnt.textContent=unsaved;
+        banner.style.display='block';
+        if(msg)msg.style.display='none';
+      } else {
+        banner.style.display='none';
+        if(msg)msg.style.display='block';
+      }
+    }
+  }catch(e){}
+  modal.style.display='flex';
 }
 
 async function doLogout(){
@@ -6447,7 +6872,7 @@ async function doLogout(){
     if(btn){ btn.textContent='✅ Data saved! Logging out…'; }
     await new Promise(function(r){ setTimeout(r,800); });
   }
-  try{ localStorage.removeItem('ac_sess_v99'); }catch(e){}
+  try{ _safeLS.removeItem('ac_sess_v99'); }catch(e){}
   var modal=document.getElementById('logoutModal');
   if(modal){ modal.style.display='none'; }
   if(btn){ btn.disabled=false; btn.textContent='Yes, Save & Logout'; }
@@ -6467,44 +6892,9 @@ function _showLoginScreen(){
   try{ window.history.pushState({ac:'login',ts:Date.now()},'',window.location.href); }catch(e){}
 }
 
-function lcLogin(){
-  var p=document.getElementById('lc-pw').value;
-  var m=document.getElementById('lc-msg');
-  m.style.display='none';
-  if(!p){ m.textContent='Please enter the password'; m.style.display='block'; return; }
-  var hash=_lcSHA256(_lcS+p);
-  if(hash!==_lcH){
-    m.style.background='#fdecea'; m.style.color='#c62828';
-    m.textContent='❌ Wrong password — please try again';
-    m.style.display='block';
-    setTimeout(function(){ document.getElementById('lc-pw').focus(); },100);
-    return;
-  }
-  try{ localStorage.setItem('ac_sess_v99',JSON.stringify({name:'Caregiver',exp:Date.now()+24*3600*1000})); }catch(e){}
-  var ls=document.getElementById('loginScreen');
-  ls.style.display='none'; ls.style.pointerEvents='none';
-  document.getElementById('lc-pw').value='';
-  var b=document.getElementById('lc-badge');
-  if(b){
-    b.textContent='CG';
-    b.style.background='#D8EDD9'; b.style.color='#1b5e20';
-    b.title='Logged in as Caregiver — tap to logout';
-  }
-  if(typeof toast==='function') toast('✅ Welcome, Caregiver!');
-  setTimeout(function(){ try{ if(typeof loadFromSheets==='function') loadFromSheets(); }catch(e){} },800);
-}
 
-document.addEventListener('DOMContentLoaded',function(){
-  try{
-    var s=JSON.parse(localStorage.getItem('ac_sess_v99')||'null');
-    if(s&&Date.now()<s.exp){
-      var ls=document.getElementById('loginScreen');
-      if(ls){ls.style.display='none';ls.style.pointerEvents='none';}
-      var b=document.getElementById('lc-badge');
-      if(b){b.textContent='CG';b.style.background='#D8EDD9';b.style.color='#1b5e20';b.title='Logged in as Caregiver — tap to logout';}
-    }
-  }catch(e){}
-});
+
+
 // ───────────────────────────────────────────────────────────────────────
 </script>
 
@@ -6628,15 +7018,7 @@ document.addEventListener('DOMContentLoaded',function(){
   </div>
 </div>
 
-<div id="logoutModal" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:18px;padding:28px 24px;max-width:320px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.3);text-align:center;">
-    <div style="font-size:2rem;margin-bottom:10px;">🔒</div>
-    <h3 style="margin-bottom:8px;color:#333;">Log out?</h3>
-    <p style="color:#666;font-size:.9rem;margin-bottom:20px;">Your data will be saved before logging out.</p>
-    <button id="logoutConfirmBtn" onclick="doLogout()" style="width:100%;padding:12px;background:#4a7c59;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;margin-bottom:10px;cursor:pointer;">Yes, Save &amp; Logout</button>
-    <button onclick="cancelLogout()" style="width:100%;padding:12px;background:#f0ede8;color:#555;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;">No, Go Back</button>
-  </div>
-</div>
+
 <script>
 (function(){
   try{ window.history.pushState({ac:'app',ts:Date.now()},'',window.location.href); }catch(e){}
@@ -6651,6 +7033,141 @@ document.addEventListener('DOMContentLoaded',function(){
     }catch(e){}
   });
 })();
+
+/* ═══════════════════════════════════════════════════════
+   AnbuCare v120 — Companion Functions
+   ═══════════════════════════════════════════════════════ */
+
+function applyRoleView(){
+  var cg=(typeof isCG==='function'&&isCG());
+  var pt=(typeof isPT==='function'&&isPT());
+  document.querySelectorAll('.cg-only').forEach(function(el){el.style.display=cg?'':'none';});
+  var gb=document.getElementById('guestBanner');if(gb)gb.style.display=pt?'block':'none';
+  var oc=document.getElementById('overdueCardFull');if(oc)oc.style.display=cg?'':'none';
+  var sb=document.getElementById('symBulkDeleteBar');if(sb)sb.style.display=cg?'':'none';
+  if(typeof applySnoozeState==='function')applySnoozeState();
+  if(typeof applyNightMode==='function')applyNightMode();
+  try{if(typeof renderVitHist==='function')renderVitHist();}catch(e){}
+  try{if(typeof renderSymHist==='function')renderSymHist();}catch(e){}
+}
+
+function selectMood(v){
+  var today=new Date().toISOString().slice(0,10);
+  try{_safeLS.setItem('morningMood',JSON.stringify({v:v,date:today}));}catch(e){}
+  document.querySelectorAll('.mood-btn').forEach(function(b){b.classList.toggle('sel',Number(b.dataset.v)===v);});
+}
+
+function snoozeReminders(){
+  try{_safeLS.setItem('reminderSnooze',String(Date.now()+2*3600*1000));}catch(e){}
+  applySnoozeState();
+}
+function applySnoozeState(){
+  var su=Number(_safeLS.getItem('reminderSnooze')||0);
+  var sn=su>Date.now();
+  var oc=document.getElementById('overdueCardFull');
+  var sb=document.getElementById('snoozeBanner');
+  if(typeof isCG==='function'&&!isCG())return;
+  if(sn){
+    var mins=Math.ceil((su-Date.now())/60000);
+    if(oc)oc.style.display='none';
+    if(sb){sb.style.display='block';sb.textContent='💚 Reminders paused — '+mins+' min remaining. Medicine reminders still active.';}
+  }else{
+    _safeLS.removeItem('reminderSnooze');
+    if(oc)oc.style.display='';
+    if(sb)sb.style.display='none';
+  }
+}
+function startBreather(hours){
+  try{_safeLS.setItem('reminderSnooze',String(Date.now()+hours*3600*1000));}catch(e){}
+  applySnoozeState();
+  if(typeof toast==='function')toast('Non-medicine reminders paused for '+hours+' hour'+(hours>1?'s':'')+'. 💚');
+}
+
+function setNightMode(on){
+  try{_safeLS.setItem('nightMode',on?'1':'0');}catch(e){}
+  applyNightMode();
+}
+function applyNightMode(){
+  var on=_safeLS.getItem('nightMode')==='1';
+  var tog=document.getElementById('nightModeToggle');if(tog)tog.checked=on;
+  if(typeof isCG==='function'&&!isCG())return;
+  var h=new Date().getHours();
+  var quiet=(h>=22||h<7);
+  if(on&&quiet){
+    var oc=document.getElementById('overdueCardFull');
+    if(Number(_safeLS.getItem('reminderSnooze')||0)<=Date.now()&&oc)oc.style.display='none';
+    document.querySelectorAll('.rem-item').forEach(function(el){
+      if((el.dataset.type||'').toLowerCase()!=='medicine')el.classList.add('night-dim');
+    });
+  }else{
+    document.querySelectorAll('.rem-item').forEach(function(el){el.classList.remove('night-dim');});
+  }
+}
+
+function getISOWeek(d){
+  var date=new Date(d);date.setHours(0,0,0,0);
+  date.setDate(date.getDate()+3-(date.getDay()+6)%7);
+  var w1=new Date(date.getFullYear(),0,4);
+  return 1+Math.round(((date-w1)/86400000-3+(w1.getDay()+6)%7)/7);
+}
+function cgCheckinAnswer(v){
+  try{_safeLS.setItem('cgCheckinWeek',String(getISOWeek(new Date())));}catch(e){}
+  var msgs={
+    1:"That's completely valid. You are doing something extraordinary.\nPlease reach out to someone you trust today.",
+    2:"You're carrying a lot. Even small rests matter.\nYou're doing better than you think.",
+    3:"So glad to hear it. Keep nurturing yourself —\nyour strength is the patient's strength too."
+  };
+  var q=document.getElementById('cgCheckinQ'),r=document.getElementById('cgCheckinResp'),t=document.getElementById('cgCheckinRespText');
+  if(q)q.style.display='none';if(r)r.style.display='block';if(t)t.textContent=msgs[v]||'';
+}
+
+function closeGentleOverlay(){
+  var el=document.getElementById('gentleCloseOverlay');if(!el)return;
+  el.style.transition='opacity 0.5s';el.style.opacity='0';
+  setTimeout(function(){el.style.display='none';el.style.opacity='1';el.style.transition='';},500);
+}
+
 </script>
+
+</div><!-- /appWrapper -->
+
+<div id="logoutModal" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.55);align-items:center;justify-content:center;">
+  <div style="background:#FAF9F6;border-radius:18px;padding:28px 24px;max-width:320px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,.3);text-align:center;">
+    <div style="font-size:2rem;margin-bottom:8px;" id="logoutRoleIcon">🔒</div>
+    <div id="logoutRoleLabel" style="display:inline-block;padding:4px 14px;border-radius:20px;font-size:.78rem;font-weight:800;margin-bottom:12px;background:#D8EDD9;color:#1b5e20;">Caregiver</div>
+    <h3 style="margin-bottom:6px;color:#2d3a2e;font-family:'Libre Baskerville',Georgia,serif;">Log out?</h3>
+    <div id="logoutUnsavedBanner" style="display:none;background:#fff8e1;border:1.5px solid #f9a825;border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:.82rem;color:#795548;font-weight:600;">
+      ⚠️ You have <span id="logoutUnsavedCount">0</span> unsaved changes.<br>
+      <span style="font-weight:400;">They will be saved automatically on logout.</span>
+    </div>
+    <p id="logoutSavedMsg" style="color:#666;font-size:.85rem;margin-bottom:18px;">Your data is saved to Google Sheets before logging out.</p>
+    <button id="logoutConfirmBtn" onclick="doLogout()" style="width:100%;padding:13px;background:#4a7c59;color:#fff;border:none;border-radius:10px;font-size:1rem;font-weight:700;margin-bottom:10px;cursor:pointer;">✅ Save &amp; Logout</button>
+    <button onclick="cancelLogout()" style="width:100%;padding:13px;background:#f0ede8;color:#555;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;">← Stay Logged In</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="cgCheckinModal">
+  <div class="modal" style="text-align:center;">
+    <div class="modal-header" style="justify-content:center;"><div class="modal-title">How are YOU doing this week? &#x1F49A;</div></div>
+    <div id="cgCheckinQ">
+      <button class="cg-checkin-btn" onclick="cgCheckinAnswer(1)">&#x1F614; It&#x27;s been really hard</button>
+      <button class="cg-checkin-btn" onclick="cgCheckinAnswer(2)">&#x1F610; Managing, but tired</button>
+      <button class="cg-checkin-btn" onclick="cgCheckinAnswer(3)">&#x1F60A; Doing okay</button>
+    </div>
+    <div id="cgCheckinResp" style="display:none;padding:14px 0;">
+      <p id="cgCheckinRespText" style="font-size:.95rem;line-height:1.7;color:var(--text);white-space:pre-line;"></p>
+      <button class="btn btn-success btn-block" onclick="closeModal('cgCheckinModal')" style="margin-top:12px;">Thank you &#x1F33F;</button>
+    </div>
+  </div>
+</div>
+
+<div id="gentleCloseOverlay" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(20,30,20,0.96);align-items:center;justify-content:center;">
+  <div style="background:#FAF9F6;border-radius:20px;padding:32px 24px;max-width:320px;width:90%;text-align:center;box-shadow:0 12px 48px rgba(0,0,0,.4);">
+    <div style="font-size:2rem;margin-bottom:16px;">&#x1F33F;</div>
+    <p style="font-family:'Libre Baskerville',Georgia,serif;font-size:1.15rem;font-weight:700;color:#2d3a2e;line-height:1.7;margin-bottom:10px;">You&#x27;ve done everything that needed doing today.<br>Now, rest.</p>
+    <p style="font-size:.82rem;color:var(--muted);margin-bottom:24px;line-height:1.6;">Your log is saved. AnbuCare will be here tomorrow.</p>
+    <button onclick="closeGentleOverlay()" style="width:100%;padding:16px;background:#3d6b43;color:#fff;border:none;border-radius:13px;font-size:1rem;font-weight:800;cursor:pointer;font-family:inherit;">Close for the night &#x1F319;</button>
+  </div>
+</div>
 </body>
 </html>
