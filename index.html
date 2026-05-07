@@ -298,7 +298,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
 .form-input:focus,.form-textarea:focus,.form-select:focus{border-color:var(--primary)}
 .form-textarea{resize:vertical;min-height:72px}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.dose-row{display:flex;gap:8px}.dose-row .form-input{flex:2}.dose-row .form-select{flex:1}
+.dose-row{display:flex;gap:8px}.dose-row .form-input{flex:2;min-height:48px;font-size:1rem;}.dose-row .form-select{flex:1}
 
 /* BUTTONS */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:0 22px;height:50px;border-radius:30px;font-size:.92rem;font-weight:700;transition:all .15s;white-space:nowrap}
@@ -607,7 +607,7 @@ input:checked+.tslider::before{transform:translateX(20px)}
     border:1.5px solid #c8e6c9;transition:all .15s;-webkit-tap-highlight-color:transparent;}
   .neuro-lchip.sel{background:#3d6b43;color:#fff;border-color:#2e7d32;}
   .neuro-sym-div{border:none;border-top:1px dashed #E8E0F4;margin:4px 0 11px;}
-  .neuro-signs-lbl{font-size:.72rem;font-weight:800;color:#7B5EA7;
+  .neuro-signs-lbl{font-size:.72rem;font-weight:800;color:#3d6b43;
     text-transform:uppercase;letter-spacing:.7px;margin:8px 0 6px;}
   #neuroBody .sym-btn.active{border-color:#5A4090!important;background:#EDE7F6!important;}
   #neuroBody .sym-btn.active .sbl{color:#4A148C!important;}
@@ -843,18 +843,18 @@ input:checked+.tslider::before{transform:translateX(20px)}
   position:relative;z-index:1;
   transition:transform .22s cubic-bezier(.16,1,.3,1),box-shadow .22s ease;
   transform-origin:center center;border-radius:16px;}
-.sym-btn-grp.sym-grp-zoom{transform:scale(1.09);z-index:200;
-  box-shadow:0 8px 32px rgba(61,107,67,.28);}
-.sym-btn{flex:1;min-width:0;padding:9px 2px 7px;border:2px solid #ddd;
+.sym-btn-grp.sym-grp-zoom{transform:scale(1.07);z-index:10;
+  box-shadow:0 6px 20px rgba(61,107,67,.22);}
+.sym-btn{flex:1;min-width:0;padding:10px 2px 8px;border:2px solid #ddd;
   border-radius:13px;background:#f5f7f5;cursor:pointer;text-align:center;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:3px;touch-action:manipulation;-webkit-tap-highlight-color:transparent;
-  transition:border-color .15s,background .15s,transform .12s;-webkit-user-select:none;}
+  transition:border-color .15s,background .15s,transform .12s;-webkit-user-select:none;min-height:58px;}
 .sym-btn:active{transform:scale(.9);}
 .sym-btn.active{border-color:#3d6b43;background:#e8f5e9;box-shadow:0 0 0 1px #3d6b43;}
-.sym-btn-grp.sym-grp-zoom .sbe{font-size:1.75rem;}
-.sym-btn-grp.sym-grp-zoom .sbl{font-size:.72rem;}
-.sym-btn-grp.sym-grp-zoom .sym-btn{padding:11px 3px 9px;border-radius:15px;}
+.sym-btn-grp.sym-grp-zoom .sbe{font-size:2rem;}
+.sym-btn-grp.sym-grp-zoom .sbl{font-size:.78rem;font-weight:700;}
+.sym-btn-grp.sym-grp-zoom .sym-btn{padding:13px 3px 11px;border-radius:15px;min-height:70px;}
 .sym-btn-grp.sym-grp-zoom .sym-btn.active{border-color:#3d6b43;background:#d0f0d8;box-shadow:0 0 0 2px #3d6b43;}
 .sbe{font-size:1.5rem;line-height:1.1;}
 .sbl{font-size:.62rem;font-weight:700;color:#444;line-height:1.15;word-break:break-word;text-align:center;}
@@ -1143,8 +1143,7 @@ document.addEventListener('DOMContentLoaded',function(){
   position:relative;z-index:1;
   transition:transform .22s cubic-bezier(.16,1,.3,1),box-shadow .22s ease;
   transform-origin:center center;border-radius:16px;}
-.sym-btn-grp.sym-grp-zoom{transform:scale(1.09);z-index:200;
-  box-shadow:0 8px 32px rgba(61,107,67,.28);}
+
 .sym-btn{flex:1;min-width:0;padding:9px 2px 7px;border:2px solid #ddd;
   border-radius:13px;background:#f5f7f5;cursor:pointer;text-align:center;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -4266,7 +4265,7 @@ function _saveSymInternal(){
   var bowelFields=existingBowel&&existingBowel.bowelType!=null?{bowelType:existingBowel.bowelType,bowelCount:existingBowel.bowelCount,bowelLabel:existingBowel.bowelLabel}:{};
   // Remove standalone bowel-only / merged entry for today so we replace with full entry
   S.symptoms=S.symptoms.filter(function(e){return !(e.date===today_&&(e.type==='bowel'||e.type==='merged'));});
-  const entry=Object.assign({id:S.nextId++,date:today,session:symSession,nausea:+document.getElementById('sN').value,fatigue:+document.getElementById('sF').value,pain:+document.getElementById('sP').value,mood:+document.getElementById('sM').value,appetite:+document.getElementById('sA').value,extras:chips('extraChips'),notes:document.getElementById('symNotes').value,chemoId:S.chemoSessions.length?S.chemoSessions[S.chemoSessions.length-1].id:null},bowelFields);
+  const entry=Object.assign({id:S.nextId++,date:today,session:symSession,nausea:+document.getElementById('sN').value,fatigue:+document.getElementById('sF').value,pain:+document.getElementById('sP').value,mood:+document.getElementById('sM').value,appetite:+document.getElementById('sA').value,extras:chips('extraChips'),notes:document.getElementById('symNotes').value,chemoId:S.chemoSessions.length?S.chemoSessions[S.chemoSessions.length-1].id:null,nerve:{tingling:+(document.getElementById('sNT')||{value:1}).value||1,numbness:+(document.getElementById('sNN')||{value:1}).value||1,burning:+(document.getElementById('sNB')||{value:1}).value||1,balance:+(document.getElementById('sNW')||{value:1}).value||1,location:[...document.querySelectorAll('#neuroLocChips .neuro-lchip.sel')].map(function(el){return el.textContent.trim();}),signs:[...document.querySelectorAll('#neuroSignChips .chip.sel')].map(function(el){return el.textContent.trim();})}},bowelFields);
   S.symptoms.unshift(entry);
   const ex=entry.extras.length?' | Also: '+entry.extras.join(', '):'';
   const bowelNote=entry.bowelLabel?' | Bowel: '+entry.bowelLabel+(entry.bowelCount?' x'+entry.bowelCount:''):'';
@@ -4363,6 +4362,35 @@ function resetNeuroWatch(){
 }
 
 function saveAllLog(){
+  /* ── Edit mode intercept ── */
+  if(_editMode && _editMode.type==='sym'){
+    var lvl=['','None','A little','Noticeable','Quite a bit','Very much'];
+    var km={N:'nausea',F:'fatigue',P:'pain',M:'mood',A:'appetite'};
+    var o=_editMode.oldEntry;
+    var rows=[
+      {k:'Nausea',  old:lvl[o.nausea||1],  now:lvl[+document.getElementById('sN').value||1]},
+      {k:'Fatigue', old:lvl[o.fatigue||1], now:lvl[+document.getElementById('sF').value||1]},
+      {k:'Pain',    old:lvl[o.pain||1],    now:lvl[+document.getElementById('sP').value||1]},
+      {k:'Mood',    old:lvl[o.mood||1],    now:lvl[+document.getElementById('sM').value||1]},
+      {k:'Appetite',old:lvl[o.appetite||1],now:lvl[+document.getElementById('sA').value||1]},
+      {k:'Notes',   old:o.notes||'—',      now:document.getElementById('symNotes').value||'—'}
+    ];
+    /* Capture new entry to stage */
+    var today_=(function(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})();
+    _editPendingEntry = {id:_editMode.oldEntry.id, date:today_, session:symSession,
+      nausea:+document.getElementById('sN').value, fatigue:+document.getElementById('sF').value,
+      pain:+document.getElementById('sP').value, mood:+document.getElementById('sM').value,
+      appetite:+document.getElementById('sA').value,
+      notes:document.getElementById('symNotes').value,
+      nerve:{tingling:+(document.getElementById('sNT')||{value:1}).value||1,
+             numbness:+(document.getElementById('sNN')||{value:1}).value||1,
+             burning:+(document.getElementById('sNB')||{value:1}).value||1,
+             balance:+(document.getElementById('sNW')||{value:1}).value||1}
+    };
+    _showEditDiff('Confirm Symptom Update', rows, _confirmEditSave);
+    return;
+  }
+
   const btn=document.getElementById('btnSaveAllLog');
   btn.disabled=true;btn.textContent='⏳ Saving…';
   window._saveLabel='Symptoms';
@@ -4595,62 +4623,128 @@ function _acFilterBarHTML(filterKey,renderFnName){
 }
 
 
-/* ── Edit Functions for Health Entries ── */
+
+/* ══════════════════════════════════════════════
+   EDIT MODE SYSTEM — v121
+   ══════════════════════════════════════════════ */
+var _editMode = null; /* {type:'sym'|'vit'|'sl', idx, oldEntry} */
+var _editPendingEntry = null; /* staged new entry waiting for confirm */
+
+function _cancelEdit(){
+  var m = document.getElementById('editConfirmModal');
+  if(m) m.style.display = 'none';
+  /* Restore old entry if user cancels */
+  if(_editMode && _editPendingEntry){
+    if(_editMode.type==='sym') S.symptoms.splice(_editMode.idx, 0, _editMode.oldEntry);
+    if(_editMode.type==='vit') S.vitals.splice(_editMode.idx, 0, _editMode.oldEntry);
+    if(_editMode.type==='sl')  S.sleepLogs.splice(_editMode.idx, 0, _editMode.oldEntry);
+  }
+  _editPendingEntry = null;
+  _editMode = null;
+  _resetSaveBtn();
+}
+
+function _confirmEditSave(){
+  var m = document.getElementById('editConfirmModal');
+  if(m) m.style.display = 'none';
+  if(!_editPendingEntry || !_editMode) return;
+  /* Commit the new entry */
+  if(_editMode.type==='sym'){ S.symptoms.splice(_editMode.idx,0,_editPendingEntry); renderSymHist(); }
+  if(_editMode.type==='vit'){ S.vitals.splice(_editMode.idx,0,_editPendingEntry); renderVitHist(); }
+  if(_editMode.type==='sl') { S.sleepLogs.splice(_editMode.idx,0,_editPendingEntry); renderSlHist(); }
+  /* Navigate to history tab */
+  var histTab;
+  if(_editMode.type==='sym'){ try{ histTab=document.querySelector('[onclick*="sym-history"]')||document.querySelector('[onclick*="renderSymHist"]'); showSub('sym','history',histTab); }catch(_){} }
+  if(_editMode.type==='vit'){ try{ histTab=document.querySelector('[onclick*="vit-history"]')||document.querySelector('[onclick*="renderVitHist"]'); showSub('vit','history',histTab); }catch(_){} }
+  if(_editMode.type==='sl') { try{ histTab=document.querySelector('[onclick*="sl-history"]')||document.querySelector('[onclick*="renderSlHist"]'); showSub('sl','history',histTab); }catch(_){} }
+  window._saveLabel = _editMode.type==='sym'?'Symptoms':_editMode.type==='vit'?'Vitals':'Sleep';
+  saveNow();
+  toast('✅ Entry updated!');
+  _editPendingEntry = null;
+  _editMode = null;
+  _resetSaveBtn();
+}
+
+function _resetSaveBtn(){
+  var b1=document.getElementById('btnSaveAllLog');
+  if(b1){b1.textContent='Done for today ✓';b1.style.border='';b1.disabled=false;}
+  var b2=document.querySelector('[onclick*="saveVitals"]');
+  if(b2){b2.textContent='💾 Save Reading';b2.style.background='';}
+  var b3=document.getElementById('btnSaveSleep');
+  if(b3){b3.textContent='🌙 Save Sleep Log';b3.disabled=false;}
+}
+
+function _showEditDiff(title, rows, onConfirm){
+  var m = document.getElementById('editConfirmModal');
+  if(!m) return;
+  document.getElementById('editModalTitle').textContent = title;
+  var h = '<table style="width:100%;border-collapse:collapse;font-size:.84rem;">';
+  h += '<tr style="color:#888;font-size:.75rem;"><th style="text-align:left;padding:4px 6px;">Field</th><th style="text-align:right;padding:4px 6px;">Was</th><th style="text-align:right;padding:4px 6px;">Now</th></tr>';
+  rows.forEach(function(r){
+    var changed = String(r.old) !== String(r.now);
+    var bg = changed ? 'background:#fffde7;' : '';
+    var nowCol = changed ? 'color:#2e7d32;font-weight:700;' : 'color:#555;';
+    h += '<tr style="border-top:1px solid #f0f0f0;'+bg+'">'
+      +'<td style="padding:5px 6px;color:#555;">'+r.k+'</td>'
+      +'<td style="text-align:right;padding:5px 6px;color:#aaa;text-decoration:line-through;">'+r.old+'</td>'
+      +'<td style="text-align:right;padding:5px 6px;'+nowCol+'">'+r.now+'</td></tr>';
+  });
+  h += '</table>';
+  document.getElementById('editModalDiff').innerHTML = h;
+  document.getElementById('editConfirmBtn').onclick = onConfirm;
+  m.style.display = 'flex';
+}
+
+/* ── Edit entry point functions ── */
 function editSymEntry(idx){
-  var e=S.symptoms[idx]; if(!e)return;
-  /* Switch to log tab */
-  try{showSub('health','symptoms',document.querySelector('.sub-tab'));}catch(_){}
-  try{
-    ['nausea','fatigue','pain','mood','appetite'].forEach(function(k){
-      var inp=document.getElementById('s'+k.charAt(0).toUpperCase());
-      if(inp){inp.value=e[k]||0; _setSymBtn(k,e[k]||0);}
-    });
-    if(e.session){
-      var sessMap={Morning:'symSess0',Noon:'symSess1',Night:'symSess2'};
-      var sessId=sessMap[e.session];
-      if(sessId){document.querySelectorAll('[id^="symSess"]').forEach(function(b){b.classList.remove('sel');});
-      var sb=document.getElementById(sessId); if(sb)sb.classList.add('sel');}
-    }
-    var notesEl=document.getElementById('symNotes'); if(notesEl)notesEl.value=e.notes||'';
-    /* Remove old entry so re-save replaces it */
-    S.symptoms.splice(idx,1);
-    toast('✏️ Edit loaded — adjust and tap Done for today');
-    var logBtn=document.getElementById('btnSaveAllLog');
-    if(logBtn){logBtn.style.border='2px solid var(--primary)'; logBtn.textContent='💾 Update Log';}
-    document.getElementById('btnSaveAllLog')&&document.getElementById('btnSaveAllLog').scrollIntoView({behavior:'smooth',block:'center'});
-  }catch(ex){toast('Edit error: '+ex.message);}
+  var old = S.symptoms[idx]; if(!old) return;
+  _editMode = {type:'sym', idx:idx, oldEntry:old};
+  /* Pre-fill form */
+  var km = {N:'nausea',F:'fatigue',P:'pain',M:'mood',A:'appetite'};
+  ['N','F','P','M','A'].forEach(function(k){ symTap(k, old[km[k]]||1); });
+  if(old.session){ var sm={Morning:0,Noon:1,Night:2}; if(sm[old.session]!==undefined) try{selectSymSess(sm[old.session]);}catch(_){} }
+  try{document.getElementById('symNotes').value=old.notes||'';}catch(_){}
+  /* Remove old entry — will be restored on cancel or replaced on confirm */
+  S.symptoms.splice(idx,1);
+  /* Navigate to log form */
+  try{ showSub('sym','log',document.querySelector('[onclick*="sym-log"]')||document.querySelector('.sub-tab')); }catch(_){}
+  /* Mark save button */
+  var btn=document.getElementById('btnSaveAllLog');
+  if(btn){btn.textContent='💾 Update Symptom Log';btn.style.border='2px solid #3d6b43';}
+  setTimeout(function(){ var b=document.getElementById('btnSaveAllLog'); if(b) b.scrollIntoView({behavior:'smooth',block:'center'}); },250);
 }
 
 function editVitalEntry(idx){
-  var v=S.vitals[idx]; if(!v)return;
-  try{showSub('health','vitals',document.querySelector('[onclick*="vitals"]'));}catch(_){}
-  try{
-    var fields={bp_s:'vitSys',bp_d:'vitDia',pulse:'vitPulse',temp:'vitTemp',spo2:'vitSpo2',weight:'vitWeight'};
-    /* Map correct field names */
-    var setVal=function(id,val){var el=document.getElementById(id);if(el&&val)el.value=val;};
-    setVal('vitSys',v.sys); setVal('vitDia',v.dia); setVal('vitPulse',v.pulse);
-    setVal('vitTemp',v.temp); setVal('vitSpo2',v.spo2); setVal('vitWeight',v.weight);
-    S.vitals.splice(idx,1);
-    toast('✏️ Vitals loaded — correct and tap Save Vitals');
-    var saveBtn=document.querySelector('[onclick*="saveVitals"]');
-    if(saveBtn)saveBtn.scrollIntoView({behavior:'smooth',block:'center'});
-  }catch(ex){toast('Edit error: '+ex.message);}
+  var old = S.vitals[idx]; if(!old) return;
+  _editMode = {type:'vit', idx:idx, oldEntry:old};
+  /* Pre-fill vitals */
+  var sv=function(id,val){var el=document.getElementById(id);if(el)el.value=val||'';};
+  sv('vitSys',old.sys); sv('vitDia',old.dia); sv('vitPulse',old.pulse);
+  sv('vitTemp',old.temp||''); sv('vitSpo2',old.spo2||''); sv('vitWeight',old.weight||'');
+  /* Pre-select meal */
+  try{ var ml=document.getElementById('vitMeal'); if(ml&&old.meal) ml.value=old.meal; }catch(_){}
+  S.vitals.splice(idx,1);
+  try{ showSub('vit','log',document.querySelector('[onclick*="vit-log"]')||document.querySelector('.sub-tab')); }catch(_){}
+  var btn=document.querySelector('[onclick*="saveVitals"]');
+  if(btn){btn.textContent='💾 Update Vitals';btn.style.background='#e8f5e9';}
+  setTimeout(function(){ if(btn) btn.scrollIntoView({behavior:'smooth',block:'center'}); },250);
 }
 
 function editSleepEntry(idx){
-  var s=S.sleepLogs[idx]; if(!s)return;
-  try{showSub('sl','log',document.querySelector('[onclick*="sl"]'));}catch(_){}
-  try{
-    var setVal=function(id,val){var el=document.getElementById(id);if(el&&val!==undefined)el.value=val;};
-    setVal('sleepBed',s.bedtime); setVal('sleepWake',s.wake);
-    setVal('sleepQuality',s.quality);
-    var notesEl=document.getElementById('sleepNotes'); if(notesEl)notesEl.value=s.notes||'';
-    S.sleepLogs.splice(idx,1);
-    toast('✏️ Sleep log loaded — correct and tap Save Sleep Log');
-    var saveBtn=document.querySelector('[onclick*="saveSleep"]');
-    if(saveBtn)saveBtn.scrollIntoView({behavior:'smooth',block:'center'});
-  }catch(ex){toast('Edit error: '+ex.message);}
+  var old = S.sleepLogs[idx]; if(!old) return;
+  _editMode = {type:'sl', idx:idx, oldEntry:old};
+  /* Pre-fill sleep form */
+  var sv=function(id,val){var el=document.getElementById(id);if(el)el.value=val||'';};
+  sv('slBed',old.bedtime); sv('slWake',old.wake);
+  try{document.getElementById('sSQ').value=old.quality||3;}catch(_){}
+  try{document.getElementById('slNotes').value=old.notes||'';}catch(_){}
+  S.sleepLogs.splice(idx,1);
+  try{ showSub('sl','log',document.querySelector('[onclick*="sl-log"]')||document.querySelector('.sub-tab')); }catch(_){}
+  var btn=document.getElementById('btnSaveSleep');
+  if(btn){btn.textContent='💾 Update Sleep Log';btn.style.border='2px solid #3d6b43';}
+  setTimeout(function(){ var b=document.getElementById('btnSaveSleep'); if(b) b.scrollIntoView({behavior:'smooth',block:'center'}); },250);
 }
+
 
 function renderSymHist(){
   var el=document.getElementById('symHistList'); if(!el)return;
@@ -4734,8 +4828,7 @@ function renderSymHist(){
       +bars
       +(e.extras&&e.extras.length?'<div style="font-size:.74rem;color:var(--warn);margin-top:3px;">⚡ '+e.extras.join(' · ')+'</div>':'')
       +(e.notes?'<div style="font-size:.75rem;color:var(--muted);margin-top:2px;">💬 '+esc(e.notes)+'</div>':'')
-      +bowelSection
-      +'</div>';
+      +bowelSection+(e.nerve&&(e.nerve.tingling>1||e.nerve.numbness>1||e.nerve.burning>1||e.nerve.balance>1)?(function(){var nl={tingling:'🌊 Tingling',numbness:'🌫️ Numbness',burning:'🌡️ Warmth',balance:'🧘 Balance'};var ns=['','Not today','A little','Noticeable','Quite a bit','Hard to ignore'];var bs=['','Steady','Slightly off','Noticeable','Quite unsteady','Need support'];var h='<div style="margin-top:8px;padding:7px 10px;background:#f1f8f2;border-radius:8px;border-left:3px solid #81c784;">'+'<div style="font-size:.72rem;font-weight:700;color:#3d6b43;margin-bottom:4px;">🌿 Nerve Comfort</div>';['tingling','numbness','burning','balance'].forEach(function(k){var v=e.nerve[k]||1; if(v<=1) return;var lbl=k==='balance'?bs[v]:ns[v];var col=v===2?'#66bb6a':v===3?'#ffa726':v===4?'#ff7043':'#e57373';h+='<div style="display:flex;justify-content:space-between;font-size:.72rem;">'+'<span>'+nl[k]+'</span><span style="font-weight:700;color:'+col+';">'+lbl+'</span></div>';});if(e.nerve.location&&e.nerve.location.length)h+='<div style="font-size:.7rem;color:#888;margin-top:2px;">📍 '+e.nerve.location.join(', ')+'</div>';h+='</div>'; return h;})():'')+'</div>';
   }
 
   /* ── PATIENT: today only ── */
@@ -4809,6 +4902,31 @@ function deleteVital(idx){
   toast('🗑 Vitals entry removed');
 }
 function saveVitals(){
+  /* ── Edit mode intercept ── */
+  if(_editMode && _editMode.type==='vit'){
+    var o=_editMode.oldEntry;
+    var nsys=document.getElementById('vitSys').value, ndia=document.getElementById('vitDia').value;
+    var npulse=document.getElementById('vitPulse').value;
+    if(!nsys||!ndia||!npulse){toast('⚠️ BP and Pulse required');return;}
+    var rows=[
+      {k:'BP Systolic', old:o.sys||'—', now:nsys},
+      {k:'BP Diastolic',old:o.dia||'—', now:ndia},
+      {k:'Pulse',       old:o.pulse||'—',now:npulse},
+      {k:'Temperature', old:o.temp||'—', now:document.getElementById('vitTemp').value||'—'},
+      {k:'SpO₂',        old:o.spo2||'—', now:document.getElementById('vitSpo2').value||'—'},
+      {k:'Weight',      old:o.weight||'—',now:document.getElementById('vitWeight').value||'—'}
+    ];
+    _editPendingEntry = {id:o.id||Date.now(), date:o.date||today, time:new Date().toTimeString().substring(0,5),
+      meal:document.getElementById('vitMeal').value,
+      sys:+nsys, dia:+ndia, pulse:+npulse,
+      temp:+document.getElementById('vitTemp').value||null,
+      spo2:+document.getElementById('vitSpo2').value||null,
+      weight:+document.getElementById('vitWeight').value||null
+    };
+    _showEditDiff('Confirm Vitals Update', rows, _confirmEditSave);
+    return;
+  }
+
   const btn=document.querySelector('button[onclick="saveVitals()"]');
   const sys=document.getElementById('vitSys').value,dia=document.getElementById('vitDia').value,pulse=document.getElementById('vitPulse').value,meal=document.getElementById('vitMeal').value;
   if(!sys||!dia||!pulse){toast('⚠️ BP and Pulse required');return;}
@@ -4909,6 +5027,27 @@ function renderSleepSum(){
   a.innerHTML=`<div class="sleep-sum"><div class="ss-title">🌙 Last Night — ${fmtDate(l.date)}</div><div class="ss-grid"><div class="ss-box"><div class="ss-val">${hoursDisp}h</div><div class="ss-lbl">Duration</div></div><div class="ss-box"><div class="ss-val">${bedDisp||'—'}</div><div class="ss-lbl">Bedtime</div></div><div class="ss-box"><div class="ss-val">${wakeDisp||'—'}</div><div class="ss-lbl">Wake up</div></div></div><div style="text-align:center;margin-top:9px;font-size:.88rem;font-weight:600;color:var(--purple)">${'⭐'.repeat(l.quality||0)}${'☆'.repeat(5-(l.quality||0))} ${l.quality||0}/5</div>${(l.disruptions||[]).length?`<div style="text-align:center;font-size:.75rem;color:var(--muted);margin-top:3px">⚡ ${(l.disruptions||[]).join(' · ')}</div>`:''}</div>`;
 }
 function saveSleep(){
+  /* ── Edit mode intercept ── */
+  if(_editMode && _editMode.type==='sl'){
+    var o=_editMode.oldEntry;
+    var bed=document.getElementById('slBed').value||'22:00', wake=document.getElementById('slWake').value||'06:30';
+    var hours=calcH(bed,wake), quality=+document.getElementById('sSQ').value;
+    var notes=document.getElementById('slNotes').value;
+    var rows=[
+      {k:'Bedtime', old:o.bedtime||'—', now:bed},
+      {k:'Wake',    old:o.wake||'—',    now:wake},
+      {k:'Hours',   old:(o.hours||'—')+'h', now:hours+'h'},
+      {k:'Quality', old:(o.quality||'—')+'/5', now:quality+'/5'},
+      {k:'Notes',   old:o.notes||'—',   now:notes||'—'}
+    ];
+    _editPendingEntry = {id:o.id||Date.now(), date:o.date||today,
+      bedtime:bed, wake:wake, hours:hours, quality:quality,
+      disruptions:chips('sleepChips'), notes:notes
+    };
+    _showEditDiff('Confirm Sleep Log Update', rows, _confirmEditSave);
+    return;
+  }
+
   const btn=document.getElementById('btnSaveSleep');btn.disabled=true;btn.textContent='⏳ Saving…';
   setTimeout(()=>{
     try{
@@ -7370,5 +7509,21 @@ function closeGentleOverlay(){
   setTimeout(setHH,300);
 })();
 </script>
+
+<div id="editConfirmModal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.5);align-items:flex-end;justify-content:center;">
+  <div style="background:#fff;border-radius:20px 20px 0 0;padding:24px 20px 36px;width:100%;max-width:480px;box-shadow:0 -4px 24px rgba(0,0,0,.15);">
+    <div style="text-align:center;margin-bottom:14px;">
+      <div style="font-size:1.6rem;">✏️</div>
+      <div id="editModalTitle" style="font-weight:800;font-size:1rem;color:#2e3d2e;margin-top:4px;"></div>
+      <div style="font-size:.78rem;color:#aaa;margin-top:2px;">Highlighted rows have changes</div>
+    </div>
+    <div id="editModalDiff" style="border-radius:12px;overflow:hidden;margin-bottom:16px;max-height:45vh;overflow-y:auto;border:1px solid #eee;"></div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button id="editConfirmBtn" style="background:#3d6b43;color:#fff;border:none;border-radius:12px;padding:14px;font-size:.95rem;font-weight:700;cursor:pointer;touch-action:manipulation;">✅ Save Changes</button>
+      <button onclick="_cancelEdit()" style="background:#f0f0f0;color:#555;border:none;border-radius:12px;padding:14px;font-size:.9rem;font-weight:600;cursor:pointer;touch-action:manipulation;">✕ Cancel — Restore Original</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
