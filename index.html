@@ -40,7 +40,7 @@ input,textarea,select{font-family:inherit;font-size:16px;-webkit-appearance:none
 .red-cross-btn{background:#D44F4F;color:#fff;border-radius:50%;width:42px;height:42px;font-size:1.25rem;font-weight:900;display:flex;align-items:center;justify-content:center;margin-left:6px;flex-shrink:0;box-shadow:0 2px 8px rgba(212,79,79,.45);border:2px solid #FAF9F6}
 
 /* NAV */
-.nav-tabs{display:grid;grid-template-columns:repeat(3,1fr);background:#F0EDE8;padding:6px 8px 8px;gap:5px;position:sticky;top:67px;z-index:40;box-shadow:0 3px 12px rgba(0,0,0,.18);border-bottom:none}
+.nav-tabs{display:grid;grid-template-columns:repeat(3,1fr);background:#F0EDE8;padding:6px 8px 8px;gap:5px;position:sticky;top:var(--hh,70px);z-index:40;box-shadow:0 3px 12px rgba(0,0,0,.18);border-bottom:none}
 .nav-tabs::-webkit-scrollbar{display:none}
 .tab-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:7px 4px;min-height:58px;font-size:.7rem;font-weight:700;color:#6B7C6E;background:#FFFFFF;border:1.5px solid #D9D4CC;border-radius:12px;cursor:pointer;transition:all .18s;gap:3px;width:100%;-webkit-tap-highlight-color:transparent}
 .tab-btn.active{color:#333!important;background:#FEF9E7!important;border-color:#F4D03F!important;box-shadow:0 2px 10px rgba(244,208,63,.40)!important}
@@ -582,7 +582,12 @@ input:checked+.tslider::before{transform:translateX(20px)}
 .header-title-blk{display:flex;flex-direction:column;}
 .htitle{font-size:1.22rem;font-weight:700;font-family:'Libre Baskerville',Georgia,serif;color:#fff;letter-spacing:.01em;line-height:1.2;}
 .hdate{font-size:.73rem;color:rgba(255,255,255,.82);margin-top:2px;}
-#syncBadge{font-size:.68rem;color:rgba(255,255,255,.75);}#syncBadge:empty{display:none!important;}
+#syncBadge{font-size:.68rem;color:rgba(255,255,255,.75);transition:all .3s ease;}
+#syncBadge:empty{display:none!important;}
+#syncBadge.saving{color:#ffe082;animation:syncPulse .8s ease-in-out infinite;}
+#syncBadge.saved{color:#a5d6a7;font-weight:700;}
+#syncBadge.error{color:#ef9a9a;}
+@keyframes syncPulse{0%,100%{opacity:1}50%{opacity:.4}}
 #lc-badge{background:rgba(255,255,255,.22)!important;border:1.5px solid rgba(255,255,255,.55)!important;color:#fff!important;font-size:.85rem;font-weight:700;width:38px!important;height:38px!important;border-radius:50%!important;}
 .red-cross-btn{background:#e53935!important;border:1.5px solid #c62828!important;color:#fff!important;box-shadow:0 2px 8px rgba(229,57,53,.45)!important;}
 .neuro-hdr{display:flex;align-items:center;justify-content:space-between;
@@ -2281,6 +2286,36 @@ const MERGE_KEYS = ['tasks','medicines','dietPlan','tests','chemoSessions',
 }
 
 let _saveTimer=null,_saving=false,_editingChemoId=null,fcItemState={},_fcLastDate=today,_syncCooldownUntil=0,_lastSaveStartTs='';
+
+/* ── Save status bubble on syncBadge ── */
+var _saveStatusTimer=null;
+function _showSaveStatus(label){
+  var b=document.getElementById('syncBadge'); if(!b)return;
+  clearTimeout(_saveStatusTimer);
+  b.className='saving';
+  b.textContent='⏳ '+(label||'Saving')+'…';
+}
+function _showSavedStatus(label){
+  var b=document.getElementById('syncBadge'); if(!b)return;
+  clearTimeout(_saveStatusTimer);
+  b.className='saved';
+  b.textContent='✅ '+(label||'Saved')+' to sheet';
+  _saveStatusTimer=setTimeout(function(){
+    b.className='';
+    /* Restore Connected state */
+    if(typeof _updSyncBadge==='function') _updSyncBadge('','● Connected');
+    else b.textContent='';
+  },3000);
+}
+function _showSaveError(msg){
+  var b=document.getElementById('syncBadge'); if(!b)return;
+  clearTimeout(_saveStatusTimer);
+  b.className='error';
+  b.textContent='⚠️ '+(msg||'Save failed');
+  _saveStatusTimer=setTimeout(function(){
+    b.className=''; b.textContent='';
+  },4000);
+}
 function saveNow(){
   // Cancel any pending debounced save
   clearTimeout(_saveTimer);
@@ -2305,6 +2340,7 @@ function saveNow(){
   // Guard against concurrent saves — queue a retry if one is in flight
   if(_saving){ _saveTimer=setTimeout(saveNow,1500); return; } // retry after 1.5s
   _saving=true; _isSaving=true;
+  try{_showSaveStatus(window._saveLabel||'Data');}catch(_){}
   const sid=_LS.getItem('anbucare_sid')||'';
   let bodyStr;
   try{
@@ -2331,11 +2367,11 @@ function saveNow(){
   .then(function(r){return r.text();})
   .then(function(txt){
     var res; try{res=JSON.parse(txt);}catch(e){throw new Error('Bad response');}
-    if(res.ok||res.success){var _ts=new Date().toISOString();try{_LS.setItem('anbucare_last_save',_ts);}catch(e){}toast('☁️ Saved');}
-    else{toast('⚠️ Save error: '+(res.error||'Check Sheet ID'));}
+    if(res.ok||res.success){var _ts=new Date().toISOString();try{_LS.setItem('anbucare_last_save',_ts);}catch(e){}try{_showSavedStatus(window._saveLabel||'Data');}catch(_){} toast('☁️ Saved');}
+    else{try{_showSaveError(res.error||'Check Sheet ID');}catch(_){} toast('⚠️ Save error: '+(res.error||'Check Sheet ID'));}
   })
-  .catch(function(e){toast('⚠️ Save failed: '+e.message);})
-  .finally(function(){_saving=false; _isSaving=false;});
+  .catch(function(e){try{_showSaveError('Save failed');}catch(_){} toast('⚠️ Save failed: '+e.message);})
+  .finally(function(){_saving=false; _isSaving=false; window._saveLabel=null;});
 }
 async function saveToSheets(section){
   const url = (_LS.getItem('anbucare_url')||GAS_URL);
@@ -4249,12 +4285,7 @@ function initSymSession(){
   var h=new Date().getHours(),idx=h<12?0:h<17?1:2;
   document.querySelectorAll('.sym-sess-btn').forEach(function(b,i){b.classList.toggle('sel',i===idx);});
 }
-function saveSym(){
-  const btn=document.getElementById('btnSaveAllLog');
-  if(btn){btn.disabled=true;btn.textContent='⏳ Saving…';}
-  setTimeout(()=>{_saveSymInternal();if(btn){btn.disabled=false;btn.textContent='Done for today ✓';}toast('📊 Symptoms logged!');saveNow();
-  try{renderFlashCards();}catch(_re){} try{renderNext3Strip();}catch(_re){} try{renderOverdue();}catch(_re){}},400);
-}
+function saveSym(){saveAllLog();}
 function _saveBowelInternal(){
   const count=parseInt(document.getElementById('bowelCount').value)||0;
   const today_=(function(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})();
@@ -4279,6 +4310,7 @@ function _saveBowelInternal(){
   renderBowelHistory();
   renderSymHist();
   document.getElementById('bowelCount').value='';
+  window._saveLabel='Digestive Health';
   saveNow();
 }
 
@@ -4333,12 +4365,27 @@ function resetNeuroWatch(){
 function saveAllLog(){
   const btn=document.getElementById('btnSaveAllLog');
   btn.disabled=true;btn.textContent='⏳ Saving…';
+  window._saveLabel='Symptoms';
   setTimeout(()=>{
     try{_saveSymInternal();}catch(e){toast('⚠️ Symptom save error: '+e.message);}
-    try{_saveBowelInternal();}catch(e){toast('⚠️ Bowel save error: '+e.message);}
+    /* Only merge bowel if user actually entered a count or changed selection */
+    try{
+      var bc=document.getElementById('bowelCount');
+      if(bc&&bc.value&&parseInt(bc.value)>0){_saveBowelInternal();}
+      else {
+        /* Still attach selected bowel type silently if user picked one */
+        var today_=(function(){var d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})();
+        var ex=S.symptoms.find(function(e){return e.date===today_&&e.type!=='bowel';});
+        if(ex&&typeof selectedBowel!=='undefined'&&selectedBowel){
+          ex.bowelType=selectedBowel;
+          ex.bowelCount=0;
+          ex.bowelLabel=bowelLabels[selectedBowel]||'Bowel';
+        }
+      }
+    }catch(e){toast('⚠️ Bowel save error: '+e.message);}
     btn.disabled=false;btn.textContent='Done for today ✓';
     toast('✅ Daily log saved!');saveNow();try{resetNeuroWatch();}catch(e){}
-  try{renderFlashCards();}catch(_re){} try{renderNext3Strip();}catch(_re){} try{renderOverdue();}catch(_re){}
+    try{renderFlashCards();}catch(_re){} try{renderNext3Strip();}catch(_re){} try{renderOverdue();}catch(_re){}
   },500);
 
   /* v120 Gentle Close */
@@ -4547,6 +4594,64 @@ function _acFilterBarHTML(filterKey,renderFnName){
   return wrap;
 }
 
+
+/* ── Edit Functions for Health Entries ── */
+function editSymEntry(idx){
+  var e=S.symptoms[idx]; if(!e)return;
+  /* Switch to log tab */
+  try{showSub('health','symptoms',document.querySelector('.sub-tab'));}catch(_){}
+  try{
+    ['nausea','fatigue','pain','mood','appetite'].forEach(function(k){
+      var inp=document.getElementById('s'+k.charAt(0).toUpperCase());
+      if(inp){inp.value=e[k]||0; _setSymBtn(k,e[k]||0);}
+    });
+    if(e.session){
+      var sessMap={Morning:'symSess0',Noon:'symSess1',Night:'symSess2'};
+      var sessId=sessMap[e.session];
+      if(sessId){document.querySelectorAll('[id^="symSess"]').forEach(function(b){b.classList.remove('sel');});
+      var sb=document.getElementById(sessId); if(sb)sb.classList.add('sel');}
+    }
+    var notesEl=document.getElementById('symNotes'); if(notesEl)notesEl.value=e.notes||'';
+    /* Remove old entry so re-save replaces it */
+    S.symptoms.splice(idx,1);
+    toast('✏️ Edit loaded — adjust and tap Done for today');
+    var logBtn=document.getElementById('btnSaveAllLog');
+    if(logBtn){logBtn.style.border='2px solid var(--primary)'; logBtn.textContent='💾 Update Log';}
+    document.getElementById('btnSaveAllLog')&&document.getElementById('btnSaveAllLog').scrollIntoView({behavior:'smooth',block:'center'});
+  }catch(ex){toast('Edit error: '+ex.message);}
+}
+
+function editVitalEntry(idx){
+  var v=S.vitals[idx]; if(!v)return;
+  try{showSub('health','vitals',document.querySelector('[onclick*="vitals"]'));}catch(_){}
+  try{
+    var fields={bp_s:'vitSys',bp_d:'vitDia',pulse:'vitPulse',temp:'vitTemp',spo2:'vitSpo2',weight:'vitWeight'};
+    /* Map correct field names */
+    var setVal=function(id,val){var el=document.getElementById(id);if(el&&val)el.value=val;};
+    setVal('vitSys',v.sys); setVal('vitDia',v.dia); setVal('vitPulse',v.pulse);
+    setVal('vitTemp',v.temp); setVal('vitSpo2',v.spo2); setVal('vitWeight',v.weight);
+    S.vitals.splice(idx,1);
+    toast('✏️ Vitals loaded — correct and tap Save Vitals');
+    var saveBtn=document.querySelector('[onclick*="saveVitals"]');
+    if(saveBtn)saveBtn.scrollIntoView({behavior:'smooth',block:'center'});
+  }catch(ex){toast('Edit error: '+ex.message);}
+}
+
+function editSleepEntry(idx){
+  var s=S.sleepLogs[idx]; if(!s)return;
+  try{showSub('sl','log',document.querySelector('[onclick*="sl"]'));}catch(_){}
+  try{
+    var setVal=function(id,val){var el=document.getElementById(id);if(el&&val!==undefined)el.value=val;};
+    setVal('sleepBed',s.bedtime); setVal('sleepWake',s.wake);
+    setVal('sleepQuality',s.quality);
+    var notesEl=document.getElementById('sleepNotes'); if(notesEl)notesEl.value=s.notes||'';
+    S.sleepLogs.splice(idx,1);
+    toast('✏️ Sleep log loaded — correct and tap Save Sleep Log');
+    var saveBtn=document.querySelector('[onclick*="saveSleep"]');
+    if(saveBtn)saveBtn.scrollIntoView({behavior:'smooth',block:'center'});
+  }catch(ex){toast('Edit error: '+ex.message);}
+}
+
 function renderSymHist(){
   var el=document.getElementById('symHistList'); if(!el)return;
   el.innerHTML='';
@@ -4619,9 +4724,12 @@ function renderSymHist(){
       +'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'
       +'<span style="font-size:.78rem;font-weight:700;color:var(--muted);">'+fmtDate(e.date)+'</span>'
       +(e.session?'<span style="font-size:.7rem;font-weight:700;background:var(--primary-l,#e8f5e9);color:var(--primary);padding:2px 7px;border-radius:8px;">'+(e.session==='Morning'?'🌅':e.session==='Noon'?'☀️':'🌙')+' '+e.session+'</span>':'')
-      +(cs?'<span style="font-size:.7rem;font-weight:700;background:#e8eaf6;color:#3949ab;padding:2px 7px;border-radius:8px;">C'+cs.cycle+'S'+cs.session+'</span>':'')
+      +(cs?'<span style="font-size:.7rem;font-weight:700;background:#e8eaf6;color:#3949ab;padding:2px 7px;border-radius:8px;">C'+(cs.cycle||'?')+'S'+(cs.session||'?')+'</span>':'')
       +'</div>'
-      +(showDelete?'<button onclick="deleteSymEntry(\''+entryId+'\','+i+')" style="background:#fff0f0;border:1.5px solid #ffcdd2;color:#e53935;border-radius:8px;padding:3px 8px;font-size:.72rem;cursor:pointer;">🗑</button>':'')
+      +(showDelete?'<div style="display:flex;gap:4px;">'
+      +'<button onclick="editSymEntry('+i+')" style="background:#e8f5e9;border:1.5px solid #a5d6a7;color:#2e7d32;border-radius:8px;padding:3px 8px;font-size:.72rem;cursor:pointer;">✏️</button>'
+      +'<button onclick="deleteSymEntry(\''+entryId+'\','+i+')" style="background:#fff0f0;border:1.5px solid #ffcdd2;color:#e53935;border-radius:8px;padding:3px 8px;font-size:.72rem;cursor:pointer;">🗑</button>'
+      +'</div>':'')
       +'</div>'
       +bars
       +(e.extras&&e.extras.length?'<div style="font-size:.74rem;color:var(--warn);margin-top:3px;">⚡ '+e.extras.join(' · ')+'</div>':'')
@@ -4708,6 +4816,7 @@ function saveVitals(){
   S.vitals.unshift(entry);
   S.notes.unshift({date:today,email:'patient@anbucare',note:`🫀 Vitals (After ${meal}) — BP:${sys}/${dia} | Pulse:${pulse}${entry.temp?` | Temp:${entry.temp}°F`:''}${entry.spo2?` | SpO₂:${entry.spo2}%`:''}`});
   renderVitHist();renderNotes();renderAllNotes();
+  window._saveLabel='Vitals';
   try{renderFlashCards();}catch(_re){} try{renderNext3Strip();}catch(_re){} try{renderOverdue();}catch(_re){}
   ['vitSys','vitDia','vitPulse','vitTemp','vitSpo2','vitWeight'].forEach(id=>document.getElementById(id).value='');
   saveNow();
@@ -4739,7 +4848,10 @@ function renderVitHist(){
       +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap;">'
       +'<span style="font-size:.78rem;font-weight:700;color:var(--muted);">'+fmtDate(v.date)+' · '+(v.time||'')+'</span>'
       +(v.meal?'<span style="font-size:.7rem;background:var(--surface2,#f5f5f5);padding:2px 7px;border-radius:8px;color:var(--muted);">After '+esc(v.meal)+'</span>':'')
-      +(showDelete?'<button onclick="deleteVital('+i+')" style="margin-left:auto;background:#fff0f0;border:1.5px solid #ffcdd2;color:#e53935;border-radius:8px;padding:2px 8px;font-size:.72rem;cursor:pointer;">🗑</button>':'')
+      +(showDelete?'<div style="display:flex;gap:4px;margin-left:auto;">'
+      +'<button onclick="editVitalEntry('+i+')" style="background:#e8f5e9;border:1.5px solid #a5d6a7;color:#2e7d32;border-radius:8px;padding:2px 8px;font-size:.72rem;cursor:pointer;">✏️</button>'
+      +'<button onclick="deleteVital('+i+')" style="background:#fff0f0;border:1.5px solid #ffcdd2;color:#e53935;border-radius:8px;padding:2px 8px;font-size:.72rem;cursor:pointer;">🗑</button>'
+      +'</div>':'')
       +'</div>'
       +'<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">'
       +(v.sys||v.dia?'<div style="font-size:.9rem;font-weight:700;color:'+bpc+';">'+v.sys+'/'+v.dia+' <span style="font-size:.72rem;font-weight:400;">mmHg</span></div>':'')
@@ -4803,6 +4915,7 @@ function saveSleep(){
       const bed=document.getElementById('slBed').value||'22:00',wake=document.getElementById('slWake').value||'06:30';
       const hours=calcH(bed,wake),quality=+document.getElementById('sSQ').value;
       const disruptions=chips('sleepChips'),notes=document.getElementById('slNotes').value;
+      window._saveLabel='Sleep';
       S.sleepLogs.unshift({date:today,bedtime:bed,wake,hours,quality,disruptions,notes});
       S.notes.unshift({id:Date.now(),date:today,email:'patient@anbucare',type:'auto',note:`🌙 Sleep — ${bed} → ${wake} | ${hours}h | Quality: ${quality}/5${disruptions.length?' | '+disruptions.join(', '):''}${notes?' | '+notes:''}`});
       renderNotes();renderAllNotes();renderSleepSum();renderSlHist();
@@ -4824,7 +4937,10 @@ function renderSlHist(){
     return '<div style="padding:10px 0;border-bottom:1px solid var(--border);">'
       +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">'
       +'<span style="font-size:.78rem;font-weight:700;color:var(--muted);">'+fmtDate(s.date)+'</span>'
-      +(showDelete?'<button onclick="deleteSlEntry('+i+')" style="background:#fff0f0;border:1.5px solid #ffcdd2;color:#e53935;border-radius:8px;padding:2px 8px;font-size:.72rem;cursor:pointer;">🗑</button>':'')
+      +(showDelete?'<div style="display:flex;gap:4px;">'
+      +'<button onclick="editSleepEntry('+i+')" style="background:#e8f5e9;border:1.5px solid #a5d6a7;color:#2e7d32;border-radius:8px;padding:2px 8px;font-size:.72rem;cursor:pointer;">✏️</button>'
+      +'<button onclick="deleteSlEntry('+i+')" style="background:#fff0f0;border:1.5px solid #ffcdd2;color:#e53935;border-radius:8px;padding:2px 8px;font-size:.72rem;cursor:pointer;">🗑</button>'
+      +'</div>':'')
       +'</div>'
       +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'
       +'<span style="font-weight:700;font-size:.9rem;">🌙 '+s.hours+' hrs</span>'
@@ -6899,20 +7015,19 @@ function showLogoutModal(){
     }
   }
   if(ico) ico.textContent=role==='pt'?'🌸':'🔒';
-  /* Unsaved data tracker */
+  /* Unsaved data tracker — generic: any filled input in active tab */
   try{
     var unsaved=0;
-    var fields=['dDate','bp_s','bp_d','hr','temp','spo2','rr'];
-    fields.forEach(function(id){
-      var el=document.getElementById(id);
-      if(el&&el.value&&el.value.trim()!='')unsaved++;
+    /* Check all visible text/number/select inputs that have values */
+    var activeSection=document.querySelector('.section:not(.hidden), [id^="tab-"]:not(.hidden)');
+    var inputs=document.querySelectorAll('input[type="text"]:not([readonly]),input[type="number"],select,textarea');
+    inputs.forEach(function(el){
+      if(el.value&&el.value.trim()!==''&&el.type!=='hidden'){unsaved++;}
     });
     var banner=document.getElementById('logoutUnsavedBanner');
-    var cnt=document.getElementById('logoutUnsavedCount');
     var msg=document.getElementById('logoutSavedMsg');
-    if(banner&&cnt){
+    if(banner){
       if(unsaved>0){
-        cnt.textContent=unsaved;
         banner.style.display='block';
         if(msg)msg.style.display='none';
       } else {
@@ -7202,7 +7317,7 @@ function closeGentleOverlay(){
     <div id="logoutRoleLabel" style="display:inline-block;padding:4px 14px;border-radius:20px;font-size:.78rem;font-weight:800;margin-bottom:12px;background:#D8EDD9;color:#1b5e20;">Caregiver</div>
     <h3 style="margin-bottom:6px;color:#2d3a2e;font-family:'Libre Baskerville',Georgia,serif;">Log out?</h3>
     <div id="logoutUnsavedBanner" style="display:none;background:#fff8e1;border:1.5px solid #f9a825;border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:.82rem;color:#795548;font-weight:600;">
-      ⚠️ You have <span id="logoutUnsavedCount">0</span> unsaved changes.<br>
+      ⚠️ You have unsaved changes.<br>
       <span style="font-weight:400;">They will be saved automatically on logout.</span>
     </div>
     <p id="logoutSavedMsg" style="color:#666;font-size:.85rem;margin-bottom:18px;">Your data is saved to Google Sheets before logging out.</p>
@@ -7234,5 +7349,26 @@ function closeGentleOverlay(){
     <button onclick="closeGentleOverlay()" style="width:100%;padding:16px;background:#3d6b43;color:#fff;border:none;border-radius:13px;font-size:1rem;font-weight:800;cursor:pointer;font-family:inherit;">Close for the night &#x1F319;</button>
   </div>
 </div>
+
+<script>
+/* ── Fix sticky nav: measure real header height and set --hh ── */
+(function(){
+  function setHH(){
+    var h=document.querySelector('.header');
+    if(h){
+      var hh=h.getBoundingClientRect().height;
+      document.documentElement.style.setProperty('--hh', hh+'px');
+    }
+  }
+  window.addEventListener('load',setHH);
+  window.addEventListener('resize',setHH);
+  if(typeof ResizeObserver!=='undefined'){
+    var ro=new ResizeObserver(setHH);
+    var hel=document.querySelector('.header');
+    if(hel) ro.observe(hel);
+  }
+  setTimeout(setHH,300);
+})();
+</script>
 </body>
 </html>
