@@ -4224,10 +4224,17 @@ function updSym(k,v){
   if(inp)inp.value=v;
 }
 function _saveSymInternal(){
-  const entry={id:S.nextId++,date:today,session:symSession,nausea:+document.getElementById('sN').value,fatigue:+document.getElementById('sF').value,pain:+document.getElementById('sP').value,mood:+document.getElementById('sM').value,appetite:+document.getElementById('sA').value,extras:chips('extraChips'),notes:document.getElementById('symNotes').value,chemoId:S.chemoSessions.length?S.chemoSessions[S.chemoSessions.length-1].id:null};
+  const today_=(function(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})();
+  // Carry over any bowel data already saved for today
+  var existingBowel=S.symptoms.find(function(e){return e.date===today_&&(e.type==='bowel'||e.bowelType!=null);});
+  var bowelFields=existingBowel&&existingBowel.bowelType!=null?{bowelType:existingBowel.bowelType,bowelCount:existingBowel.bowelCount,bowelLabel:existingBowel.bowelLabel}:{};
+  // Remove standalone bowel-only / merged entry for today so we replace with full entry
+  S.symptoms=S.symptoms.filter(function(e){return !(e.date===today_&&(e.type==='bowel'||e.type==='merged'));});
+  const entry=Object.assign({id:S.nextId++,date:today,session:symSession,nausea:+document.getElementById('sN').value,fatigue:+document.getElementById('sF').value,pain:+document.getElementById('sP').value,mood:+document.getElementById('sM').value,appetite:+document.getElementById('sA').value,extras:chips('extraChips'),notes:document.getElementById('symNotes').value,chemoId:S.chemoSessions.length?S.chemoSessions[S.chemoSessions.length-1].id:null},bowelFields);
   S.symptoms.unshift(entry);
   const ex=entry.extras.length?' | Also: '+entry.extras.join(', '):'';
-  S.notes.unshift({id:Date.now(),date:today,email:'patient@anbucare',type:'auto',note:`📊 Symptoms — Nausea:${entry.nausea} | Fatigue:${entry.fatigue} | Pain:${entry.pain} | Mood:${entry.mood} | Appetite:${entry.appetite}${ex}`});
+  const bowelNote=entry.bowelLabel?' | Bowel: '+entry.bowelLabel+(entry.bowelCount?' x'+entry.bowelCount:''):'';
+  S.notes.unshift({id:Date.now(),date:today,email:'patient@anbucare',type:'auto',note:`📊 Symptoms — Nausea:${entry.nausea} | Fatigue:${entry.fatigue} | Pain:${entry.pain} | Mood:${entry.mood} | Appetite:${entry.appetite}${ex}${bowelNote}`});
   renderSymHist();renderNotes();renderAllNotes();renderChemo();renderChemoBySym();
   resetChips('extraChips');document.getElementById('symNotes').value='';
 }
@@ -4251,14 +4258,24 @@ function saveSym(){
 function _saveBowelInternal(){
   const count=parseInt(document.getElementById('bowelCount').value)||0;
   const today_=(function(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');})();
-  // Remove any existing bowel entry for today (de-dup)
+  // Remove any standalone bowel-only entry for today
   S.symptoms=S.symptoms.filter(function(e){return !(e.type==='bowel'&&e.date===today_);});
-  S.symptoms.unshift({
-    id:Date.now(),date:today_,session:'',type:'bowel',
-    bowelType:selectedBowel,bowelCount:count,
-    bowelLabel:bowelLabels[selectedBowel]||'Bowel',
-    nausea:0,fatigue:0,pain:0,mood:0,appetite:0,extras:[],notes:'',chemoId:null
-  });
+  // Find today's most recent regular symptom entry
+  var existing=S.symptoms.find(function(e){return e.date===today_&&e.type!=='bowel';});
+  if(existing){
+    // Merge bowel data into the existing symptom entry
+    existing.bowelType=selectedBowel;
+    existing.bowelCount=count;
+    existing.bowelLabel=bowelLabels[selectedBowel]||'Bowel';
+  } else {
+    // No symptom entry today yet — create a merged entry with bowel data + zero symptoms
+    S.symptoms.unshift({
+      id:Date.now(),date:today_,session:'',type:'merged',
+      nausea:0,fatigue:0,pain:0,mood:0,appetite:0,extras:[],notes:'',chemoId:null,
+      bowelType:selectedBowel,bowelCount:count,
+      bowelLabel:bowelLabels[selectedBowel]||'Bowel'
+    });
+  }
   renderBowelHistory();
   renderSymHist();
   document.getElementById('bowelCount').value='';
@@ -4533,52 +4550,110 @@ function _acFilterBarHTML(filterKey,renderFnName){
 function renderSymHist(){
   var el=document.getElementById('symHistList'); if(!el)return;
   el.innerHTML='';
-  var NL={0:'None',1:'Mild',2:'Moderate',3:'Quite a bit',4:'Severe',5:'Very difficult'};
   var today=_acToday();
 
-  /* PATIENT: today only */
+  /* session dropdown for bulk delete (CG only) */
+  var sel=document.getElementById('symBulkSession');
+  if(sel&&typeof isCG==='function'&&isCG()){
+    var sessions=[...new Set((S.symptoms||[]).filter(function(e){return e.chemoId;}).map(function(e){return e.chemoId;}))];
+    var sessionOpts=sessions.map(function(cid){
+      var cs=S.chemoSessions&&S.chemoSessions.find(function(s){return s.id===cid;});
+      var lbl=cs?('Cycle '+cs.cycle+' · Session '+cs.session+' ('+fmtDate(cs.date)+')'):'Session '+cid;
+      return '<option value="'+cid+'">'+lbl+'</option>';
+    }).join('');
+    sel.innerHTML='<option value="">— Select a session —</option>'+sessionOpts;
+    var unlinked=(S.symptoms||[]).filter(function(e){return !e.chemoId&&e.type!=='bowel';}).length;
+    if(unlinked) sel.innerHTML+='<option value="__none__">Unlinked entries ('+unlinked+')</option>';
+    var bar=document.getElementById('symBulkDeleteBar');
+    if(bar) bar.style.display=(sessions.length||unlinked)?'flex':'none';
+  }
+
+  var lbs={nausea:'🤢 Nausea',fatigue:'😴 Fatigue',pain:'🩹 Pain',mood:'😊 Mood',appetite:'🍽️ Appetite'};
+  var lvlLabel=['None','Mild','Moderate','Quite a bit','Severe'];
+  var bIcons=['💧','🌊','✅','🪨','🚫'];
+
+  /* Filter out standalone legacy bowel-only entries — they're now merged */
+  function visibleEntries(list){
+    return list.filter(function(e){ return e.type!=='bowel'; });
+  }
+
+  function symCard(e,i,showDelete){
+    var entryId=e.id!=null?e.id:i;
+
+    /* ── Symptom bars ── */
+    var hasSymData=(e.nausea||e.fatigue||e.pain||e.mood||e.appetite);
+    var bars='';
+    if(hasSymData){
+      bars=['nausea','fatigue','pain','mood','appetite'].map(function(k){
+        var v=e[k]||0; var pct=v*25;
+        var col=v<=1?'var(--success)':v===2?'#f0b429':'var(--warn)';
+        var label=lvlLabel[v]||v;
+        return '<div style="margin-bottom:5px;">'
+          +'<div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-bottom:2px;">'
+          +'<span>'+lbs[k]+'</span><span style="font-weight:700;color:'+col+';">'+label+'</span></div>'
+          +'<div style="background:var(--surface2,#eee);border-radius:4px;height:5px;overflow:hidden;">'
+          +'<div style="width:'+pct+'%;height:100%;background:'+col+';border-radius:4px;"></div></div></div>';
+      }).join('');
+    }
+
+    /* ── Bowel sub-section (merged) ── */
+    var bowelSection='';
+    if(e.bowelType!=null){
+      var bIcon=bIcons[e.bowelType]||'🚽';
+      var bLbl=e.bowelLabel||(typeof bowelLabels!=='undefined'?bowelLabels[e.bowelType]:'Bowel');
+      var bCnt=e.bowelCount||0;
+      var bCol=(typeof bowelColors!=='undefined'?bowelColors[e.bowelType]:null)||'var(--primary)';
+      bowelSection='<div style="display:flex;align-items:center;gap:8px;margin-top:8px;padding:6px 10px;background:var(--surface2,#f5f5f5);border-radius:8px;border-left:3px solid '+bCol+';">'
+        +'<span style="font-size:1.1rem;">🚽</span>'
+        +'<div>'
+        +'<div style="font-size:.75rem;font-weight:700;color:var(--muted);margin-bottom:1px;">🫁 Digestive Health</div>'
+        +'<div style="font-weight:700;font-size:.83rem;color:'+bCol+';">'+bIcon+' '+esc(bLbl)+'</div>'
+        +'<div style="font-size:.72rem;color:var(--muted);">'+bCnt+' time'+(bCnt!==1?'s':'')+'</div>'
+        +'</div></div>';
+    }
+
+    var cs=e.chemoId&&S.chemoSessions?S.chemoSessions.find(function(s){return s.id===e.chemoId;}):null;
+
+    return '<div style="padding:10px 0;border-bottom:1px solid var(--border);">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'
+      +'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'
+      +'<span style="font-size:.78rem;font-weight:700;color:var(--muted);">'+fmtDate(e.date)+'</span>'
+      +(e.session?'<span style="font-size:.7rem;font-weight:700;background:var(--primary-l,#e8f5e9);color:var(--primary);padding:2px 7px;border-radius:8px;">'+(e.session==='Morning'?'🌅':e.session==='Noon'?'☀️':'🌙')+' '+e.session+'</span>':'')
+      +(cs?'<span style="font-size:.7rem;font-weight:700;background:#e8eaf6;color:#3949ab;padding:2px 7px;border-radius:8px;">C'+cs.cycle+'S'+cs.session+'</span>':'')
+      +'</div>'
+      +(showDelete?'<button onclick="deleteSymEntry(\''+entryId+'\','+i+')" style="background:#fff0f0;border:1.5px solid #ffcdd2;color:#e53935;border-radius:8px;padding:3px 8px;font-size:.72rem;cursor:pointer;">🗑</button>':'')
+      +'</div>'
+      +bars
+      +(e.extras&&e.extras.length?'<div style="font-size:.74rem;color:var(--warn);margin-top:3px;">⚡ '+e.extras.join(' · ')+'</div>':'')
+      +(e.notes?'<div style="font-size:.75rem;color:var(--muted);margin-top:2px;">💬 '+esc(e.notes)+'</div>':'')
+      +bowelSection
+      +'</div>';
+  }
+
+  /* ── PATIENT: today only ── */
   if(typeof isPT==='function'&&isPT()){
-    var todaySym=(S.symptoms||[]).filter(function(s){return s.date===today;}).reverse();
+    var todaySym=visibleEntries((S.symptoms||[]).filter(function(e){return e.date===today;}));
     if(!todaySym.length){
-      el.innerHTML='<div style="color:var(--muted);font-size:.85rem;padding:8px 0;">No symptoms logged today \uD83D\uDC9A</div>';
+      el.innerHTML='<div style="color:var(--muted);font-size:.85rem;padding:8px 0;">No symptoms logged today 💚</div>';
       return;
     }
-    el.innerHTML=todaySym.map(function(s){
-      var lvl=NL[s.level]||s.level;
-      var emoji=s.level<=1?'\uD83D\uDC9A':s.level<=2?'\uD83C\uDF3F':s.level<=3?'\uD83C\uDF3C':s.level<=4?'\uD83C\uDF42':'\uD83C\uDF27\uFE0F';
-      return '<div style="padding:10px 0;border-bottom:1px solid var(--border);">'
-        +'<div style="display:flex;justify-content:space-between;align-items:center;">'
-        +'<span style="font-weight:600;font-size:.9rem;">'+emoji+' '+s.name+'</span>'
-        +'<span style="font-size:.78rem;color:var(--muted);">'+s.time+'</span>'
-        +'</div>'
-        +'<div style="font-size:.82rem;color:var(--muted);margin-top:3px;">You felt: <strong>'+lvl+'</strong>'+(s.note?' \u00B7 "'+s.note+'"':'')+'</div>'
-        +'</div>';
-    }).join('');
+    var div=document.createElement('div');
+    div.innerHTML=todaySym.map(function(e,i){return symCard(e,i,false);}).join('');
+    el.appendChild(div);
     return;
   }
 
-  /* CAREGIVER: filter bar + filtered list */
+  /* ── CAREGIVER: filter bar + filtered list ── */
   el.appendChild(_acFilterBarHTML('sym_hist_filter','renderSymHist'));
   var fd=_acFilterDates('sym_hist_filter');
-  var filtered=(S.symptoms||[]).filter(function(s){
-    var d=new Date(s.date); return d>=fd.from&&d<=fd.to;
-  }).reverse();
+  var filtered=visibleEntries((S.symptoms||[]).filter(function(e){
+    var d=new Date(e.date); return d>=fd.from&&d<=fd.to;
+  }));
   var listDiv=document.createElement('div');
   if(!filtered.length){
     listDiv.innerHTML='<div style="color:var(--muted);font-size:.85rem;padding:8px 0;">No symptoms in this period.</div>';
   } else {
-    listDiv.innerHTML=filtered.map(function(s){
-      var lvl=NL[s.level]||s.level;
-      var bg=s.level<=1?'#e8f5e9':s.level<=2?'#f9fbe7':s.level<=3?'#fff8e1':s.level<=4?'#fff3e0':'#fce4ec';
-      var bc=s.level<=1?'#a5d6a7':s.level<=2?'#c5e1a5':s.level<=3?'#ffe082':s.level<=4?'#ffcc80':'#f48fb1';
-      return '<div style="padding:10px 12px;border-radius:10px;background:'+bg+';border:1px solid '+bc+';margin-bottom:8px;">'
-        +'<div style="display:flex;justify-content:space-between;align-items:center;">'
-        +'<span style="font-weight:700;font-size:.88rem;">'+s.name+'</span>'
-        +'<span style="font-size:.75rem;color:var(--muted);">'+s.date+' '+s.time+'</span>'
-        +'</div>'
-        +'<div style="font-size:.8rem;margin-top:4px;">Level: <strong>'+lvl+'</strong>'+(s.note?' \u00B7 <em>'+s.note+'</em>':'')+'</div>'
-        +'</div>';
-    }).join('');
+    listDiv.innerHTML=filtered.map(function(e,i){return symCard(e,i,true);}).join('');
   }
   el.appendChild(listDiv);
 }
@@ -4656,58 +4731,50 @@ function renderVitHist(){
   el.innerHTML='';
   var today=_acToday();
 
-  /* PATIENT: today only */
+  function vitCard(v,i,showDelete){
+    var bpc=v.sys>140||v.dia>90?'var(--warn)':v.sys<90?'var(--accent,#e57373)':'var(--success)';
+    var sc=v.spo2&&v.spo2<95?'var(--warn)':'var(--success)';
+    var tc=v.temp&&v.temp>99.5?'var(--warn)':'var(--success)';
+    return '<div style="padding:10px 0;border-bottom:1px solid var(--border);">'
+      +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap;">'
+      +'<span style="font-size:.78rem;font-weight:700;color:var(--muted);">'+fmtDate(v.date)+' · '+(v.time||'')+'</span>'
+      +(v.meal?'<span style="font-size:.7rem;background:var(--surface2,#f5f5f5);padding:2px 7px;border-radius:8px;color:var(--muted);">After '+esc(v.meal)+'</span>':'')
+      +(showDelete?'<button onclick="deleteVital('+i+')" style="margin-left:auto;background:#fff0f0;border:1.5px solid #ffcdd2;color:#e53935;border-radius:8px;padding:2px 8px;font-size:.72rem;cursor:pointer;">🗑</button>':'')
+      +'</div>'
+      +'<div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">'
+      +(v.sys||v.dia?'<div style="font-size:.9rem;font-weight:700;color:'+bpc+';">'+v.sys+'/'+v.dia+' <span style="font-size:.72rem;font-weight:400;">mmHg</span></div>':'')
+      +(v.pulse?'<div style="font-size:.88rem;font-weight:700;">💓 '+v.pulse+' <span style="font-size:.72rem;font-weight:400;">bpm</span></div>':'')
+      +(v.temp?'<div style="font-size:.88rem;font-weight:700;color:'+tc+';">🌡️ '+v.temp+'<span style="font-size:.72rem;font-weight:400;">°F</span></div>':'')
+      +(v.spo2?'<div style="font-size:.88rem;font-weight:700;color:'+sc+';">💨 '+v.spo2+'<span style="font-size:.72rem;font-weight:400;">%</span></div>':'')
+      +(v.weight?'<div style="font-size:.88rem;font-weight:700;">⚖️ '+v.weight+' kg</div>':'')
+      +'</div>'
+      +'</div>';
+  }
+
+  /* ── PATIENT: today only ── */
   if(typeof isPT==='function'&&isPT()){
-    var todayVit=(S.vitals||[]).filter(function(v){return v.date===today;}).reverse();
+    var todayVit=(S.vitals||[]).filter(function(v){return v.date===today;});
     if(!todayVit.length){
       el.innerHTML='<div style="color:var(--muted);font-size:.85rem;padding:8px 0;">No vitals recorded today.</div>';
       return;
     }
-    el.innerHTML=todayVit.map(function(v){
-      var parts=[];
-      if(v.bp_s||v.bp_d) parts.push('BP: '+(v.bp_s||'?')+'/'+(v.bp_d||'?')+' mmHg');
-      if(v.hr)   parts.push('Heart rate: '+v.hr+' bpm');
-      if(v.temp) parts.push('Temp: '+v.temp+'\u00B0C');
-      if(v.spo2) parts.push('SpO\u2082: '+v.spo2+'%');
-      if(v.rr)   parts.push('Breathing: '+v.rr+' breaths/min');
-      return '<div style="padding:10px 0;border-bottom:1px solid var(--border);">'
-        +'<div style="font-size:.78rem;color:var(--muted);margin-bottom:4px;">'+v.time+'</div>'
-        +'<div style="font-size:.85rem;line-height:1.7;">'+parts.join(' &nbsp;\u00B7&nbsp; ')+'</div>'
-        +'</div>';
-    }).join('');
+    var div=document.createElement('div');
+    div.innerHTML=todayVit.map(function(v,i){return vitCard(v,i,false);}).join('');
+    el.appendChild(div);
     return;
   }
 
-  /* CAREGIVER: filter bar + filtered list grouped by date */
+  /* ── CAREGIVER: filter bar + filtered list ── */
   el.appendChild(_acFilterBarHTML('vit_hist_filter','renderVitHist'));
   var fd=_acFilterDates('vit_hist_filter');
   var filtered=(S.vitals||[]).filter(function(v){
     var d=new Date(v.date); return d>=fd.from&&d<=fd.to;
-  }).reverse();
+  });
   var listDiv=document.createElement('div');
   if(!filtered.length){
     listDiv.innerHTML='<div style="color:var(--muted);font-size:.85rem;padding:8px 0;">No vitals in this period.</div>';
   } else {
-    var byDate={};
-    filtered.forEach(function(v){if(!byDate[v.date])byDate[v.date]=[];byDate[v.date].push(v);});
-    var dateKeys=Object.keys(byDate).sort().reverse();
-    listDiv.innerHTML=dateKeys.map(function(dt){
-      var rows=byDate[dt].map(function(v){
-        var parts=[];
-        if(v.bp_s||v.bp_d) parts.push('BP '+(v.bp_s||'?')+'/'+(v.bp_d||'?'));
-        if(v.hr)   parts.push('HR '+v.hr);
-        if(v.temp) parts.push('T '+v.temp+'\u00B0');
-        if(v.spo2) parts.push('SpO\u2082 '+v.spo2+'%');
-        if(v.rr)   parts.push('RR '+v.rr);
-        return '<div style="font-size:.8rem;padding:5px 8px;background:rgba(0,0,0,.03);border-radius:6px;margin-bottom:4px;">'
-          +'<span style="color:var(--muted);margin-right:6px;">'+v.time+'</span>'+parts.join(' \u00B7 ')
-          +(v.note?'<div style="color:var(--muted);font-size:.75rem;margin-top:2px;"><em>'+v.note+'</em></div>':'')
-          +'</div>';
-      }).join('');
-      return '<div style="margin-bottom:12px;">'
-        +'<div style="font-weight:700;font-size:.82rem;color:var(--primary);margin-bottom:4px;">\uD83D\uDCC5 '+dt+'</div>'
-        +rows+'</div>';
-    }).join('');
+    listDiv.innerHTML=filtered.map(function(v,i){return vitCard(v,i,true);}).join('');
   }
   el.appendChild(listDiv);
 }
@@ -4751,29 +4818,39 @@ function renderSlHist(){
   el.innerHTML='';
   var today=_acToday();
 
-  /* PATIENT: today only */
+  function slCard(s,i,showDelete){
+    var col=s.hours>=7?'var(--success)':s.hours>=6?'#f0b429':'var(--warn)';
+    var label=s.hours>=7?'Good':s.hours>=6?'Fair':'Low';
+    return '<div style="padding:10px 0;border-bottom:1px solid var(--border);">'
+      +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">'
+      +'<span style="font-size:.78rem;font-weight:700;color:var(--muted);">'+fmtDate(s.date)+'</span>'
+      +(showDelete?'<button onclick="deleteSlEntry('+i+')" style="background:#fff0f0;border:1.5px solid #ffcdd2;color:#e53935;border-radius:8px;padding:2px 8px;font-size:.72rem;cursor:pointer;">🗑</button>':'')
+      +'</div>'
+      +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'
+      +'<span style="font-weight:700;font-size:.9rem;">🌙 '+s.hours+' hrs</span>'
+      +'<span style="font-size:.75rem;padding:2px 8px;border-radius:10px;background:'+col+';color:#fff;font-weight:700;">'+label+'</span>'
+      +(s.bedtime&&s.wake?'<span style="font-size:.75rem;color:var(--muted);">'+s.bedtime+' → '+s.wake+'</span>':'')
+      +(s.quality?'<span style="font-size:.75rem;color:var(--muted);">Quality '+s.quality+'/5</span>':'')
+      +'</div>'
+      +(s.disruptions&&s.disruptions.length?'<div style="font-size:.74rem;color:var(--warn);margin-top:3px;">⚡ '+s.disruptions.join(' · ')+'</div>':'')
+      +(s.notes?'<div style="font-size:.75rem;color:var(--muted);margin-top:2px;font-style:italic;">"'+esc(s.notes)+'"</div>':'')
+      +'</div>';
+  }
+
+  /* ── PATIENT: today only ── */
   if(typeof isPT==='function'&&isPT()){
     var todaySl=(S.sleepLogs||[]).filter(function(s){return s.date===today;});
     if(!todaySl.length){
-      el.innerHTML='<div class="empty"><span class="emoji">\uD83D\uDE34</span>No sleep logged today.</div>';
+      el.innerHTML='<div class="empty"><span class="emoji">😴</span>No sleep logged today.</div>';
       return;
     }
-    el.innerHTML=todaySl.map(function(s){
-      var col=s.hours>=7?'var(--success)':s.hours>=6?'#f0b429':'var(--warn)';
-      var label=s.hours>=7?'Good':s.hours>=6?'Fair':'Low';
-      return '<div style="padding:10px 0;border-bottom:1px solid var(--border);">'
-        +'<div style="display:flex;justify-content:space-between;align-items:center;">'
-        +'<span style="font-weight:600;font-size:.9rem;">\uD83C\uDF19 '+s.hours+' hrs slept</span>'
-        +'<span style="font-size:.75rem;padding:2px 8px;border-radius:10px;background:'+col+';color:#fff;font-weight:700;">'+label+'</span>'
-        +'</div>'
-        +(s.quality?'<div style="font-size:.8rem;color:var(--muted);margin-top:3px;">Quality: '+s.quality+'</div>':'')
-        +(s.note?'<div style="font-size:.8rem;color:var(--muted);font-style:italic;margin-top:2px;">"'+s.note+'"</div>':'')
-        +'</div>';
-    }).join('');
+    var div=document.createElement('div');
+    div.innerHTML=todaySl.map(function(s,i){return slCard(s,i,false);}).join('');
+    el.appendChild(div);
     return;
   }
 
-  /* CAREGIVER: filter bar + filtered list */
+  /* ── CAREGIVER: filter bar + filtered list ── */
   el.appendChild(_acFilterBarHTML('sl_hist_filter','renderSlHist'));
   var fd=_acFilterDates('sl_hist_filter');
   var filtered=(S.sleepLogs||[]).filter(function(s){
@@ -4781,21 +4858,9 @@ function renderSlHist(){
   }).sort(function(a,b){return b.date.localeCompare(a.date);});
   var listDiv=document.createElement('div');
   if(!filtered.length){
-    listDiv.innerHTML='<div class="empty"><span class="emoji">\uD83D\uDE34</span>No sleep logs in this period.</div>';
+    listDiv.innerHTML='<div class="empty"><span class="emoji">😴</span>No sleep logs in this period.</div>';
   } else {
-    listDiv.innerHTML=filtered.map(function(s){
-      var col=s.hours>=7?'var(--success)':s.hours>=6?'#f0b429':'var(--warn)';
-      var label=s.hours>=7?'Good':s.hours>=6?'Fair':'Low';
-      return '<div style="padding:10px 0;border-bottom:1px solid var(--border);">'
-        +'<div style="display:flex;justify-content:space-between;align-items:center;">'
-        +'<span style="font-weight:700;font-size:.88rem;">\uD83C\uDF19 '+s.date+'</span>'
-        +'<span style="font-size:.75rem;padding:2px 8px;border-radius:10px;background:'+col+';color:#fff;font-weight:700;">'+label+'</span>'
-        +'</div>'
-        +'<div style="font-size:.82rem;color:var(--muted);margin-top:3px;"><strong>'+s.hours+' hrs</strong>'
-        +(s.quality?' \u00B7 Quality: '+s.quality:'')
-        +(s.note?' \u00B7 <em>"'+s.note+'"</em>':'')+'</div>'
-        +'</div>';
-    }).join('');
+    listDiv.innerHTML=filtered.map(function(s,i){return slCard(s,i,true);}).join('');
   }
   el.appendChild(listDiv);
 }
