@@ -6142,7 +6142,11 @@ function _buildPDFHtml(){
   const fmtDT=dt=>{if(!dt)return'—';const[d,t]=(String(dt)+' ').split('T').join(' ').split(' ');return fmtDate(d)+(t&&t.length>4?' '+t.substring(0,5):'');};
   const avgArr=(arr,key)=>arr.length?(arr.reduce((a,x)=>a+(+x[key]||0),0)/arr.length).toFixed(1):null;
   const avgSym=k=>avgArr(fS,k);
-  const repId='AC-'+today.replace(/-/g,'').substring(0,8)+'-'+Math.floor(1000+Math.random()*9000);
+  /* Nerve comfort averages */
+  const fSnerve=fS.filter(e=>e.nerve&&(e.nerve.tingling>1||e.nerve.numbness>1||e.nerve.burning>1||e.nerve.balance>1));
+  const avgNerve=k=>fSnerve.length?(fSnerve.reduce((a,e)=>a+(+(e.nerve&&e.nerve[k])||1),0)/fSnerve.length).toFixed(1):null;
+  const nerveLabel=v=>{const n=+v;return n<=1?'Not today':n<=2?'A little':n<=3?'Noticeable':n<=4?'Quite a bit':'Hard to ignore';};
+  const nerveCol=v=>{const n=+v;return n<=1?'#27ae60':n<=2?'#81c784':n<=3?'#f39c12':n<=4?'#e67e22':'#e74c3c';};
 
   /* BP avg: only count rows where BOTH systolic & diastolic > 0 */
   const fVbp=fV.filter(v=>(+v.systolic||0)>0&&(+v.diastolic||0)>0);
@@ -6153,7 +6157,7 @@ function _buildPDFHtml(){
   const avgSpo2=avgArr(fV.filter(v=>(+v.spo2||0)>0),'spo2');
   const avgSleep=avgArr(fSl,'hours');
 
-  /* Abnormal flag helpers (clinical reference ranges) */
+  /* Abnormal flag helpers — IHS/CSI 2022, API, ICMR Clinical Practice Guidelines */
   const flagBP=(s,d)=>(+s>140||+s<90||+d>90||+d<60)?'*':'';
   const flagPulse=v=>(+v>100||+v<60)?'*':'';
   const flagTemp=v=>(+v>99.5||+v<97)?'*':'';
@@ -6264,7 +6268,6 @@ function _buildPDFHtml(){
       <div style="font-size:8.5px;color:#A8C5A0;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:6px;font-weight:600">AnbuCare &nbsp;·&nbsp; Patient Health Monitoring</div>
       <div style="font-size:22px;font-weight:900;color:#ffffff;letter-spacing:.3px;line-height:1.2">PATIENT HEALTH<br>MONITORING REPORT</div>
       <div style="margin-top:12px;display:flex;gap:20px;font-size:9px;color:#d4e8d5;flex-wrap:wrap">
-        <span><b style="color:#E1AD01">Report ID:</b> ${repId}</span>
         <span><b style="color:#E1AD01">Generated:</b> ${today}</span>
       </div>
       <div style="margin-top:8px;display:inline-block;background:#C0714F;color:#fff;font-size:8.5px;font-weight:700;padding:3px 12px;border-radius:2px;letter-spacing:1px">CONFIDENTIAL — FOR PHYSICIAN USE ONLY</div>
@@ -6318,9 +6321,20 @@ function _buildPDFHtml(){
           <td style="color:${symCol(v)};font-weight:700">${symLabel(v)}</td>
           <td>${symTrend(k)}</td>
           <td>${fS.length}</td></tr>`;
-      }).join('')}
+      }).join('')+
+      (fSnerve.length?
+        `<tr style="background:#e8f5e9"><td colspan="5" style="padding:5px 8px;font-size:9.5px;font-weight:800;color:#2e7d32;letter-spacing:.3px;">🌿 NERVE COMFORT CHECK (avg over ${fSnerve.length} reading${fSnerve.length>1?'s':''})</td></tr>`+
+        [['tingling','🌊 Tingling / Pins &amp; Needles'],['numbness','🌫️ Numbness'],['burning','🌡️ Warmth / Burning'],['balance','🧘 Balance &amp; Steadiness']].map(([k,lbl])=>{
+          const av=avgNerve(k); if(!av||+av<=1.1) return '';
+          const v=+av;
+          return`<tr style="background:#f4faf4"><td><b>${lbl}</b></td>
+            <td><b style="color:${nerveCol(v)}">${av}/5.0</b></td>
+            <td style="color:${nerveCol(v)};font-weight:700">${nerveLabel(v)}</td>
+            <td>—</td><td>${fSnerve.length}</td></tr>`;
+        }).join('')
+      :'')}
     </table>
-    <div class="ref-note">Note: Mood score reflects patient-reported mood (higher = better mood). All other scores reflect symptom burden (higher = more severe).</div>`;
+    <div class="ref-note">Note: Mood score reflects patient-reported mood (higher = better mood). All other scores reflect symptom burden (higher = more severe). Nerve Comfort scores use 5-point patient-reported scale (1 = Not today, 5 = Hard to ignore).</div>`;
   }
 
   /* Avg Vitals summary */
@@ -6349,12 +6363,17 @@ function _buildPDFHtml(){
           <td>7–9 hrs/night</td>
           <td>${avgSleep?(+avgSleep>=7&&+avgSleep<=9?'Within normal range':(+avgSleep<7?'<span class="flag">⚠ Below recommended</span>':'Above recommended')):'—'}</td></tr>
     </table>
-    <div style="margin-top:8px;padding:8px 12px;background:#f5f8fb;border-left:3px solid #7A9E7E;font-size:9px;color:#444;line-height:1.75"><b style="color:#2c4a2e">Reference Standards (Indian Clinical Context):</b><br><b>Blood Pressure:</b> Indian Hypertension Guidelines 2022 (IHS &amp; CSI) — Systolic 90–139 mmHg, Diastolic 60–89 mmHg; Hypertension defined as &ge;140/90 mmHg.<br><b>Pulse Rate &amp; SpO₂:</b> Association of Physicians of India (API) &amp; ICMR Standard Adult Norms — Pulse 60–100 bpm; SpO₂ &ge;95%.<br><b>Body Temperature:</b> ICMR Clinical Practice Guidelines — Normal 97.0–99.5°F (36.1–37.5°C); Febrile threshold &ge;99.5°F (37.5°C).<br><b>Sleep Duration:</b> National Mental Health Programme (NMHP) &amp; ICMR Adult Health Guidelines — Recommended 7–9 hrs/night for adults.</div>`;
+    <div style="margin-top:8px;padding:8px 12px;background:#f5f8fb;border-left:3px solid #7A9E7E;font-size:9px;color:#444;line-height:1.75"><b style="color:#2c4a2e">Reference Standards (Indian Clinical Context):</b><br><b>Blood Pressure:</b> Indian Hypertension Guidelines 2022 — Indian Hypertension Society (IHS) &amp; Cardiological Society of India (CSI): Normal &lt;120/80 mmHg; Elevated 120–129/&lt;80; Stage 1 HTN 130–139/80–89; Stage 2 HTN &ge;140/90 mmHg. Oncology patients on chemotherapy may present with therapy-induced hypertension; review with treating oncologist.<br>
+        <b>Pulse Rate:</b> Association of Physicians of India (API) Adult Norms &amp; ICMR Clinical Practice Guidelines 2023: Normal sinus rhythm 60–100 bpm. Tachycardia (&gt;100 bpm) or bradycardia (&lt;60 bpm) in cancer patients may indicate treatment-related cardiotoxicity — escalate to oncology team.<br>
+        <b>SpO₂ (Oxygen Saturation):</b> ICMR &amp; Indian Society of Critical Care Medicine (ISCCM) — Normal &ge;95%; &lt;94% warrants supplemental O₂ evaluation; &lt;90% is a medical emergency. Cancer patients with lung involvement or post-chemotherapy pneumonitis are at higher risk.<br>
+        <b>Body Temperature:</b> ICMR Clinical Practice Guidelines — Normal 97.0–99.5°F (36.1–37.5°C). Febrile neutropenia threshold: single oral temp &ge;101°F (38.3°C) or &ge;100.4°F (38°C) sustained for &ge;1 hour — this constitutes a medical emergency in oncology patients per AIIMS &amp; Tata Memorial Hospital chemotherapy protocols.<br>
+        <b>Sleep Duration:</b> National Mental Health Programme (NMHP) &amp; ICMR Adult Health Guidelines 2022 — 7–9 hrs/night recommended. Cancer-related fatigue and chemotherapy side effects commonly disrupt sleep; chronic sleep deprivation (&lt;6 hrs) impacts immune recovery and treatment tolerance.<br>
+        <b>Disclaimer:</b> These benchmarks are general reference ranges. All clinical decisions must be made by the treating physician in the context of the patient's diagnosis, current treatment protocol, and individual health history.</div>`;
   }
 
   out+=`<div class="footer-band">
     <span>AnbuCare Patient Health Report &nbsp;|&nbsp; ${esc(patientName)} &nbsp;|&nbsp; ${fmtDate(from)} – ${fmtDate(to)}</span>
-    <span>Report ID: ${repId} &nbsp;|&nbsp; Page 1 &nbsp;|&nbsp; CONFIDENTIAL</span>
+    <span>    Page 1 &nbsp;|&nbsp; CONFIDENTIAL</span>
   </div>`;
 
   /* ═══════════════════════════════════════════
@@ -6363,7 +6382,7 @@ function _buildPDFHtml(){
   out+=`<div class="page-break"></div>`;
   out+=`<div style="border-bottom:2px solid #7A9E7E;margin-bottom:14px;padding-bottom:6px;display:flex;justify-content:space-between;background:#FAF9F6">
     <span style="font-size:13px;font-weight:800;color:#2c4a2e">PATIENT HEALTH MONITORING REPORT — DETAIL SECTIONS</span>
-    <span style="font-size:10px;color:#888">${esc(patientName)} &nbsp;|&nbsp; ${repId}</span>
+    <span style="font-size:10px;color:#888">${esc(patientName)}</span>
   </div>`;
 
   out+=`<div class="sec-hdr">SECTION 1 — SYMPTOM ASSESSMENT LOG</div>`;
@@ -6378,10 +6397,11 @@ function _buildPDFHtml(){
     const sorted=[...fS].sort((a,b)=>b.date.localeCompare(a.date));
     out+=`<table>
       <tr>
-        <th style="width:90px">Date &amp; Time</th>
-        <th style="width:90px">Chemo Reference</th>
+        <th style="width:80px">Date &amp; Time</th>
+        <th style="width:80px">Chemo Ref</th>
         <th>Nausea</th><th>Fatigue</th><th>Pain</th><th>Mood</th><th>Appetite</th>
-        <th>Additional Symptoms / Notes</th>
+        <th style="width:110px">🌿 Nerve Comfort</th>
+        <th>Additional / Notes</th>
       </tr>`;
     sorted.forEach(e=>{
       const extras=[e.fever&&'Fever',e.constipation&&'Constipation',e.diarrhoea&&'Diarrhoea',
@@ -6397,6 +6417,16 @@ function _buildPDFHtml(){
           const v=+e[k]||0;
           return`<td><b style="color:${symCol(v)}">${v}</b><br><span style="font-size:9px;color:#555">${symLabel(v)}</span></td>`;
         }).join('')}
+        <td style="font-size:8.5px;line-height:1.7">${(()=>{
+          if(!e.nerve) return '—';
+          const nd=e.nerve; const parts=[];
+          if((nd.tingling||1)>1) parts.push('🌊 '+nerveLabel(nd.tingling));
+          if((nd.numbness||1)>1) parts.push('🌫️ '+nerveLabel(nd.numbness));
+          if((nd.burning||1)>1)  parts.push('🌡️ '+nerveLabel(nd.burning));
+          if((nd.balance||1)>1)  parts.push('🧘 '+nerveLabel(nd.balance));
+          if(nd.location&&nd.location.length) parts.push('📍 '+nd.location.join(', '));
+          return parts.length?parts.join('<br>'):'<span style="color:#aaa">—</span>';
+        })()}</td>
         <td style="font-size:9.5px">${addl}</td>
       </tr>`;
     });
@@ -6425,7 +6455,7 @@ function _buildPDFHtml(){
 
   out+=`<div class="footer-band">
     <span>AnbuCare Patient Health Report &nbsp;|&nbsp; ${esc(patientName)} &nbsp;|&nbsp; ${fmtDate(from)} – ${fmtDate(to)}</span>
-    <span>Report ID: ${repId} &nbsp;|&nbsp; Page 2 &nbsp;|&nbsp; CONFIDENTIAL</span>
+    <span>    Page 2 &nbsp;|&nbsp; CONFIDENTIAL</span>
   </div>`;
 
   /* ═══════════════════════════════════════════
@@ -6434,7 +6464,7 @@ function _buildPDFHtml(){
   out+=`<div class="page-break"></div>`;
   out+=`<div style="border-bottom:2px solid #7A9E7E;margin-bottom:14px;padding-bottom:6px;display:flex;justify-content:space-between;background:#FAF9F6">
     <span style="font-size:13px;font-weight:800;color:#2c4a2e">PATIENT HEALTH MONITORING REPORT — DETAIL SECTIONS</span>
-    <span style="font-size:10px;color:#888">${esc(patientName)} &nbsp;|&nbsp; ${repId}</span>
+    <span style="font-size:10px;color:#888">${esc(patientName)}</span>
   </div>`;
 
   out+=`<div class="sec-hdr">SECTION 2 — VITAL SIGNS LOG</div>`;
@@ -6484,12 +6514,12 @@ function _buildPDFHtml(){
     out+=`</table>`;
     if(anyVitalFlag){
       out+=`<div class="ref-note" style="color:#c0392b;margin-top:8px">
-        <b>* Flagged Values:</b> One or more readings fall outside normal reference ranges.
-        ${hasBPFlag?'Blood pressure readings require clinical review. ':''
-        }${hasTempFlag?'Temperature elevated — possible febrile episode; correlate with clinical presentation. ':''
-        }${hasSpo2Flag?'SpO₂ below 95% — assess for respiratory compromise. ':''
-        }${hasPulseFlag?'Pulse rate outside 60–100 bpm range. ':''}
-        Please review highlighted entries with the patient's treating physician.
+        <b>* Flagged Values:</b> One or more readings fall outside Indian clinical reference ranges (IHS/CSI 2022, API, ICMR).
+        ${hasBPFlag?'⚠️ BP outside 90–139/60–89 mmHg — IHS/CSI Stage 1 or Stage 2 hypertension threshold. Review with treating oncologist for therapy-induced hypertension. ':''
+        }${hasTempFlag?'⚠️ Temperature ≥99.5°F — AIIMS/Tata Memorial febrile neutropenia protocol: if ≥101°F or ≥100.4°F sustained, treat as oncology emergency. ':''
+        }${hasSpo2Flag?'⚠️ SpO₂ <95% — ISCCM/ICMR threshold. Values <90% constitute a medical emergency; assess for chemotherapy-related pulmonary toxicity. ':''
+        }${hasPulseFlag?'⚠️ Pulse outside 60–100 bpm (API Adult Norms) — may indicate chemotherapy-related cardiotoxicity; escalate to cardio-oncology if persistent. ':''}
+        All flagged values should be reviewed by the patient's treating physician in context of current treatment protocol.
       </div>`;
     }
   } else {
@@ -6529,7 +6559,7 @@ function _buildPDFHtml(){
 
   out+=`<div class="footer-band">
     <span>AnbuCare Patient Health Report &nbsp;|&nbsp; ${esc(patientName)} &nbsp;|&nbsp; ${fmtDate(from)} – ${fmtDate(to)}</span>
-    <span>Report ID: ${repId} &nbsp;|&nbsp; Page 3 &nbsp;|&nbsp; CONFIDENTIAL</span>
+    <span>    Page 3 &nbsp;|&nbsp; CONFIDENTIAL</span>
   </div>`;
 
   /* ═══════════════════════════════════════════
@@ -6538,7 +6568,7 @@ function _buildPDFHtml(){
   out+=`<div class="page-break"></div>`;
   out+=`<div style="border-bottom:2px solid #7A9E7E;margin-bottom:14px;padding-bottom:6px;display:flex;justify-content:space-between;background:#FAF9F6">
     <span style="font-size:13px;font-weight:800;color:#2c4a2e">PATIENT HEALTH MONITORING REPORT — DETAIL SECTIONS</span>
-    <span style="font-size:10px;color:#888">${esc(patientName)} &nbsp;|&nbsp; ${repId}</span>
+    <span style="font-size:10px;color:#888">${esc(patientName)}</span>
   </div>`;
 
   /* Medication Schedule */
@@ -6623,7 +6653,7 @@ function _buildPDFHtml(){
 
   out+=`<div class="footer-band">
     <span>AnbuCare Patient Health Report &nbsp;|&nbsp; ${esc(patientName)} &nbsp;|&nbsp; ${fmtDate(from)} – ${fmtDate(to)}</span>
-    <span>Report ID: ${repId} &nbsp;|&nbsp; Page 4 &nbsp;|&nbsp; CONFIDENTIAL</span>
+    <span>    Page 4 &nbsp;|&nbsp; CONFIDENTIAL</span>
   </div>`;
 
   /* ═══════════════════════════════════════════
@@ -6632,7 +6662,7 @@ function _buildPDFHtml(){
   out+=`<div class="page-break"></div>`;
   out+=`<div style="border-bottom:2px solid #7A9E7E;margin-bottom:14px;padding-bottom:6px;display:flex;justify-content:space-between;background:#FAF9F6">
     <span style="font-size:13px;font-weight:800;color:#2c4a2e">PATIENT HEALTH MONITORING REPORT — DETAIL SECTIONS</span>
-    <span style="font-size:10px;color:#888">${esc(patientName)} &nbsp;|&nbsp; ${repId}</span>
+    <span style="font-size:10px;color:#888">${esc(patientName)}</span>
   </div>`;
 
   /* Care Notes — manual only */
@@ -6671,13 +6701,12 @@ function _buildPDFHtml(){
     <b>DISCLAIMER:</b> This report is generated by AnbuCare, a patient-support caregiving application.
     All data presented herein is self-reported by the patient or caregiver and has not been independently verified.
     This report is intended solely as a supplementary reference for the treating medical team and does not constitute a clinical diagnosis or medical advice.
-    The treating physician should exercise independent clinical judgement in all treatment decisions.
-    Report ID: ${repId} &nbsp;|&nbsp; Generated: ${today} &nbsp;|&nbsp; Prepared by: ${esc(prepBy)}
+    The treating physician should exercise independent clinical judgement in all treatment decisions.    Generated: ${today} &nbsp;|&nbsp; Prepared by: ${esc(prepBy)}
   </div>`;
 
   out+=`<div class="footer-band">
     <span>AnbuCare Patient Health Report &nbsp;|&nbsp; ${esc(patientName)} &nbsp;|&nbsp; ${fmtDate(from)} – ${fmtDate(to)}</span>
-    <span>Report ID: ${repId} &nbsp;|&nbsp; Page 5 &nbsp;|&nbsp; CONFIDENTIAL</span>
+    <span>    Page 5 &nbsp;|&nbsp; CONFIDENTIAL</span>
   </div>`;
 
   return out;
