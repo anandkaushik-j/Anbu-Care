@@ -2444,6 +2444,24 @@ function slotLabel(t){return SLOT_LABEL[t]||SLOT_LABEL[t.replace(/^\S+\s/,'')]||
 function normalizeMed(m){
   if(typeof m.times === 'string'){try{m.times=JSON.parse(m.times);}catch(e){m.times=['Morning'];}}
   if(!Array.isArray(m.times)||!m.times.length) m.times=['Morning'];
+  /* Fix: days must be a positive integer — sanitize date strings like "1900-01-02" */
+  if(m.days !== undefined && m.days !== null && m.days !== ''){
+    var dv = String(m.days).trim();
+    if(/^\d{4}-\d{2}-\d{2}/.test(dv)){
+      /* It's a date string — compute days from start→end if available */
+      if(m.start && m.end){
+        var ms = new Date(m.start), me = new Date(m.end);
+        var diff = Math.round((me - ms) / 864e5) + 1;
+        m.days = diff > 0 ? diff : 1;
+      } else {
+        /* Extract day number from date: "1900-01-13" → 13 */
+        var dayNum = parseInt(dv.split('-')[2]) || 1;
+        m.days = dayNum;
+      }
+    } else {
+      m.days = parseInt(dv) || '';
+    }
+  }
   return m;
 }
 function normalizeDiet(d){
@@ -3681,6 +3699,8 @@ function renderDietDaySummary(){
 }
 // ═══════════════════════════════════════════════════════════════════
 function renderMeds(){
+  /* Sanitize all medicines on every render — fixes legacy date-string days */
+  if(S.medicines && S.medicines.length) S.medicines.forEach(normalizeMed);
   try{renderMedsDaySummary();}catch(_e){}
   try{refreshMedSug();}catch(_e){}
   const el=document.getElementById('medList');if(!el)return;
@@ -3898,7 +3918,7 @@ function updateMed(){
     food:document.getElementById('mFood').value||'',
     start:document.getElementById('mStart').value||today,
     end:document.getElementById('mEnd').value||'',
-    days:document.getElementById('mDays').value||'',
+    days:parseInt(document.getElementById('mDays').value)||'',
     notes:sos?(document.getElementById('mSosNote')?document.getElementById('mSosNote').value||'':''):(document.getElementById('mNotes').value||''),
     email:S.medicines[idx].email||'patient@anbucare'
   };
